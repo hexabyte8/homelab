@@ -136,5 +136,3 @@ If something here looks like a leaked secret, please [open an issue](https://git
 ## License & disclaimer
 
 Provided as-is, without warranty. Configuration values, hostnames, and conventions are specific to this lab — copy with adaptation, not as-is. PRs that improve clarity for other readers are welcome.
-
-If you really want a license, it's MIT.
