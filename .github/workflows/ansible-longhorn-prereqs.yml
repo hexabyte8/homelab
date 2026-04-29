@@ -57,7 +57,11 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          cat .ssh/known_hosts >> ~/.ssh/known_hosts
+          IFS=',' read -ra HOSTS <<< "${{ inputs.target_hosts }}"
+          for host in "${HOSTS[@]}"; do
+            host=$(echo "$host" | xargs)
+            ssh-keyscan ${host}.daggertooth-scala.ts.net >> ~/.ssh/known_hosts 2>/dev/null || true
+          done
 
       - name: Build inventory from target hosts
         run: |

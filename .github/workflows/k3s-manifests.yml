@@ -70,7 +70,7 @@ jobs:
       - name: Configure SSH known hosts
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          cat .ssh/known_hosts >> ~/.ssh/known_hosts
+          ssh-keyscan ${{ inputs.target_host }}.daggertooth-scala.ts.net >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Get kubeconfig from k3s server
         run: |
