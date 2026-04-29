@@ -97,7 +97,7 @@ flowchart LR
 ├── ansible/                     # VM-level provisioning (not in-cluster services)
 │   ├── playbooks/
 │   └── templates/
-├── docs/                        # MkDocs documentation source (rendered to docs.domain.net)
+├── docs/                        # Documentation source (Zensical) — published to docs.chronobyte.net via GitHub Pages
 ├── mkdocs.yml
 └── .github/workflows/           # opentofu-{plan,apply}, ansible-*, k3s-patch-secrets, …
 ```

@@ -65,7 +65,7 @@ graph TD
         uptime_ts["Uptime Kuma<br/>uptime-kuma.tailnet.ts.net"]
         ntfy["Ntfy<br/>ntfy.tailnet.ts.net"]
         dashy["Dashy<br/>dashy.tailnet.ts.net"]
-        docs["MkDocs<br/>docs.tailnet.ts.net"]
+        docs["GitHub Pages<br/>docs.chronobyte.net"]
     end
 
     tsop -->|"provisions proxy pods"| ts_services

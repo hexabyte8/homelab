@@ -103,7 +103,7 @@ Not sure what a technology does or how it works? These pages explain each one fr
 | AdGuard Home | `adguard` | `https://adguard.tailnet.ts.net` | DNS-based ad blocking |
 | Jellyfin | `jellyfin` | `https://jellyfin.tailnet.ts.net` | Media server |
 | Uptime Kuma | `uptime-kuma` | `https://status.example.com` (public) | Uptime monitoring |
-| MkDocs | `docs` | `https://docs.tailnet.ts.net` | This documentation |
+| MkDocs/Zensical | GitHub Pages | `https://docs.chronobyte.net` | This documentation |
 | Longhorn | `longhorn-system` | `https://longhorn.tailnet.ts.net` | Storage UI |
 | cert-manager | `cert-manager` | — (cluster internal) | Automatic TLS certificates |
 | cloudflared | `cloudflared` | — (cluster internal) | Cloudflare Tunnel daemon |

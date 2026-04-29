@@ -52,10 +52,6 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "homelab" {
         service  = "http://traefik.kube-system.svc.cluster.local:80"
       },
       {
-        hostname = "docs.${var.cloudflare_zone_name}"
-        service  = "http://traefik.kube-system.svc.cluster.local:80"
-      },
-      {
         hostname = "healthygames.${var.cloudflare_zone_name}"
         service  = "http://traefik.kube-system.svc.cluster.local:80"
       },
@@ -132,13 +128,16 @@ resource "cloudflare_dns_record" "jellyfin" {
   proxied = true
 }
 
+# docs.chronobyte.net is hosted on GitHub Pages (see .github/workflows/docs-pages.yml).
+# CNAME points to <owner>.github.io and is DNS-only so GitHub can provision
+# the Let's Encrypt certificate for the custom domain.
 resource "cloudflare_dns_record" "docs" {
   zone_id = var.cloudflare_zone_id
   name    = "docs"
-  content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"
+  content = "hexabyte8.github.io"
   type    = "CNAME"
   ttl     = 1
-  proxied = true
+  proxied = false
 }
 
 resource "cloudflare_dns_record" "healthygames" {
