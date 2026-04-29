@@ -89,7 +89,7 @@ jobs:
 | Action | What It Does |
 |--------|-------------|
 | `actions/checkout@v6` | Clones the repository into the runner |
-| `bitwarden/sm-action@v4` | Pulls secrets from Bitwarden Secrets Manager |
+| `bitwarden/sm-action@v3` | Pulls secrets from Bitwarden Secrets Manager |
 | `tailscale/github-action@v3` | Connects the runner to the Tailscale tailnet |
 | `opentofu/setup-opentofu@v2` | Installs OpenTofu on the runner |
 

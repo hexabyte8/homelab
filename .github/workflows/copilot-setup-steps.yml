@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Load secrets from Bitwarden
-        uses: bitwarden/sm-action@v4
+        uses: bitwarden/sm-action@v3
         with:
           access_token: ${{ secrets.BW_ACCESS_TOKEN }}
           secrets: |

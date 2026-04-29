@@ -66,7 +66,7 @@ Used to store:
 - Secrets are referenced by UUID, not by name
 - Access is controlled by **Service Accounts** (machine identities)
 
-**Key concept:** Each GitHub Actions workflow uses `bitwarden/sm-action@v4` to pull
+**Key concept:** Each GitHub Actions workflow uses `bitwarden/sm-action@v3` to pull
 secrets from Bitwarden SM at the start of the run. The only credential GitHub needs
 to know is `BW_ACCESS_TOKEN` (a service account token).
 
@@ -79,7 +79,7 @@ Every GitHub Actions workflow in this homelab follows this pattern:
 ```yaml
 # Step 1: Pull secrets from Bitwarden Secrets Manager
 - name: Get Secrets
-  uses: bitwarden/sm-action@v4
+  uses: bitwarden/sm-action@v3
   with:
     access_token: ${{ secrets.BW_ACCESS_TOKEN }}
     secrets: |
