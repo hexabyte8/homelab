@@ -10,9 +10,9 @@ For the canonical GitOps workflow — how services are deployed, updated, and re
 
 | Node | Local IP | Tailscale IP | Role |
 |---|---|---|---|
-| k3s-server | 192.168.1.179 | 100.94.165.115 | control-plane |
-| k3s-agent-1 | 192.168.1.175 | 100.110.221.27 | worker |
-| k3s-agent-2 | 192.168.1.180 | 100.103.36.18 | worker |
+| k3s-server | <k3s-server-lan-ip> | <k3s-server-ts-ip> | control-plane |
+| k3s-agent-1 | <k3s-agent-1-lan-ip> | <k3s-agent-1-ts-ip> | worker |
+| k3s-agent-2 | <k3s-agent-2-lan-ip> | <k3s-agent-2-ts-ip> | worker |
 
 **k3s version:** v1.34.5+k3s1
 

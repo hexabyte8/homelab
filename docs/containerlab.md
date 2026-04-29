@@ -6,7 +6,7 @@
 
 ```mermaid
 flowchart LR
-  tailnet["Tailnet"] --> vm["containerlab.tailnet.ts.net<br/>(VM, 192.168.1.181)"]
+  tailnet["Tailnet"] --> vm["containerlab.tailnet.ts.net<br/>(VM, <containerlab-lan-ip>)"]
   vm --> docker["Docker CE"]
   vm --> clab["containerlab<br/>(/usr/bin/containerlab)"]
   vm --> netlab["netlab<br/>(pip3 networklab)"]
@@ -16,7 +16,7 @@ flowchart LR
 | ---------------- | -------------------------------------------------- |
 | VM name          | `containerlab`                                     |
 | Proxmox VMID     | `105`                                              |
-| LAN IP           | `192.168.1.181/24`                                 |
+| LAN IP           | `192.168.x.x/24`                                 |
 | Tailnet name     | `containerlab.tailnet.ts.net`                      |
 | Resources        | 4 vCPU (`cpu type = host`), 16 GB RAM, 100 GB disk |
 | OS user          | `ubuntu` (in `docker` group)                       |

@@ -6,9 +6,9 @@ The `jellyfin` namespace hosts a collection of media-related services that work 
 
 | Service | Image | Purpose | LAN IP |
 |---------|-------|---------|--------|
-| Jellyfin | `jellyfin/jellyfin:10.10.7` | Media server and streaming | `192.168.1.240` |
-| FileBrowser | `filebrowser/filebrowser:v2.31.2` | Web file manager | `192.168.1.241` |
-| Transmission | `haugene/transmission-openvpn:5.3` | BitTorrent client (VPN-tunnelled) | `192.168.1.242` |
+| Jellyfin | `jellyfin/jellyfin:10.10.7` | Media server and streaming | `<jellyfin-lan-ip>` |
+| FileBrowser | `filebrowser/filebrowser:v2.31.2` | Web file manager | `<filebrowser-lan-ip>` |
+| Transmission | `haugene/transmission-openvpn:5.3` | BitTorrent client (VPN-tunnelled) | `<transmission-lan-ip>` |
 | MeTube | `ghcr.io/alexta69/metube:2026.03.21` | yt-dlp web UI (YouTube downloader) | — |
 
 ## Access
@@ -38,7 +38,7 @@ flowchart LR
   end
 ```
 
-Jellyfin, FileBrowser, and Transmission are also exposed as `LoadBalancer` services with static MetalLB IPs on the home LAN (`192.168.1.0/24`). This allows devices such as Apple TV to discover and connect to Jellyfin directly over the local network without going through Tailscale.
+Jellyfin, FileBrowser, and Transmission are also exposed as `LoadBalancer` services with static MetalLB IPs on the home LAN (`<lan-cidr>`). This allows devices such as Apple TV to discover and connect to Jellyfin directly over the local network without going through Tailscale.
 
 ### Node affinity
 
@@ -128,7 +128,7 @@ kubectl create secret generic transmission-openvpn-credentials \
 | `TRANSMISSION_RPC_AUTHENTICATION_REQUIRED` | `true` | Require username/password for web UI access |
 | `TRANSMISSION_DOWNLOAD_DIR` | `/media/downloads` | Completed download destination |
 | `TRANSMISSION_INCOMPLETE_DIR` | `/media/downloads/incomplete` | In-progress download staging area |
-| `LOCAL_NETWORK` | `192.168.1.0/24` | Bypass VPN for LAN traffic (allows Jellyfin to access the web UI) |
+| `LOCAL_NETWORK` | `<lan-cidr>` | Bypass VPN for LAN traffic (allows Jellyfin to access the web UI) |
 | `PUID` / `PGID` | `1000` | Run as UID/GID 1000 for consistent file ownership on the shared PVC |
 | `TZ` | `America/New_York` | Timezone for cron jobs and log timestamps |
 
@@ -188,7 +188,7 @@ kubectl exec -n jellyfin deployment/transmission -- curl --max-time 5 https://ch
 
 ### Jellyfin not discoverable on LAN
 
-The MetalLB IP (`192.168.1.240`) must be within the MetalLB address pool. Confirm the LoadBalancer service has been assigned an external IP:
+The MetalLB IP (`<jellyfin-lan-ip>`) must be within the MetalLB address pool. Confirm the LoadBalancer service has been assigned an external IP:
 
 ```bash
 kubectl get svc jellyfin -n jellyfin

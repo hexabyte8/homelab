@@ -10,18 +10,18 @@ For the Flannel VXLAN **data plane**, this cluster uses `flannel-iface: eth0` (t
 
 ```
 Node registration:  100.x.x.x  (Tailscale IP — stable, via node-ip flag)
-Flannel data plane: 192.168.1.x (LAN IP — fast, via flannel-iface: eth0)
+Flannel data plane: <lan-cidr> (LAN IP — fast, via flannel-iface: eth0)
 ```
 
 ---
 
 ## Current Node IPs
 
-| Node        | LAN IP        | Tailscale IP   |
-| ----------- | ------------- | -------------- |
-| k3s-server  | 192.168.1.179 | 100.94.165.115 |
-| k3s-agent-1 | 192.168.1.175 | 100.110.221.27 |
-| k3s-agent-2 | 192.168.1.180 | 100.103.36.18  |
+| Node | LAN IP | Tailscale IP |
+|------|--------|-------------|
+| k3s-server | <k3s-server-lan-ip> | <k3s-server-ts-ip> |
+| k3s-agent-1 | <k3s-agent-1-lan-ip> | <k3s-agent-1-ts-ip> |
+| k3s-agent-2 | <k3s-agent-2-lan-ip> | <k3s-agent-2-ts-ip> |
 
 ---
 
@@ -37,9 +37,9 @@ Each node has `/etc/rancher/k3s/config.yaml` written before k3s starts:
 write-kubeconfig-mode: "644"
 tls-san:
   - k3s-server.tailnet.ts.net
-  - 100.94.165.115
-  - 192.168.1.179
-node-ip: "100.94.165.115"
+  - <k3s-server-ts-ip>
+  - <k3s-server-lan-ip>
+node-ip: "<k3s-server-ts-ip>"
 flannel-iface: eth0
 ```
 
@@ -67,7 +67,7 @@ Flannel maintains a forwarding database (fdb) entry per remote node. With `flann
 ```
 # fdb entries point at LAN IPs (fast, direct)
 bridge fdb show dev flannel.1
-aa:bb:cc:dd:ee:01 dst 192.168.1.175 self permanent
+aa:bb:cc:dd:ee:01 dst <k3s-agent-1-lan-ip> self permanent
 ```
 
 The Kubernetes node registration (control plane routing, `kubectl`, etc.) still uses Tailscale IPs because `node-ip` is set to `100.x.x.x`. If the LAN IP changes, only the Flannel data plane is affected — the cluster control plane remains healthy.
@@ -122,9 +122,9 @@ kubectl get nodes -o json | jq -r '.items[] |
 Expected output — all IPs should be `100.x.x.x`:
 
 ```
-k3s-agent-1  internal=100.110.221.27  flannel=100.110.221.27
-k3s-agent-2  internal=100.103.36.18   flannel=100.103.36.18
-k3s-server   internal=100.94.165.115  flannel=100.94.165.115
+k3s-agent-1  internal=<k3s-agent-1-ts-ip>  flannel=<k3s-agent-1-ts-ip>
+k3s-agent-2  internal=<k3s-agent-2-ts-ip>   flannel=<k3s-agent-2-ts-ip>
+k3s-server   internal=<k3s-server-ts-ip>  flannel=<k3s-server-ts-ip>
 ```
 
 ### Test cross-node connectivity
@@ -190,8 +190,8 @@ spec:
       nsenter -t 1 -m -u -i -n -- sh << 'SCRIPT'
       mkdir -p /etc/rancher/k3s
       cat > /etc/rancher/k3s/config.yaml << 'CONF'
-      node-ip: "100.110.221.27"       # <-- Tailscale IP of this node
-      node-external-ip: "100.110.221.27"
+      node-ip: "<k3s-agent-1-ts-ip>"       # <-- Tailscale IP of this node
+      node-external-ip: "<k3s-agent-1-ts-ip>"
       flannel-iface: eth0
       CONF
       cat /etc/rancher/k3s/config.yaml
@@ -278,7 +278,7 @@ kubectl debug node/k3s-agent-1 -it --image=alpine -- chroot /host bridge fdb sho
 ### Verifying flannel data plane
 
 ```bash
-# Check the fdb — entries should show LAN IPs (192.168.1.x)
+# Check the fdb — entries should show LAN IPs (<lan-cidr>)
 kubectl debug node/k3s-server -it --image=alpine -- chroot /host bridge fdb show dev flannel.1
 
 # Check the flannel MTU is 1450

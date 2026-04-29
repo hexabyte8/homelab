@@ -5,7 +5,7 @@
 > **What you need:**
 > - A USB drive (4 GB or larger)
 > - Physical access to the server to boot from USB
-> - The server's existing static IP plan (192.168.1.10/24)
+> - The server's existing static IP plan (<proxmox-lan-cidr>)
 
 ---
 
@@ -58,8 +58,8 @@ to write the ISO to the USB drive in **DD mode**.
 | Country | Your country |
 | Timezone | Your timezone |
 | Hostname (FQDN) | `chronobyte.local` |
-| IP Address | `192.168.1.10/24` |
-| Gateway | `192.168.1.254` |
+| IP Address | `<proxmox-lan-cidr>` |
+| Gateway | `<lan-gateway>` |
 | DNS Server | `8.8.8.8` |
 | Root password | Choose a strong password and save it to Bitwarden |
 
@@ -70,7 +70,7 @@ to write the ISO to the USB drive in **DD mode**.
 
 Open a browser and navigate to:
 ```
-https://192.168.1.10:8006
+https://<proxmox-lan-ip>:8006
 ```
 
 Accept the self-signed certificate warning. Log in with:
@@ -80,7 +80,7 @@ Accept the self-signed certificate warning. Log in with:
 
 > **Note:** The Proxmox web interface uses HTTPS but with a self-signed certificate.
 > Your browser will show a security warning — this is expected. Click "Advanced" → 
-> "Proceed to 192.168.1.10" to continue.
+> "Proceed to <proxmox-lan-ip>" to continue.
 
 **Reference:** [Proxmox Installation Guide](https://pve.proxmox.com/wiki/Installation)
 
@@ -101,8 +101,8 @@ into the same physical switch.
 2. Confirm `vmbr0` exists with these settings:
    - Type: Linux Bridge
    - Ports/Slaves: your physical NIC name (e.g. `enp3s0` or `eth0`)
-   - IP: `192.168.1.10/24`
-   - Gateway: `192.168.1.254`
+   - IP: `<proxmox-lan-cidr>`
+   - Gateway: `<lan-gateway>`
 
 **Expected `/etc/network/interfaces` configuration:**
 ```
@@ -113,8 +113,8 @@ iface enp3s0 inet manual
 
 auto vmbr0
 iface vmbr0 inet static
-    address 192.168.1.10/24
-    gateway 192.168.1.254
+    address <proxmox-lan-cidr>
+    gateway <lan-gateway>
     bridge-ports enp3s0
     bridge-stp off
     bridge-fd 0
@@ -126,12 +126,12 @@ iface vmbr0 inet static
 
 | VM | VMID | Static LAN IP |
 |----|------|--------------|
-| k3s-agent-1 | 101 | 192.168.1.175/24 |
-| k3s-server | 102 | 192.168.1.179/24 |
-| k3s-agent-2 | 103 | 192.168.1.180/24 |
+| k3s-agent-1 | 101 | <k3s-agent-1-lan-cidr> |
+| k3s-server | 102 | <k3s-server-lan-cidr> |
+| k3s-agent-2 | 103 | <k3s-agent-2-lan-cidr> |
 | game-server | 104 | DHCP |
 
-All VMs use gateway `192.168.1.254` and DNS `8.8.8.8`.
+All VMs use gateway `<lan-gateway>` and DNS `8.8.8.8`.
 
 ---
 
@@ -299,7 +299,7 @@ template icon (stacked squares icon).
 
 Before proceeding to Phase 3:
 
-- [ ] Proxmox VE is installed and web UI is accessible at `https://192.168.1.10:8006`
+- [ ] Proxmox VE is installed and web UI is accessible at `https://<proxmox-lan-ip>:8006`
 - [ ] `vmbr0` network bridge is configured and VMs can reach the LAN
 - [ ] Tailscale is installed on the Proxmox host and shows as online in the admin console
 - [ ] `ping chronobyte.tailnet.ts.net` responds from your laptop

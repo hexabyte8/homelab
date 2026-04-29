@@ -72,9 +72,9 @@ This homelab runs a **3-node k3s cluster**:
 
 ```mermaid
 graph TD
-    srv["k3s-server<br/>Role: control-plane, master<br/>Tailscale: 100.94.165.115<br/><br/>• kube-apiserver<br/>• kube-scheduler<br/>• kube-controller-manager<br/>• etcd (state store)"]
-    ag1["k3s-agent-1<br/>Role: worker<br/>Tailscale: 100.110.221.27<br/><br/>• kubelet<br/>• kube-proxy<br/>• container runtime"]
-    ag2["k3s-agent-2<br/>Role: worker<br/>Tailscale: 100.103.36.18<br/><br/>• kubelet<br/>• kube-proxy<br/>• container runtime"]
+    srv["k3s-server<br/>Role: control-plane, master<br/>Tailscale: <k3s-server-ts-ip><br/><br/>• kube-apiserver<br/>• kube-scheduler<br/>• kube-controller-manager<br/>• etcd (state store)"]
+    ag1["k3s-agent-1<br/>Role: worker<br/>Tailscale: <k3s-agent-1-ts-ip><br/><br/>• kubelet<br/>• kube-proxy<br/>• container runtime"]
+    ag2["k3s-agent-2<br/>Role: worker<br/>Tailscale: <k3s-agent-2-ts-ip><br/><br/>• kubelet<br/>• kube-proxy<br/>• container runtime"]
     srv --> ag1
     srv --> ag2
 ```

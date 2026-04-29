@@ -22,7 +22,7 @@ graph TD
     subgraph server["Physical Server (chronobyte)<br/>16+ CPU cores | 64+ GB RAM | 2+ TB SSD"]
         subgraph pve["Proxmox VE (OS)"]
             vm1["k3s-server<br/>4 vCPU | 8 GB RAM"]
-            vm2["k3s-agent<br/>4 vCPU | 8 GB RAM"]
+            vm2["k3s-agent<br/>4 vCPU | 16 GB RAM"]
             vmn["..."]
         end
     end
@@ -94,9 +94,9 @@ This homelab's cloud-init configuration:
 
 | VM | VMID | Purpose | Resources |
 |----|------|---------|-----------|
-| k3s-agent-1 | 101 | Kubernetes worker | 4 vCPU, 8 GB RAM, 50 GB disk |
-| k3s-server | 102 | Kubernetes control plane | 4 vCPU, 8 GB RAM, 50 GB disk |
-| k3s-agent-2 | 103 | Kubernetes worker | 4 vCPU, 8 GB RAM, 50 GB disk |
+| k3s-agent-1 | 101 | Kubernetes worker | 4 vCPU, 16 GB RAM, 500 GB disk |
+| k3s-server | 102 | Kubernetes control plane | 4 vCPU, 8 GB RAM, 500 GB disk |
+| k3s-agent-2 | 103 | Kubernetes worker | 4 vCPU, 16 GB RAM, 500 GB disk |
 | game-server | 104 | Minecraft server | 4 vCPU, 16 GB RAM, 500 GB disk |
 
 All VMs are cloned from **VM 9000** (Ubuntu 24.04 template) using OpenTofu.
@@ -168,7 +168,7 @@ pvesm list local-lvm
 
 ## Proxmox Web UI Overview
 
-Access the web UI at `https://192.168.1.10:8006`
+Access the web UI at `https://<proxmox-lan-ip>:8006`
 
 **Key sections:**
 

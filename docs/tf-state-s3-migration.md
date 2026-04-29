@@ -322,7 +322,7 @@ Remove the `TF_API_TOKEN` secret from the Bitwarden loading step and the
 
 ```yaml
 # Remove from the Bitwarden secrets block:
-11141155-d09d-488a-a792-b40f00cbc05e > TF_API_TOKEN
+<bws-uuid-tf-api-token> > TF_API_TOKEN
 
 # Remove this entire step:
 - name: Setup OpenTofu CLI
