@@ -1,6 +1,6 @@
 # Hexabyte's Homelab
 
-A self-hosted, GitOps-driven homelab built around a small **k3s Kubernetes cluster on Proxmox**, with everything from VM provisioning to DNS records defined as code. This repository is published as a reference for other self-hosters and as a public, auditable record of how the lab is operated.
+A GitOps-driven homelab built around a small **k3s Kubernetes cluster on Proxmox**, with everything from VM provisioning to DNS records defined as code. This repository is published as a reference for others and as a public, auditable record of how the lab is operated.
 
 **DISCLAIMER** - This is a personal homelab, not a product or template. The architecture, conventions, and configuration choices are specific to my needs and preferences. If you're looking for a copy-paste solution, this isn't it — but if you want to learn how to wire up these technologies in a real-world context, this repo is meant to be readable evidence that it can be done.
 
