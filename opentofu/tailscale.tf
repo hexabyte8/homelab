@@ -51,6 +51,11 @@ resource "tailscale_acl" "as_json" {
             "dst": ["tag:k8s"],
             "ip":  ["tcp:80", "tcp:443"],
           },
+          {
+            "src": ["autogroup:member"],
+            "dst": ["autogroup:internet"],
+            "ip":  ["*"],
+          },
         ],
       
         "ssh": [
