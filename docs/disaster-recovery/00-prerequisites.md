@@ -69,7 +69,7 @@ following items exists.
 |--------|-----------|-------|
 | `BW_ACCESS_TOKEN` | GitHub Actions → Bitwarden SM | Set as a **GitHub Actions repository secret** in `hexabyte8/homelab` |
 
-> **Important:** GitHub Actions workflows use Bitwarden Secrets Manager (`bitwarden/sm-action@v3`)
+> **Important:** GitHub Actions workflows use Bitwarden Secrets Manager (`bitwarden/sm-action@v2`)
 > and pull all other secrets from there at runtime. As long as `BW_ACCESS_TOKEN` is set as a
 > repository secret, the CI/CD pipelines are self-contained and can run without manual intervention.
 
