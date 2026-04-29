@@ -48,3 +48,13 @@ resource "cloudflare_dns_record" "resend_dmarc" {
   ttl     = 1
   proxied = false
 }
+
+# GitHub Pages domain verification
+resource "cloudflare_dns_record" "github_pages_challenge" {
+  zone_id = var.cloudflare_zone_id
+  name    = "_github-pages-challenge-hexabyte8"
+  content = "a3f36a82728a32d92ef98d203e9119"
+  type    = "TXT"
+  ttl     = 1
+  proxied = false
+}
