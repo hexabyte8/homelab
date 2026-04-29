@@ -13,7 +13,7 @@ Proxmox server, managed via GitOps with Flux CD.
 | Networking  | Flannel (VXLAN) + Tailscale operator            |
 | Storage     | Longhorn (distributed)                          |
 | GitOps      | Flux CD                                         |
-| Ingress     | Tailscale (`*.tailnet.ts.net`) and Cloudflare Tunnel (`*.example.com`) |
+| Ingress     | Traefik (Cloudflare Tunnel `*.example.com`) + Tailscale operator (`*.tailnet.ts.net`) |
 | TLS         | cert-manager + Let's Encrypt (Cloudflare path); Tailscale (Tailscale path) |
 
 ## Key services
@@ -21,7 +21,7 @@ Proxmox server, managed via GitOps with Flux CD.
 | Service | URL | Notes |
 | --- | --- | --- |
 | Authentik | `authentik.tailnet.ts.net` | SSO / identity provider |
-| AdGuard Home | `adguard.tailnet.ts.net` | DNS ad-blocking |
+| AdGuard Home | `adguard.tailnet.ts.net` | DNS ad-blocking + LAN DNS via MetalLB |
 | Dashy | `dashy.tailnet.ts.net` | Service dashboard |
 | Uptime Kuma | `uptime-kuma.tailnet.ts.net` · `uptime.example.com` (public) | Uptime monitoring |
 | Jellyfin | `jellyfin.tailnet.ts.net` · `jellyfin.example.com` (public) | Media server |
@@ -31,6 +31,7 @@ Proxmox server, managed via GitOps with Flux CD.
 | Calibre-Web | `calibre-web.tailnet.ts.net` · `calibre.example.com` (public) | Ebook library |
 | Stalwart Mail | `mail.tailnet.ts.net` · `mail.example.com` (public) | Mail server |
 | Ntfy | `ntfy.tailnet.ts.net` | Push notifications |
+| Grafana / Prometheus | `grafana.tailnet.ts.net` / `prometheus.tailnet.ts.net` | Monitoring (see [monitoring.md](monitoring.md)) |
 | Docs (this site) | `docs.chronobyte.net` (public, GitHub Pages) | Documentation |
 | Fail2ban | — | DaemonSet on all nodes — managed via [Ansible](fail2ban.md) |
 
@@ -38,9 +39,11 @@ Proxmox server, managed via GitOps with Flux CD.
 
 - **[GitOps with Flux CD](gitops-flux.md)** — Bootstrap, adding services, patched secrets
 - **[Adding a New Service](new-service.md)** — End-to-end guide: manifests → Flux → ingress → Authentik
+- **[Cloudflare Tunnels](cloudflare-tunnels.md)** — Public ingress via Cloudflare Tunnel
 - **[Tailscale Operator](tailscale-operator.md)** — Exposing services on the tailnet
 - **[Flannel over Tailscale](flannel-over-tailscale.md)** — Cross-node pod networking via Tailscale IPs
 - **[Manifests & Helm](manifests-and-helm.md)** — Cluster overview and manual `kubectl` / `helm` escape hatches
+- **[Monitoring](monitoring.md)** — Prometheus, Grafana, and alerting
 - **[Disaster Recovery](disaster-recovery/index.md)** — Full rebuild from scratch
 - **[Fail2ban](fail2ban.md)** — DaemonSet deployment, jail config, ban management, troubleshooting
 
