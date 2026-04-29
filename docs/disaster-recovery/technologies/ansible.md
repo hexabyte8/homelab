@@ -309,4 +309,7 @@ If a VM was recreated (new host key), remove the old entry:
 ssh-keygen -R k3s-server.tailnet.ts.net
 ```
 
-Or use strict host checking with the known_hosts file from the repo (`.ssh/known_hosts`).
+Or repopulate the host key with `ssh-keyscan`:
+```bash
+ssh-keyscan k3s-server.tailnet.ts.net >> ~/.ssh/known_hosts
+```

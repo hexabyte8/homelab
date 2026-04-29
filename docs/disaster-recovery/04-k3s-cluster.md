@@ -97,8 +97,8 @@ pip install ansible
 # Ensure you are on the tailnet
 tailscale up
 
-# Add the k3s-server host key to known_hosts (find this in .ssh/known_hosts in the repo)
-echo "k3s-server.tailnet.ts.net ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDY0q2U6SakvDe1Fo7/EX4FrT+alwv1zv7eQtyxchMGa" >> ~/.ssh/known_hosts
+# Add the k3s-server host key to known_hosts via ssh-keyscan
+ssh-keyscan k3s-server.tailnet.ts.net >> ~/.ssh/known_hosts 2>/dev/null
 ```
 
 ```bash
