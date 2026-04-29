@@ -118,10 +118,10 @@ Not sure what a technology does or how it works? These pages explain each one fr
 
 ```mermaid
 graph TD
-    subgraph phys["Physical Server: chronobyte<br/>OS: Proxmox VE | LAN: 192.168.1.10 | Tailscale: chronobyte.tailnet.ts.net"]
-        srv["VM: k3s-server (VMID 102)<br/>LAN: 192.168.1.179 | Tailscale: 100.94.165.115<br/>Role: Kubernetes control plane"]
-        ag1["VM: k3s-agent-1 (VMID 101)<br/>LAN: 192.168.1.175 | Tailscale: 100.110.221.27<br/>Role: Kubernetes worker node"]
-        ag2["VM: k3s-agent-2 (VMID 103)<br/>LAN: 192.168.1.180 | Tailscale: 100.103.36.18<br/>Role: Kubernetes worker node"]
+    subgraph phys["Physical Server: chronobyte<br/>OS: Proxmox VE | LAN: <proxmox-lan-ip> | Tailscale: chronobyte.tailnet.ts.net"]
+        srv["VM: k3s-server (VMID 102)<br/>LAN: <k3s-server-lan-ip> | Tailscale: <k3s-server-ts-ip><br/>Role: Kubernetes control plane"]
+        ag1["VM: k3s-agent-1 (VMID 101)<br/>LAN: <k3s-agent-1-lan-ip> | Tailscale: <k3s-agent-1-ts-ip><br/>Role: Kubernetes worker node"]
+        ag2["VM: k3s-agent-2 (VMID 103)<br/>LAN: <k3s-agent-2-lan-ip> | Tailscale: <k3s-agent-2-ts-ip><br/>Role: Kubernetes worker node"]
         gs["VM: game-server (VMID 104)<br/>LAN: DHCP | Tailscale: auto-assigned<br/>Role: Minecraft game server"]
     end
     srv --- ag1

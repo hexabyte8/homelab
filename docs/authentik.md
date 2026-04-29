@@ -49,7 +49,7 @@ Key files:
 | `opentofu/authentik-ldap.tf` | LDAP provider, dedicated bind flow, LDAP outpost, Jellyfin service-account user |
 
 The provider authenticates with `AUTHENTIK_API_TOKEN` (Bitwarden Secrets Manager UUID
-`73f4bb30-0c41-445c-908e-b43a00ef7863`). Both `opentofu-plan.yml` and `opentofu-apply.yml` workflows
+`<bws-uuid-authentik-api-token>`). Both `opentofu-plan.yml` and `opentofu-apply.yml` workflows
 inject it. Pushing to `main` runs `tofu apply` automatically.
 
 The previous YAML-blueprint approach (`k3s/manifests/authentik/blueprints-configmap.yaml`) has been
@@ -74,7 +74,7 @@ The recovery flow (slug `default-recovery-flow`) is wired into the default Brand
 The flow's email stage uses Authentik's **global SMTP settings** (configured on the HelmRelease in
 `k3s/flux/apps/authentik.yaml`) which point at Stalwart at `stalwart.stalwart.svc.cluster.local:587`,
 sender `noreply@example.com`. The SMTP password lives in the `authentik-credentials` secret
-(key `smtp-password`, BWS UUID `793deec1-de4b-487b-b685-b43a00e06099`).
+(key `smtp-password`, BWS UUID `<bws-uuid-smtp-password>`).
 
 Test it: visit the login page → "Forgot password?" → enter username/email → an email lands at the
 user's inbox with a 30-minute reset link.

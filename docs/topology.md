@@ -9,11 +9,11 @@ This page provides a complete visual overview of the homelab infrastructure — 
 ```mermaid
 graph TD
     %% Physical layer
-    subgraph physical["Physical Server: chronobyte (192.168.1.10)"]
+    subgraph physical["Physical Server: chronobyte (<proxmox-lan-ip>)"]
         subgraph proxmox["Proxmox VE — hypervisor"]
-            srv["VM: k3s-server (VMID 102)<br/>LAN: 192.168.1.179<br/>Tailscale: 100.94.165.115<br/>Role: control plane"]
-            ag1["VM: k3s-agent-1 (VMID 101)<br/>LAN: 192.168.1.175<br/>Tailscale: 100.110.221.27<br/>Role: worker node"]
-            ag2["VM: k3s-agent-2 (VMID 103)<br/>LAN: 192.168.1.180<br/>Tailscale: 100.103.36.18<br/>Role: worker node"]
+            srv["VM: k3s-server (VMID 102)<br/>LAN: <k3s-server-lan-ip><br/>Tailscale: <k3s-server-ts-ip><br/>Role: control plane"]
+            ag1["VM: k3s-agent-1 (VMID 101)<br/>LAN: <k3s-agent-1-lan-ip><br/>Tailscale: <k3s-agent-1-ts-ip><br/>Role: worker node"]
+            ag2["VM: k3s-agent-2 (VMID 103)<br/>LAN: <k3s-agent-2-lan-ip><br/>Tailscale: <k3s-agent-2-ts-ip><br/>Role: worker node"]
             gamesrv["VM: game-server (VMID 104)<br/>LAN: DHCP<br/>Tailscale: auto-assigned<br/>Role: Minecraft"]
         end
     end
@@ -229,9 +229,9 @@ graph LR
         ts_mesh["WireGuard mesh"]
     end
 
-    subgraph lan["LAN (192.168.1.0/24)"]
-        proxmox_host["Proxmox host<br/>192.168.1.10"]
-        vm_net["VMs<br/>192.168.1.175–180"]
+    subgraph lan["LAN (<lan-cidr>)"]
+        proxmox_host["Proxmox host<br/><proxmox-lan-ip>"]
+        vm_net["VMs<br/><k3s-agent-1-lan-ip>–<k3s-agent-2-lan-ip>"]
     end
 
     subgraph cluster_net["Cluster Network"]

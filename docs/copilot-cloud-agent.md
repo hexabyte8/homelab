@@ -38,8 +38,8 @@ The workflow reuses the same Bitwarden items as `ansible-k3s.yml`:
 
 | Bitwarden item ID | Env var |
 |---|---|
-| `2ea22c80-a3b2-4b71-a5f7-b40f00c90b84` | `TAILSCALE_OAUTH_CLIENT_ID` |
-| `9edcc17b-513b-4b4b-848b-b40f00c91c35` | `TAILSCALE_OAUTH_CLIENT_SECRET` |
+| `<bws-uuid-tailscale-oauth-client-id>` | `TAILSCALE_OAUTH_CLIENT_ID` |
+| `<bws-uuid-tailscale-oauth-client-secret>` | `TAILSCALE_OAUTH_CLIENT_SECRET` |
 
 ---
 

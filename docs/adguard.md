@@ -16,8 +16,8 @@ This document covers the AdGuard Home deployment in this homelab — what it doe
 AdGuard Home is exposed to both the tailnet and the local LAN:
 
 - **Web UI** → `https://adguard.tailnet.ts.net` — Tailscale Ingress, `prod` ProxyClass (no Funnel, tailnet only)
-- **DNS (port 53, tailnet)** → `adguard-dns.tailnet.ts.net` / `100.127.96.108` — Tailscale LoadBalancer Service
-- **DNS (port 53, LAN)** → `192.168.1.231` — MetalLB LoadBalancer Service
+- **DNS (port 53, tailnet)** → `adguard-dns.tailnet.ts.net` / `<adguard-ts-ip>` — Tailscale LoadBalancer Service
+- **DNS (port 53, LAN)** → `<adguard-lan-ip>` — MetalLB LoadBalancer Service
 
 No port is exposed to the public internet. The web UI is tailnet-only; DNS is reachable from both tailnet and LAN devices.
 
@@ -30,8 +30,8 @@ No port is exposed to the public internet. The web UI is tailnet-only; DNS is re
 | **Runtime** | Kubernetes Deployment in the `adguard` namespace |
 | **Image** | `adguard/adguardhome:v0.107.63` |
 | **Web UI** | Tailscale Ingress (`prod` ProxyClass) → `https://adguard.tailnet.ts.net` |
-| **DNS (tailnet)** | Tailscale LoadBalancer Service → `adguard-dns.tailnet.ts.net:53` / `100.127.96.108` (UDP + TCP) |
-| **DNS (LAN)** | MetalLB LoadBalancer Service → `192.168.1.231:53` (UDP + TCP) |
+| **DNS (tailnet)** | Tailscale LoadBalancer Service → `adguard-dns.tailnet.ts.net:53` / `<adguard-ts-ip>` (UDP + TCP) |
+| **DNS (LAN)** | MetalLB LoadBalancer Service → `<adguard-lan-ip>:53` (UDP + TCP) |
 | **Config storage** | Longhorn PVC `adguard-conf` (1 Gi) — mounted at `/opt/adguardhome/conf` |
 | **Data storage** | Longhorn PVC `adguard-work` (5 Gi) — mounted at `/opt/adguardhome/work` |
 | **Provisioning** | Flux CD — managed via `k3s/manifests/adguard/` and `k3s/flux/apps/adguard.yaml` |
@@ -131,7 +131,7 @@ Once AdGuard Home is running, find the DNS Tailscale IP:
 ```bash
 # From any tailnet device
 tailscale status | grep adguard-dns
-# e.g. 100.127.96.108  adguard-dns  linux  -
+# e.g. <adguard-ts-ip>  adguard-dns  linux  -
 ```
 
 #### Method A — Per-device DNS (testing / selective)
@@ -151,14 +151,14 @@ In the Tailscale admin console:
 
 ### LAN devices
 
-Point any device on the local network at `192.168.1.231` as its DNS server. No Tailscale required. This works for:
+Point any device on the local network at `<adguard-lan-ip>` as its DNS server. No Tailscale required. This works for:
 
-- Router-level DNS (set in your router's DHCP config to push `192.168.1.231` to all LAN clients automatically)
+- Router-level DNS (set in your router's DHCP config to push `<adguard-lan-ip>` to all LAN clients automatically)
 - Individual devices (set manually in network settings)
 
 ```bash
 # Quick test from any LAN device
-dig @192.168.1.231 google.com
+dig @<adguard-lan-ip> google.com
 ```
 
 ---
@@ -259,8 +259,8 @@ The PVCs are backed by Longhorn.  If the config resets to the wizard, the PVC ma
 | Item | Value |
 |---|---|
 | Web UI (tailnet only) | `https://adguard.tailnet.ts.net` |
-| DNS hostname (tailnet) | `adguard-dns.tailnet.ts.net` / `100.127.96.108` |
-| DNS IP (LAN) | `192.168.1.231` |
+| DNS hostname (tailnet) | `adguard-dns.tailnet.ts.net` / `<adguard-ts-ip>` |
+| DNS IP (LAN) | `<adguard-lan-ip>` |
 | Namespace | `adguard` |
 | Docker image | `adguard/adguardhome:v0.107.63` |
 | Config PVC | `adguard-conf` (1 Gi, Longhorn) |

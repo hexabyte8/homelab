@@ -22,9 +22,9 @@ Not familiar with OpenTofu? See the [OpenTofu technology guide](./technologies/o
 
 | Resource | Details |
 |----------|---------|
-| `k3s-server` (VMID 102) | 4 vCPU, 8 GB RAM, 50 GB disk, IP `192.168.1.179` |
-| `k3s-agent-1` (VMID 101) | 4 vCPU, 8 GB RAM, 50 GB disk, IP `192.168.1.175` |
-| `k3s-agent-2` (VMID 103) | 4 vCPU, 8 GB RAM, 50 GB disk, IP `192.168.1.180` |
+| `k3s-server` (VMID 102) | 4 vCPU, 8 GB RAM, 500 GB disk, IP `<k3s-server-lan-ip>` |
+| `k3s-agent-1` (VMID 101) | 4 vCPU, 16 GB RAM, 500 GB disk, IP `<k3s-agent-1-lan-ip>` |
+| `k3s-agent-2` (VMID 103) | 4 vCPU, 16 GB RAM, 500 GB disk, IP `<k3s-agent-2-lan-ip>` |
 | `game-server` (VMID 104) | 4 vCPU, 16 GB RAM, 500 GB disk, DHCP |
 | Cloud-init snippet | Written to `/var/lib/vz/snippets/main.yaml` on Proxmox |
 | Tailscale auth key | Reusable, 90-day, pre-authorized, `tag:server` |

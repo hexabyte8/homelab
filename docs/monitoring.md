@@ -28,7 +28,7 @@ Both are exposed via Tailscale Ingress — accessible only to tailnet members (n
 graph TD
     ne["k3s nodes<br/>(node-exporter DaemonSet)"] --> prom["Prometheus"]
     prom -->|scrapes| k8s["kubelet / kube-apiserver / kube-state-metrics"]
-    prom -->|scrapes| gs["game-server:9100<br/>(node-exporter, via Tailscale IP)"]
+    prom -->|scrapes| gs["game-server:9100<br/>(node-exporter, via <game-server-ts-ip>)"]
     prom -->|queried by| grafana["Grafana"]
 ```
 
@@ -152,7 +152,7 @@ On the game-server VM:
 tailscale ip -4
 ```
 
-Note the IPv4 address (e.g. `100.x.y.z`). The game server must be joined to the same tailnet (`your-tailnet`) for Prometheus to reach it.
+Note the IPv4 address (e.g. `<game-server-ts-ip>`). The game server must be joined to the same tailnet (`your-tailnet`) for Prometheus to reach it.
 
 ### Step 3 — Update the scrape config
 
@@ -172,7 +172,7 @@ additionalScrapeConfigs:
 Replace `GAME_SERVER_TAILSCALE_IP` with the actual IP from step 2:
 
 ```yaml
-      - targets: ['100.x.y.z:9100']
+      - targets: ['<game-server-ts-ip>:9100']
 ```
 
 Commit and push to `main`. Flux will reconcile and Prometheus will reload its config within ~10 minutes.
@@ -182,9 +182,9 @@ Commit and push to `main`. Flux will reconcile and Prometheus will reload its co
 Open <https://prometheus.tailnet.ts.net/targets> and confirm the `game-server-node` job shows **UP**.
 
 !!! note "Firewall"
-    If the game server has `ufw` or `iptables` rules, ensure port `9100` is accessible from the k3s-server Tailscale IP (`100.94.165.115`):
+    If the game server has `ufw` or `iptables` rules, ensure port `9100` is accessible from the k3s-server Tailscale IP:
     ```bash
-    sudo ufw allow from 100.94.165.115 to any port 9100
+    sudo ufw allow from <k3s-server-ts-ip> to any port 9100
     ```
 
 ---
@@ -209,8 +209,8 @@ k3s differs from a standard Kubernetes cluster in ways that affect kube-promethe
 |---|---|---|
 | `kubeProxy.enabled` | `false` | k3s does not run kube-proxy |
 | `kubeEtcd.enabled` | `false` | k3s uses SQLite, not etcd |
-| `kubeControllerManager.endpoints` | `[100.94.165.115]` | Controller manager runs on the k3s-server node |
-| `kubeScheduler.endpoints` | `[100.94.165.115]` | Scheduler also runs on k3s-server |
+| `kubeControllerManager.endpoints` | `[<k3s-server-ts-ip>]` | Controller manager runs on the k3s-server node |
+| `kubeScheduler.endpoints` | `[<k3s-server-ts-ip>]` | Scheduler also runs on k3s-server |
 
 These are already set in `monitoring-app.yaml`. If the cluster topology changes, update the endpoint IPs there.
 
