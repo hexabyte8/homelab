@@ -98,7 +98,7 @@ is like a map between the code and the real-world resources.
 
 ```mermaid
 graph LR
-    code["OpenTofu code<br/>(k3s-server resource)"] -->|"tracks"| state["State file<br/>VMID: 102, IP: 192.168.1.179"]
+    code["OpenTofu code<br/>(k3s-server resource)"] -->|"tracks"| state["State file<br/>VMID: 102, IP: <k3s-server-lan-ip>"]
     state -->|"maps to"| infra["Real infrastructure<br/>Actual VM in Proxmox (VMID 102)"]
 ```
 

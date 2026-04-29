@@ -18,9 +18,9 @@ sudo kubectl get nodes -o wide
 **Expected output:**
 ```
 NAME          STATUS   ROLES                  AGE   VERSION   INTERNAL-IP       EXTERNAL-IP
-k3s-server    Ready    control-plane,master   Xm    v1.x.x    100.94.165.115    <none>
-k3s-agent-1   Ready    <none>                 Xm    v1.x.x    100.110.221.27    <none>
-k3s-agent-2   Ready    <none>                 Xm    v1.x.x    100.103.36.18     <none>
+k3s-server    Ready    control-plane,master   Xm    v1.x.x    <k3s-server-ts-ip>    <none>
+k3s-agent-1   Ready    <none>                 Xm    v1.x.x    <k3s-agent-1-ts-ip>    <none>
+k3s-agent-2   Ready    <none>                 Xm    v1.x.x    <k3s-agent-2-ts-ip>     <none>
 ```
 
 ✅ **Pass:** All 3 nodes `Ready`, all `INTERNAL-IP` values start with `100.`  
@@ -98,7 +98,7 @@ kubectl logs -n cloudflared deployment/cloudflared --since=5m | grep -E "connect
 
 ## 7.5 MetalLB Load Balancer
 
-MetalLB provides LoadBalancer-type IP addresses from the LAN IP pool `192.168.1.230–192.168.1.250`:
+MetalLB provides LoadBalancer-type IP addresses from the LAN IP pool `<metallb-pool-range>`:
 
 ```bash
 # Check MetalLB pods are running
@@ -119,7 +119,7 @@ speaker-<hash>                1/1     Running   0
 sudo kubectl -n metallb-system get ipaddresspool
 ```
 
-Expected: A pool covering `192.168.1.230–192.168.1.250` with status `Auto Assigned`.
+Expected: A pool covering `<metallb-pool-range>` with status `Auto Assigned`.
 
 ---
 

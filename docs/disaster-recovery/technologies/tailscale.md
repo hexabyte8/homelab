@@ -15,8 +15,8 @@ of the **WireGuard** protocol. It creates an encrypted private network (called a
 **Without Tailscale:**
 ```mermaid
 graph LR
-    laptop["Your Laptop<br/>192.168.1.X (home network)"]
-    server["Home Server<br/>192.168.1.10 (home network)"]
+    laptop["Your Laptop<br/><lan-cidr> (home network)"]
+    server["Home Server<br/><proxmox-lan-ip> (home network)"]
     laptop -. "ONLY reachable on same network.<br/>Remote access requires port forwarding." .-> server
 ```
 
