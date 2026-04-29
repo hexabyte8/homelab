@@ -33,10 +33,10 @@ jobs:
           echo "Confirmation validated. Proceeding with destruction..."
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Load secrets from Bitwarden
-        uses: bitwarden/sm-action@v2
+        uses: bitwarden/sm-action@v4
         with:
           access_token: ${{ secrets.BW_ACCESS_TOKEN }}
           secrets: |
@@ -77,7 +77,7 @@ jobs:
           done
 
       - name: Setup OpenTofu
-        uses: opentofu/setup-opentofu@v1
+        uses: opentofu/setup-opentofu@v2
         with:
           tofu_wrapper: false
 

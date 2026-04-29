@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest    # Run on GitHub's cloud runners
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4   # Clone the repository
+        uses: actions/checkout@v6   # Clone the repository
 
       - name: Do something
         run: echo "Hello from CI"   # Run a shell command
@@ -88,10 +88,10 @@ jobs:
 
 | Action | What It Does |
 |--------|-------------|
-| `actions/checkout@v4` | Clones the repository into the runner |
-| `bitwarden/sm-action@v2` | Pulls secrets from Bitwarden Secrets Manager |
+| `actions/checkout@v6` | Clones the repository into the runner |
+| `bitwarden/sm-action@v4` | Pulls secrets from Bitwarden Secrets Manager |
 | `tailscale/github-action@v3` | Connects the runner to the Tailscale tailnet |
-| `opentofu/setup-opentofu@v1` | Installs OpenTofu on the runner |
+| `opentofu/setup-opentofu@v2` | Installs OpenTofu on the runner |
 
 ### Secrets
 
