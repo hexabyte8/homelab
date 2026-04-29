@@ -33,13 +33,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-          cache: pip
 
       - name: Install zensical
         run: pip install --upgrade zensical
 
       - name: Build site
         run: zensical build
+
+      - name: Ensure CNAME for custom domain
+        run: echo "docs.chronobyte.net" > site/CNAME
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
