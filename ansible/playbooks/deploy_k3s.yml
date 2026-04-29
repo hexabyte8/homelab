@@ -1,0 +1,125 @@
+---
+- name: Deploy k3s Kubernetes Cluster
+  hosts: k3s
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  tasks:
+    - name: Install required packages
+      ansible.builtin.apt:
+        name:
+          - curl
+          - apt-transport-https
+          - ca-certificates
+        state: present
+
+    - name: Check if k3s is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_binary
+
+    - name: Ensure /etc/rancher/k3s directory exists
+      ansible.builtin.file:
+        path: /etc/rancher/k3s
+        state: directory
+        mode: '0755'
+
+    - name: Get Tailscale IP
+      ansible.builtin.command: tailscale ip -4
+      register: tailscale_ip
+      changed_when: false
+
+    - name: Write k3s server config (Tailscale Flannel interface)
+      ansible.builtin.copy:
+        dest: /etc/rancher/k3s/config.yaml
+        content: |
+          write-kubeconfig-mode: "644"
+          tls-san:
+            - "{{ inventory_hostname }}"
+            - "{{ tailscale_ip.stdout | trim }}"
+          node-ip: "{{ tailscale_ip.stdout | trim }}"
+          flannel-iface: tailscale0
+        mode: '0644'
+
+    - name: Download and install k3s
+      ansible.builtin.shell: |
+        curl -sfL https://get.k3s.io | sh -s - server
+      args:
+        creates: /usr/local/bin/k3s
+      when: not k3s_binary.stat.exists
+
+    - name: Wait for k3s to be ready
+      ansible.builtin.wait_for:
+        path: /etc/rancher/k3s/k3s.yaml
+        timeout: 300
+
+    - name: Ensure k3s service is running
+      ansible.builtin.systemd:
+        name: k3s
+        state: started
+        enabled: true
+
+    - name: Wait for k3s node to be ready
+      ansible.builtin.command: k3s kubectl wait --for=condition=Ready nodes --all --timeout=300s
+      register: node_ready
+      changed_when: false
+      retries: 5
+      delay: 10
+      until: node_ready.rc == 0
+
+    - name: Get k3s cluster status
+      ansible.builtin.command: k3s kubectl get nodes
+      register: cluster_status
+      changed_when: false
+
+    - name: Create kubeconfig directory on control machine
+      ansible.builtin.file:
+        path: "{{ lookup('env', 'HOME') }}/.kube"
+        state: directory
+        mode: '0755'
+      delegate_to: localhost
+      become: false
+
+    - name: Fetch kubeconfig from k3s server
+      ansible.builtin.fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: "{{ lookup('env', 'HOME') }}/.kube/k3s-config"
+        flat: true
+
+    - name: Get k3s server Tailscale hostname
+      ansible.builtin.set_fact:
+        server_hostname: "{{ inventory_hostname }}"
+
+    - name: Update kubeconfig server address to use Tailscale DNS
+      ansible.builtin.replace:
+        path: "{{ lookup('env', 'HOME') }}/.kube/k3s-config"
+        regexp: 'https://127.0.0.1:6443'
+        replace: "https://{{ server_hostname }}:6443"
+      delegate_to: localhost
+      become: false
+
+    - name: Display deployment information
+      ansible.builtin.debug:
+        msg: |
+          ================================
+          k3s Deployment Complete
+          ================================
+          Cluster Status:
+          {{ cluster_status.stdout }}
+          
+          Kubeconfig has been saved to: {{ lookup('env', 'HOME') }}/.kube/k3s-config
+          
+          To use kubectl with this cluster:
+            export KUBECONFIG={{ lookup('env', 'HOME') }}/.kube/k3s-config
+            kubectl get nodes
+          
+          Or merge with your existing kubeconfig:
+            KUBECONFIG=~/.kube/config:{{ lookup('env', 'HOME') }}/.kube/k3s-config kubectl config view --flatten > ~/.kube/config.new
+            mv ~/.kube/config.new ~/.kube/config
+          
+          k3s is now running and ready to deploy applications.

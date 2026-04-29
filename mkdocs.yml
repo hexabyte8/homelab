@@ -1,0 +1,127 @@
+site_name: Homelab Docs
+site_url: https://docs.tailnet.ts.net/
+site_description: Documentation for the hexabyte8 homelab k3s cluster
+
+repo_name: hexabyte8/homelab
+repo_url: https://github.com/hexabyte8/homelab
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - content.action.edit
+    - content.code.annotate
+    - content.code.copy
+    - navigation.footer
+    - navigation.indexes
+    - navigation.path
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+nav:
+  - Home: index.md
+  - Topology: topology.md
+  - GitOps:
+    - Flux CD Setup: gitops-flux.md
+    - Manifests & Helm: manifests-and-helm.md
+    - OpenTofu State Migration (S3): tf-state-s3-migration.md
+  - Services:
+    - Adding a New Service: new-service.md
+    - Actual Budget: actual.md
+    - AdGuard Home: adguard.md
+    - Authentik SSO: authentik.md
+    - Calibre-Web: calibre-web.md
+    - Dashy Dashboard: dashy.md
+    - Fail2ban: fail2ban.md
+    - Jellyfin Media Suite: jellyfin.md
+    - Linkwarden: linkwarden.md
+    - Ntfy: ntfy.md
+    - PegaProx: pegaprox.md
+    - Stalwart Email: stalwart-email.md
+    - Uptime Kuma: uptime-kuma.md
+  - Monitoring:
+    - Monitoring (Prometheus + Grafana): monitoring.md
+  - Networking:
+    - Tailscale Operator: tailscale-operator.md
+    - Cloudflare Tunnels: cloudflare-tunnels.md
+    - Flannel over Tailscale: flannel-over-tailscale.md
+  - Network Lab:
+    - ContainerLab: containerlab.md
+  - Automation:
+    - Copilot Cloud Agent: copilot-cloud-agent.md
+  - Disaster Recovery:
+    - Overview: disaster-recovery/index.md
+    - Phase 0 — Prerequisites: disaster-recovery/00-prerequisites.md
+    - Phase 1 — External Services: disaster-recovery/01-external-services.md
+    - Phase 2 — Proxmox Rebuild: disaster-recovery/02-proxmox-rebuild.md
+    - Phase 3 — OpenTofu Apply: disaster-recovery/03-opentofu-apply.md
+    - Phase 4 — k3s Cluster: disaster-recovery/04-k3s-cluster.md
+    - Phase 5 — Flux Bootstrap: disaster-recovery/05-flux-bootstrap.md
+    - Phase 6 — Secrets Restore: disaster-recovery/06-secrets-restore.md
+    - Phase 7 — Validation: disaster-recovery/07-validation.md
+    - Technology Reference:
+      - Proxmox VE: disaster-recovery/technologies/proxmox.md
+      - OpenTofu: disaster-recovery/technologies/opentofu.md
+      - Kubernetes / k3s: disaster-recovery/technologies/kubernetes-k3s.md
+      - Flux CD & GitOps: disaster-recovery/technologies/flux-gitops.md
+      - Tailscale: disaster-recovery/technologies/tailscale.md
+      - Cloudflare DNS: disaster-recovery/technologies/cloudflare.md
+      - Longhorn Storage: disaster-recovery/technologies/longhorn.md
+      - Ansible: disaster-recovery/technologies/ansible.md
+      - AWS S3: disaster-recovery/technologies/aws-s3.md
+      - Bitwarden: disaster-recovery/technologies/bitwarden.md
+      - GitHub Actions: disaster-recovery/technologies/github-actions.md
+  - Troubleshooting:
+    - Tailscale Proxy Performance (MTU): troubleshooting/tailscale-proxy-mtu-performance.md
+    - Tailscale Proxy Pod Stuck Terminating: troubleshooting/tailscale-proxy-pod-stuck-terminating.md
+    - AdGuard Web UI Port Crash Loop: troubleshooting/adguard-web-ui-port-crash-loop.md
+    - Non-root Container PVC Permissions: troubleshooting/non-root-container-pvc-permissions.md

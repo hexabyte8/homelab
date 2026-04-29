@@ -1,0 +1,12 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: cloudflare-https-scheme
+  namespace: kube-system
+spec:
+  headers:
+    customRequestHeaders:
+      # All traffic entering via the web entrypoint comes from Cloudflare Tunnel,
+      # which always terminates TLS. Force https so downstream services
+      # (Authentik outpost, etc.) build correct redirect URLs.
+      X-Forwarded-Proto: "https"

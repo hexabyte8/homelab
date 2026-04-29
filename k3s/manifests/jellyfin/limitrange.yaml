@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: jellyfin-defaults
+  namespace: jellyfin
+spec:
+  limits:
+    - type: Container
+      # Default ephemeral-storage for any container that doesn't set its own.
+      # Prevents crash-loop container layers from consuming unbounded disk.
+      # Pods with explicit resources (jellyfin, transmission) override these.
+      default:
+        ephemeral-storage: 512Mi
+      defaultRequest:
+        ephemeral-storage: 100Mi

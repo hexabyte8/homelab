@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mcp-proxmox
+  namespace: mcp-proxmox
+  annotations:
+    tailscale.com/proxy-class: "prod"
+spec:
+  ingressClassName: tailscale
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mcp-proxmox
+                port:
+                  number: 8811
+  tls:
+    - hosts:
+        - mcp-proxmox

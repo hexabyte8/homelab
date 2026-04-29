@@ -1,0 +1,20 @@
+---
+# Provides the letsencrypt-production ClusterIssuer.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cert-manager-config
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 5m
+  prune: true
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./k3s/manifests/cert-manager
+  targetNamespace: cert-manager
+  # cert-manager operator is a HelmRelease; Kustomization dependsOn only
+  # supports Kustomization-kind dependencies, so retries handle CRD readiness.

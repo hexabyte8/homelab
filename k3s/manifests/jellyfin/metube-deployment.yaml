@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metube
+  namespace: jellyfin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metube
+  template:
+    metadata:
+      labels:
+        app: metube
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: jellyfin
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: metube
+          image: ghcr.io/alexta69/metube:2026.03.21
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+              name: http
+          env:
+            - name: DOWNLOAD_DIR
+              value: /media/youtube
+            - name: YTDL_OPTIONS
+              value: '{"writesubtitles":true,"subtitleslangs":["en"],"updatetime":false}'
+            - name: TZ
+              value: America/New_York
+          volumeMounts:
+            - name: media
+              mountPath: /media
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+              ephemeral-storage: 500Mi
+            limits:
+              cpu: "2"
+              memory: 512Mi
+              ephemeral-storage: 2Gi
+      volumes:
+        - name: media
+          persistentVolumeClaim:
+            claimName: jellyfin-media

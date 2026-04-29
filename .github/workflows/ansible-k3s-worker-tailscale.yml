@@ -1,0 +1,115 @@
+name: Ansible - Add k3s Worker Node (Tailscale)
+
+on:
+  workflow_dispatch:
+    inputs:
+      worker_host:
+        description: 'Worker node host from inventory (e.g., k3s-worker-01)'
+        required: true
+        type: string
+      server_host:
+        description: 'k3s server host (e.g., k3s-server)'
+        required: true
+        type: string
+        default: 'k3s-server'
+
+jobs:
+  add-k3s-worker-tailscale:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+          version: 1.68.1
+
+      - name: Enable MagicDNS
+        run: sudo tailscale set --accept-dns=true | cat
+
+      - name: Wait for DNS to be available
+        run: |
+          echo "Waiting for Tailscale DNS to be ready..."
+          sleep 10
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Configure SSH known hosts
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          cat .ssh/known_hosts >> ~/.ssh/known_hosts
+
+      - name: Get k3s token from server
+        id: get-token
+        run: |
+          TOKEN=$(ssh -o StrictHostKeyChecking=yes ubuntu@${{ inputs.server_host }}.daggertooth-scala.ts.net \
+            "sudo cat /var/lib/rancher/k3s/server/node-token")
+          echo "::add-mask::$TOKEN"
+          echo "K3S_TOKEN=$TOKEN" >> $GITHUB_ENV
+
+      - name: Set k3s server URL
+        run: |
+          echo "K3S_URL=https://${{ inputs.server_host }}.daggertooth-scala.ts.net:6443" >> $GITHUB_ENV
+
+      - name: Create inventory
+        run: |
+          cat > ansible/inventory.yml <<EOF
+          ---
+          all:
+            children:
+              k3s_workers:
+                hosts:
+                  ${{ inputs.worker_host }}:
+                    ansible_host: ${{ inputs.worker_host }}.daggertooth-scala.ts.net
+                    ansible_user: ubuntu
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=yes'
+                vars:
+                  ansible_python_interpreter: /usr/bin/python3
+          EOF
+
+      - name: Setup SSH known hosts
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          # k3s-server key is already pinned via Configure SSH known hosts step above.
+          # Worker nodes (k3s-agent-*) have no static key; dynamic scanning required
+          # because their IPs/keys change frequently due to DHCP issues.
+          ssh-keyscan ${{ inputs.worker_host }}.daggertooth-scala.ts.net >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy k3s worker node
+        run: |
+          cd ansible
+          ansible-playbook playbooks/deploy_k3s_worker_tailscale.yml
+        env:
+          K3S_TOKEN: ${{ env.K3S_TOKEN }}
+          K3S_URL: ${{ env.K3S_URL }}
+
+      - name: Verify worker node joined cluster
+        run: |
+          echo "Waiting for node to register..."
+          sleep 10
+          ssh -o StrictHostKeyChecking=yes ubuntu@${{ inputs.server_host }}.daggertooth-scala.ts.net \
+            "sudo kubectl get nodes"

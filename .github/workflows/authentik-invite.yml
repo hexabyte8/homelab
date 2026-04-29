@@ -1,0 +1,67 @@
+name: Authentik - Send Invitation
+
+# Sends an Authentik enrollment invitation email by invoking
+# `ansible/playbooks/authentik_send_invite.yml`.
+#
+# Why ansible? Keeps the workflow trivially short and lets the same logic
+# be run locally for testing/debugging without GitHub Actions.
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: "Recipient email address"
+        required: true
+        type: string
+      expires_days:
+        description: "Invitation lifetime (days)"
+        required: true
+        type: number
+        default: 7
+
+jobs:
+  send-invite:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            73f4bb30-0c41-445c-908e-b43a00ef7863 > AUTHENTIK_API_TOKEN
+            4f8db3c6-416a-412d-9f6f-b4160169641f > STALWART_RESEND_API_KEY
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+          version: 1.68.1
+
+      - name: Enable MagicDNS and wait for resolver
+        run: |
+          sudo tailscale set --accept-dns=true | cat
+          sleep 10
+
+      - name: Install Ansible
+        run: pip install --quiet ansible-core
+
+      - name: Send invitation
+        env:
+          AUTHENTIK_API_TOKEN: ${{ env.AUTHENTIK_API_TOKEN }}
+          STALWART_RESEND_API_KEY: ${{ env.STALWART_RESEND_API_KEY }}
+          RECIPIENT: ${{ inputs.email }}
+          EXPIRES_DAYS: ${{ inputs.expires_days }}
+        run: |
+          ansible-playbook -i localhost, ansible/playbooks/authentik_send_invite.yml \
+            -e "recipient_email=${RECIPIENT}" \
+            -e "expires_days=${EXPIRES_DAYS}" \
+            -e "authentik_api_token=${AUTHENTIK_API_TOKEN}" \
+            -e "resend_api_key=${STALWART_RESEND_API_KEY}"

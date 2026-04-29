@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: adguard-dns-lan
+  namespace: adguard
+  annotations:
+    metallb.universe.tf/address-pool: default-pool
+spec:
+  type: LoadBalancer
+  selector:
+    app: adguard-home
+  ports:
+    - name: dns-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP
+    - name: dns-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP

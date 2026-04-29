@@ -1,0 +1,22 @@
+# 1-replica StorageClass for large media volumes (jellyfin-media, etc.)
+#
+# Use this for volumes that are large and tolerant to data loss
+# (media can be re-downloaded; no need to consume 2x disk for replication).
+# Retains the PV on PVC deletion to prevent accidental media loss.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-media
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "30"
+  fsType: ext4
+  # dataLocality disabled: with only 369Gi schedulable on agent-1 (10% disk
+  # reserved by Longhorn) a 350Gi+ media volume cannot fit there. Longhorn must
+  # be free to place the replica on agent-2 (411Gi schedulable). iSCSI traffic
+  # across nodes is acceptable for a 1-replica media volume.
+  dataLocality: disabled

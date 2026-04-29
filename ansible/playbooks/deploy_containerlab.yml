@@ -1,0 +1,172 @@
+---
+- name: Deploy ContainerLab
+  hosts: containerlab
+  become: true
+
+  vars:
+    containerlab_user: ubuntu
+    labs_dir: /home/ubuntu/labs
+
+  pre_tasks:
+    - name: Verify required variables are defined
+      ansible.builtin.assert:
+        that:
+          - containerlab_user is defined
+          - labs_dir is defined
+        fail_msg: "Required variables are not defined."
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  tasks:
+    # ------------------------------------------------------------------ #
+    # Docker CE                                                           #
+    # ------------------------------------------------------------------ #
+    - name: Install Docker CE prerequisite packages
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+
+    - name: Create /etc/apt/keyrings directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Add Docker GPG key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0444'
+
+    - name: Add Docker apt repository
+      ansible.builtin.apt_repository:
+        repo: >-
+          deb [arch={{ ansible_architecture | replace('x86_64', 'amd64') }}
+          signed-by=/etc/apt/keyrings/docker.asc]
+          https://download.docker.com/linux/ubuntu
+          {{ ansible_distribution_release }} stable
+        filename: docker
+        state: present
+
+    - name: Install Docker CE packages
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Enable and start Docker service
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add ubuntu user to docker group
+      ansible.builtin.user:
+        name: "{{ containerlab_user }}"
+        groups: docker
+        append: true
+
+    # ------------------------------------------------------------------ #
+    # ContainerLab                                                        #
+    # ------------------------------------------------------------------ #
+    - name: Download ContainerLab setup script
+      ansible.builtin.get_url:
+        url: https://containerlab.dev/setup
+        dest: /tmp/containerlab-setup.sh
+        mode: '0700'
+
+    - name: Install ContainerLab via setup script
+      ansible.builtin.shell:
+        cmd: bash /tmp/containerlab-setup.sh
+        creates: /usr/bin/containerlab
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+
+    # ------------------------------------------------------------------ #
+    # Python tooling (netlab)                                             #
+    # ------------------------------------------------------------------ #
+    - name: Install pipx
+      ansible.builtin.apt:
+        name: pipx
+        state: present
+
+    - name: Install netlab (network-lab topology tooling) with pipx
+      ansible.builtin.command:
+        cmd: pipx install --force networklab
+      environment:
+        PIPX_HOME: /opt/pipx
+        PIPX_BIN_DIR: /usr/local/bin
+      changed_when: false
+
+    # ------------------------------------------------------------------ #
+    # Kernel tuning for container networking                              #
+    # ------------------------------------------------------------------ #
+    - name: Write sysctl settings for container/lab networking
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/30-containerlab.conf
+        mode: '0644'
+        content: |
+          # ContainerLab / network emulation kernel tuning.
+          #
+          # ip_forward: required for routing between ContainerLab virtual nodes.
+          net.ipv4.ip_forward = 1
+          net.ipv6.conf.all.forwarding = 1
+          # rp_filter=0: ContainerLab nodes use asymmetric routing across veth pairs;
+          # strict reverse-path filtering drops legitimate lab traffic.
+          net.ipv4.conf.all.rp_filter = 0
+          net.ipv4.conf.default.rp_filter = 0
+          # bridge-nf-call=0: ContainerLab manages its own L2 bridging between nodes;
+          # passing bridged frames through iptables/ip6tables causes double-NATing and
+          # breaks topology connectivity.
+          net.bridge.bridge-nf-call-iptables = 0
+          net.bridge.bridge-nf-call-ip6tables = 0
+      notify: Apply sysctl settings
+
+    - name: Flush handlers to apply sysctl immediately
+      ansible.builtin.meta: flush_handlers
+
+    # ------------------------------------------------------------------ #
+    # Labs working directory                                              #
+    # ------------------------------------------------------------------ #
+    - name: Create labs working directory
+      ansible.builtin.file:
+        path: "{{ labs_dir }}"
+        state: directory
+        owner: "{{ containerlab_user }}"
+        group: "{{ containerlab_user }}"
+        mode: '0755'
+
+    - name: Display deployment summary
+      ansible.builtin.debug:
+        msg: |
+          ================================================
+          ContainerLab Deployment Complete
+          ================================================
+          Docker        : installed (docker-ce)
+          ContainerLab  : installed (/usr/bin/containerlab)
+          netlab        : installed (pipx networklab)
+          Labs dir      : {{ labs_dir }}
+          User groups   : ubuntu added to docker
+
+          Verify on the host:
+            containerlab version
+            docker info
+            netlab --version
+
+  handlers:
+    - name: Apply sysctl settings
+      ansible.builtin.command:
+        cmd: sysctl --system
+      changed_when: true

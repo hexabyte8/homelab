@@ -1,0 +1,210 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashy-config
+  namespace: dashy
+data:
+  conf.yml: |
+    pageInfo:
+      title: Homelab Dashboard
+      description: hexabyte8 homelab services
+      navLinks:
+        - title: GitHub
+          path: https://github.com/hexabyte8/homelab
+
+    appConfig:
+      theme: colorful
+      layout: auto
+      iconSize: medium
+      language: en
+      startingView: default
+      defaultOpeningMethod: newtab
+      statusCheck: true
+      statusCheckInterval: 300
+
+    sections:
+      - name: Infrastructure
+        icon: fas fa-server
+        items:
+          - title: AdGuard Home
+            description: DNS ad-blocking
+            url: https://adguard.daggertooth-scala.ts.net
+            statusCheckUrl: http://adguard-home.adguard.svc.cluster.local:3000
+            icon: hl-adguardhome
+            target: newtab
+
+          - title: Authentik
+            description: Identity provider & SSO
+            url: https://authentik.daggertooth-scala.ts.net
+            statusCheckUrl: http://authentik-server.authentik.svc.cluster.local
+            icon: hl-authentik
+            target: newtab
+
+          - title: Proxmox
+            description: Proxmox Host
+            url: https://chronobyte.daggertooth-scala.ts.net
+            icon: hl-proxmox
+            target: newtab
+
+          - title: Traefik
+            description: Reverse proxy dashboard
+            url: https://traefik.daggertooth-scala.ts.net/dashboard/
+            statusCheckUrl: http://traefik.kube-system.svc.cluster.local
+            statusCheckAcceptCodes: "404"
+            icon: hl-traefik
+            target: newtab
+
+          - title: Dashy
+            description: This service dashboard
+            url: https://dashy.daggertooth-scala.ts.net
+            statusCheckUrl: http://dashy.dashy.svc.cluster.local:8080
+            icon: hl-dashy
+            target: newtab
+
+          - title: Dashy (Public)
+            description: Public dashboard (Authentik-protected)
+            url: https://dashy.chronobyte.net
+            statusCheckUrl: http://dashy.dashy.svc.cluster.local:8080
+            icon: hl-dashy
+            target: newtab
+
+          - title: Linkwarden
+            description: Bookmark & link archive
+            url: https://linkwarden.daggertooth-scala.ts.net
+            statusCheckUrl: http://linkwarden.linkwarden.svc.cluster.local:3000
+            icon: hl-linkwarden
+            target: newtab
+
+          - title: Linkwarden (Public)
+            description: Bookmark & link archive (public)
+            url: https://links.chronobyte.net
+            statusCheckUrl: http://linkwarden.linkwarden.svc.cluster.local:3000
+            icon: hl-linkwarden
+            target: newtab
+
+          - title: Pegaprox
+            description: HTTP/HTTPS proxy
+            url: https://pegaprox.daggertooth-scala.ts.net
+            statusCheckUrl: http://pegaprox.pegaprox.svc.cluster.local:5000
+            icon: fas fa-network-wired
+            target: newtab
+
+      - name: Media
+        icon: fas fa-film
+        items:
+          - title: Jellyfin
+            description: Media server
+            url: https://jellyfin.daggertooth-scala.ts.net
+            statusCheckUrl: http://jellyfin.jellyfin.svc.cluster.local:8096
+            icon: hl-jellyfin
+            target: newtab
+
+          - title: FileBrowser
+            description: Web-based file manager
+            url: https://jellyfin-files.daggertooth-scala.ts.net
+            statusCheckUrl: http://filebrowser.jellyfin.svc.cluster.local
+            icon: hl-filebrowser
+            target: newtab
+
+          - title: Transmission
+            description: BitTorrent client (via VPN)
+            url: https://jellyfin-transmission.daggertooth-scala.ts.net
+            statusCheckUrl: http://transmission.jellyfin.svc.cluster.local:9091
+            icon: hl-transmission
+            target: newtab
+
+          - title: Metube
+            description: YouTube video downloader (yt-dlp)
+            url: https://jellyfin-ytdl.daggertooth-scala.ts.net
+            statusCheckUrl: http://metube.jellyfin.svc.cluster.local:8081
+            icon: fas fa-download
+            target: newtab
+
+          - title: Jellyfin (Public)
+            description: Media server (public)
+            url: https://jellyfin.chronobyte.net
+            statusCheckUrl: http://jellyfin.jellyfin.svc.cluster.local:8096
+            icon: hl-jellyfin
+            target: newtab
+
+          - title: Calibre-Web
+            description: Ebook library & reader
+            url: https://calibre-web.daggertooth-scala.ts.net
+            statusCheckUrl: http://calibre-web.jellyfin.svc.cluster.local:8083
+            icon: hl-calibre-web
+            target: newtab
+
+          - title: Calibre-Web (Public)
+            description: Ebook library & reader (public)
+            url: https://calibre.chronobyte.net
+            statusCheckUrl: http://calibre-web.jellyfin.svc.cluster.local:8083
+            icon: hl-calibre-web
+            target: newtab
+
+      - name: Monitoring & Notifications
+        icon: fas fa-chart-line
+        items:
+          - title: Uptime Kuma
+            description: Service uptime monitoring
+            url: https://uptime-kuma.daggertooth-scala.ts.net
+            statusCheckUrl: http://uptime-kuma.uptime-kuma.svc.cluster.local:3001
+            icon: hl-uptime-kuma
+            target: newtab
+
+          - title: Uptime Kuma (Public)
+            description: Public status page
+            url: https://uptime.chronobyte.net
+            statusCheckUrl: http://uptime-kuma.uptime-kuma.svc.cluster.local:3001
+            icon: hl-uptime-kuma
+            target: newtab
+
+          - title: Ntfy
+            description: Push notification service
+            url: https://ntfy.daggertooth-scala.ts.net
+            statusCheckUrl: http://ntfy.ntfy.svc.cluster.local
+            icon: hl-ntfy
+            target: newtab
+
+      - name: Communication
+        icon: fas fa-envelope
+        items:
+          - title: Stalwart Mail
+            description: Mail server web admin
+            url: https://mail.daggertooth-scala.ts.net
+            statusCheckUrl: http://stalwart.stalwart.svc.cluster.local:8080
+            icon: hl-stalwart-mail
+            target: newtab
+
+          - title: Stalwart Mail (Public)
+            description: Public webmail & admin
+            url: https://mail.chronobyte.net
+            statusCheckUrl: http://stalwart.stalwart.svc.cluster.local:8080
+            icon: hl-stalwart-mail
+            target: newtab
+
+      - name: Documentation
+        icon: fas fa-book
+        items:
+          - title: Docs
+            description: Homelab documentation (MkDocs)
+            url: https://docs.daggertooth-scala.ts.net
+            statusCheckUrl: http://docs.docs.svc.cluster.local:8000
+            icon: hl-mkdocs
+            target: newtab
+
+          - title: Docs (Public)
+            description: Public documentation (Authentik-protected)
+            url: https://docs.chronobyte.net
+            statusCheckUrl: http://docs.docs.svc.cluster.local:8000
+            icon: hl-mkdocs
+            target: newtab
+
+      - name: Games
+        icon: fas fa-gamepad
+        items:
+          - title: Healthy Games (Public)
+            description: HTML5 games site
+            url: https://healthygames.chronobyte.net
+            statusCheckUrl: http://healthygames.healthygames.svc.cluster.local
+            icon: fas fa-gamepad
+            target: newtab

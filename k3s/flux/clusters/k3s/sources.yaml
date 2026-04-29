@@ -1,0 +1,47 @@
+---
+# HelmRepository sources for every chart used in the cluster.
+# Each maps 1:1 to a `repoURL` in a former ArgoCD Helm `Application`.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: authentik
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://charts.goauthentik.io
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: jetstack
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://charts.jetstack.io
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: cloudnative-pg
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://cloudnative-pg.github.io/charts
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: longhorn
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://charts.longhorn.io
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: tailscale
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://pkgs.tailscale.com/helmcharts

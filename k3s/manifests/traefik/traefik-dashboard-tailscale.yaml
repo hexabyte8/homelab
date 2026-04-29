@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traefik-dashboard-tailscale
+  namespace: kube-system
+  annotations:
+    tailscale.com/proxy-class: "prod"
+spec:
+  ingressClassName: tailscale
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: traefik
+                port:
+                  number: 80  # Traefik main HTTP entrypoint; IngressRoute handles routing to api@internal
+  tls:
+    - hosts:
+        - traefik  # becomes traefik.daggertooth-scala.ts.net

@@ -1,0 +1,94 @@
+name: Ansible - Install Longhorn Prerequisites
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_hosts:
+        description: 'Comma-separated list of nodes to configure'
+        required: true
+        type: string
+        default: 'k3s-server,k3s-agent-1,k3s-agent-2'
+
+jobs:
+  install-longhorn-prereqs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+          version: 1.68.1
+
+      - name: Enable MagicDNS
+        run: sudo tailscale set --accept-dns=true | cat
+
+      - name: Wait for DNS
+        run: sleep 10
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Install community.general collection (for modprobe module)
+        run: ansible-galaxy collection install community.general
+
+      - name: Configure SSH known hosts
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          cat .ssh/known_hosts >> ~/.ssh/known_hosts
+
+      - name: Build inventory from target hosts
+        run: |
+          HOSTS_YAML=""
+          IFS=',' read -ra HOSTS <<< "${{ inputs.target_hosts }}"
+          for host in "${HOSTS[@]}"; do
+            host=$(echo "$host" | xargs)
+            HOSTS_YAML="${HOSTS_YAML}              ${host}:\n                ansible_host: ${host}.daggertooth-scala.ts.net\n                ansible_user: ubuntu\n                ansible_ssh_common_args: '-o StrictHostKeyChecking=no'\n"
+          done
+          cat > ansible/inventory.yml <<EOF
+          ---
+          all:
+            hosts:
+          $(echo -e "$HOSTS_YAML")
+            vars:
+              ansible_python_interpreter: /usr/bin/python3
+          EOF
+
+      - name: Install Longhorn prerequisites
+        run: |
+          cd ansible
+          ansible-playbook playbooks/install_longhorn_prereqs.yml
+
+      - name: Generate summary
+        run: |
+          echo "## Longhorn Prerequisites Installed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Installed on: \`${{ inputs.target_hosts }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Packages installed:** \`open-iscsi\`, \`nfs-common\`, \`util-linux\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Kernel module:** \`iscsi_tcp\` loaded and persisted via \`/etc/modules-load.d/iscsi.conf\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Nodes are ready for Longhorn installation. Reconcile the \`longhorn-operator\` Flux Kustomization to deploy." >> $GITHUB_STEP_SUMMARY

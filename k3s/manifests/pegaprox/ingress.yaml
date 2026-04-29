@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pegaprox
+  namespace: pegaprox
+  annotations:
+    tailscale.com/proxy-class: "prod"
+spec:
+  ingressClassName: tailscale
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pegaprox
+                port:
+                  number: 5000
+  tls:
+    - hosts:
+        - pegaprox

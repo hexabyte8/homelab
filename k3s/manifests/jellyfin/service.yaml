@@ -1,0 +1,17 @@
+# LoadBalancer gives Jellyfin a stable LAN IP via MetalLB so Apple TV can
+# discover and connect to it directly on the local network.
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyfin
+  namespace: jellyfin
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.1.240"
+spec:
+  type: LoadBalancer
+  selector:
+    app: jellyfin
+  ports:
+    - port: 8096
+      targetPort: 8096
+      name: http

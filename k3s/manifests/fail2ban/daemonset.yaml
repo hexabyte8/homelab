@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fail2ban
+  namespace: fail2ban
+spec:
+  selector:
+    matchLabels:
+      app: fail2ban
+  template:
+    metadata:
+      labels:
+        app: fail2ban
+    spec:
+      # Needs access to the host network stack to manipulate iptables/nftables
+      hostNetwork: true
+      # Needs host PID namespace to interact with the host firewall
+      hostPID: true
+      tolerations:
+        # Also run on control-plane / server nodes
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: fail2ban
+          image: crazymax/fail2ban:1.0.2
+          env:
+            - name: TZ
+              value: UTC
+            - name: F2B_LOG_LEVEL
+              value: INFO
+            - name: F2B_DB_PURGE_AGE
+              value: 7d
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+          volumeMounts:
+            # Persistent per-node database (hostPath so each node tracks its own bans)
+            - name: data
+              mountPath: /data/db
+            # Jail configuration — only jail.local goes into jail.d
+            - name: config
+              mountPath: /data/jail.d/jail.local
+              subPath: jail.local
+              readOnly: true
+            # Filter definition for k3s API server — must live in filter.d, not jail.d
+            - name: config
+              mountPath: /data/filter.d/k3s-apiserver.conf
+              subPath: k3s-apiserver.conf
+              readOnly: true
+            # Host logs for monitoring (read-only); covers auth.log, secure, syslog
+            - name: host-logs
+              mountPath: /var/log/host
+              readOnly: true
+            # iptables/nftables lock file — required for atomic rule updates
+            - name: xtables-lock
+              mountPath: /run/xtables.lock
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: data
+          hostPath:
+            path: /var/lib/fail2ban
+            type: DirectoryOrCreate
+        - name: config
+          configMap:
+            name: fail2ban-config
+        - name: host-logs
+          hostPath:
+            path: /var/log
+        - name: xtables-lock
+          hostPath:
+            path: /run/xtables.lock
+            type: FileOrCreate

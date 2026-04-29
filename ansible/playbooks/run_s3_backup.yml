@@ -1,0 +1,72 @@
+---
+# Run a configured S3 backup job immediately and report results.
+#
+# This playbook starts the backup systemd service, waits for it to complete,
+# collects the journal logs, and fails the play if the backup exited with an
+# error so that the caller (e.g. a GitHub Actions workflow) can surface the
+# failure clearly.
+#
+# Required environment variables:
+#   BACKUP_NAME  - Identifier for the backup job (e.g. "minecraft")
+
+- name: Run S3 backup now
+  hosts: gameserver
+  become: true
+
+  vars:
+    backup_name: "{{ lookup('env', 'BACKUP_NAME') }}"
+    service_name: "s3-backup-{{ backup_name }}"
+
+  pre_tasks:
+    - name: Validate required environment variables
+      ansible.builtin.assert:
+        that:
+          - backup_name | length > 0
+          - backup_name is match('^[a-zA-Z0-9_-]+$')
+        fail_msg: >
+          BACKUP_NAME must be set and may only contain letters, digits,
+          hyphens, and underscores.
+
+  tasks:
+    - name: Check backup service is configured
+      ansible.builtin.stat:
+        path: "/etc/systemd/system/{{ service_name }}.service"
+      register: service_file
+
+    - name: Fail if backup service is not configured
+      ansible.builtin.fail:
+        msg: >
+          Backup service '{{ service_name }}' has not been deployed.
+          Run the 'Deploy S3 Backup Service' workflow first, then try again.
+      when: not service_file.stat.exists
+
+    - name: Start backup service now (blocks until the oneshot service exits)
+      ansible.builtin.systemd:
+        name: "{{ service_name }}.service"
+        state: started
+        daemon_reload: false
+      register: backup_run
+      failed_when: false
+
+    - name: Get backup service exit status
+      ansible.builtin.command:
+        cmd: systemctl show {{ service_name }}.service --property=ExecMainStatus --value
+      register: exit_status
+      changed_when: false
+
+    - name: Collect recent backup logs
+      ansible.builtin.command:
+        cmd: journalctl -u {{ service_name }}.service -n 100 --no-pager
+      register: backup_logs
+      changed_when: false
+
+    - name: Display backup logs
+      ansible.builtin.debug:
+        msg: "{{ backup_logs.stdout_lines }}"
+
+    - name: Fail if backup exited with an error
+      ansible.builtin.fail:
+        msg: >
+          Backup '{{ backup_name }}' failed (exit code {{ exit_status.stdout | trim }}).
+          See the 'Display backup logs' task output above for details.
+      when: exit_status.stdout | trim != '0'

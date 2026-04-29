@@ -1,0 +1,135 @@
+name: Ansible - Manage fail2ban
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - list_bans
+          - ban
+          - unban
+        default: list_bans
+      jail:
+        description: 'Jail name (use "all" for list_bans to query all jails)'
+        required: true
+        type: string
+        default: sshd
+      ip:
+        description: 'IP address (required for ban/unban)'
+        required: false
+        type: string
+        default: ''
+  schedule:
+    - cron: '0 8 1 * *'  # 1st of every month at 08:00 UTC
+
+jobs:
+  manage-fail2ban:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+          version: 1.68.1
+
+      - name: Enable MagicDNS
+        run: sudo tailscale set --accept-dns=true | cat
+
+      - name: Wait for DNS
+        run: sleep 10
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Configure SSH known hosts
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          cat .ssh/known_hosts >> ~/.ssh/known_hosts
+
+      - name: Build inventory
+        run: |
+          cat > ansible/inventory.yml <<'EOF'
+          ---
+          all:
+            hosts:
+              k3s-server:
+                ansible_host: k3s-server.daggertooth-scala.ts.net
+                ansible_user: ubuntu
+                ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+            vars:
+              ansible_python_interpreter: /usr/bin/python3
+          EOF
+
+      - name: Set action and jail for scheduled run
+        if: github.event_name == 'schedule'
+        run: |
+          echo "F2B_ACTION=list_bans" >> $GITHUB_ENV
+          echo "F2B_JAIL=all" >> $GITHUB_ENV
+          echo "F2B_IP=" >> $GITHUB_ENV
+
+      - name: Set action and jail for manual run
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "F2B_ACTION=${{ inputs.action }}" >> $GITHUB_ENV
+          echo "F2B_JAIL=${{ inputs.jail }}" >> $GITHUB_ENV
+          echo "F2B_IP=${{ inputs.ip }}" >> $GITHUB_ENV
+
+      - name: Create output directory
+        run: mkdir -p ansible/output
+
+      - name: Run fail2ban management playbook
+        run: |
+          cd ansible
+          ansible-playbook playbooks/manage_fail2ban.yml \
+            -e "f2b_action=${{ env.F2B_ACTION }}" \
+            -e "f2b_jail=${{ env.F2B_JAIL }}" \
+            -e "f2b_ip=${{ env.F2B_IP }}" \
+            -e "f2b_output_dir=${{ github.workspace }}/ansible/output" \
+            -e "f2b_report_date=$(date -u +%Y-%m-%d)"
+
+      - name: Upload report artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fail2ban-report-${{ github.run_id }}
+          path: ansible/output/
+          if-no-files-found: ignore
+
+      - name: Build step summary
+        if: always()
+        run: |
+          if [ -f ansible/output/summary.md ]; then
+            cat ansible/output/summary.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## fail2ban Management" >> $GITHUB_STEP_SUMMARY
+            echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+            echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Action | \`${{ env.F2B_ACTION }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| Jail | \`${{ env.F2B_JAIL }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| IP | \`${{ env.F2B_IP || 'N/A' }}\` |" >> $GITHUB_STEP_SUMMARY
+          fi

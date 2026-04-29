@@ -1,0 +1,21 @@
+---
+# Root Flux Kustomization — the equivalent of ArgoCD's `app-of-apps`.
+#
+# `flux bootstrap` creates a `flux-system` Kustomization that reconciles
+# everything under `k3s/flux/clusters/k3s/`. Because this file lives in that
+# path, it is picked up automatically and reconciled, which in turn applies
+# every per-service Flux Kustomization / HelmRelease in `k3s/flux/apps/`.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./k3s/flux/apps
+  prune: true
+  wait: false
+  timeout: 5m

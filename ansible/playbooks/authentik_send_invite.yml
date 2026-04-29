@@ -1,0 +1,102 @@
+---
+# Sends an Authentik enrollment invitation email via Resend.
+#
+# Required extra-vars:
+#   recipient_email       - target email address
+#   authentik_api_token   - Authentik API token (Bitwarden)
+#   resend_api_key        - Resend API key (Bitwarden)
+# Optional extra-vars:
+#   expires_days          - invitation lifetime in days (default 7)
+#
+# Run from the repo root:
+#   ansible-playbook -i localhost, \
+#     -e recipient_email=... \
+#     -e authentik_api_token=... \
+#     -e resend_api_key=... \
+#     ansible/playbooks/authentik_send_invite.yml
+
+- name: Send Authentik enrollment invitation
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    authentik_url: https://authentik.daggertooth-scala.ts.net
+    enrollment_flow_slug: default-invitation-enrollment
+    mail_from: "Chronobyte Homelab <noreply@chronobyte.net>"
+    expires_days: 7
+
+  pre_tasks:
+    - name: Validate inputs
+      ansible.builtin.assert:
+        that:
+          - recipient_email is defined and recipient_email | length > 0
+          - recipient_email is match('^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+          - authentik_api_token is defined and authentik_api_token | length > 0
+          - resend_api_key is defined and resend_api_key | length > 0
+        fail_msg: "Missing or invalid required variables"
+
+  tasks:
+    - name: Look up enrollment flow UUID
+      ansible.builtin.uri:
+        url: "{{ authentik_url }}/api/v3/flows/instances/?slug={{ enrollment_flow_slug }}"
+        headers:
+          Authorization: "Bearer {{ authentik_api_token }}"
+        return_content: true
+      register: flow_lookup
+      no_log: true
+
+    - name: Assert flow was found
+      ansible.builtin.assert:
+        that:
+          - flow_lookup.json.results | length > 0
+          - flow_lookup.json.results[0].pk is defined
+        fail_msg: "Could not find Authentik flow with slug '{{ enrollment_flow_slug }}'"
+
+    - name: Compute invitation metadata
+      ansible.builtin.set_fact:
+        flow_uuid: "{{ flow_lookup.json.results[0].pk }}"
+        invite_expires: "{{ lookup('pipe', 'date -u -d \"+' ~ expires_days ~ ' days\" +%Y-%m-%dT%H:%M:%SZ') }}"
+        invite_name: "invite-{{ ansible_date_time.iso8601_basic_short | default(lookup('pipe', 'date -u +%Y%m%dT%H%M%S')) }}-{{ lookup('pipe', 'openssl rand -hex 3') }}"
+
+    - name: Create invitation
+      ansible.builtin.uri:
+        url: "{{ authentik_url }}/api/v3/stages/invitation/invitations/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ authentik_api_token }}"
+        body_format: json
+        body:
+          name: "{{ invite_name }}"
+          flow: "{{ flow_uuid }}"
+          expires: "{{ invite_expires }}"
+          single_use: true
+          fixed_data:
+            email: "{{ recipient_email }}"
+        status_code: [200, 201]
+      register: invite_response
+      no_log: true
+
+    - name: Build invitation URL
+      ansible.builtin.set_fact:
+        invite_pk: "{{ invite_response.json.pk }}"
+        invite_url: "{{ authentik_url }}/if/flow/{{ enrollment_flow_slug }}/?itoken={{ invite_response.json.pk }}"
+
+    - name: Render email body from template
+      ansible.builtin.set_fact:
+        email_html: "{{ lookup('template', 'authentik_invite_email.html.j2') }}"
+
+    - name: Send invitation email via Resend
+      ansible.builtin.uri:
+        url: https://api.resend.com/emails
+        method: POST
+        headers:
+          Authorization: "Bearer {{ resend_api_key }}"
+        body_format: json
+        body:
+          from: "{{ mail_from }}"
+          to: ["{{ recipient_email }}"]
+          subject: "You're invited to the Chronobyte Homelab"
+          html: "{{ email_html }}"
+        status_code: 200
+      register: resend_response
+      no_log: true

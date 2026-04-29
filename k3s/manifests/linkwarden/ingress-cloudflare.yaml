@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: linkwarden-cloudflare
+  namespace: linkwarden
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    # cloudflare-https-scheme runs FIRST, rewriting X-Forwarded-Proto to https
+    # before Authentik's ForwardAuth sub-request is made, preventing 400 errors.
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      kube-system-cloudflare-https-scheme@kubernetescrd,authentik-authentik-forward-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: links.chronobyte.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: linkwarden
+                port:
+                  number: 3000
+  tls:
+    - hosts:
+        - links.chronobyte.net
+      secretName: linkwarden-tls

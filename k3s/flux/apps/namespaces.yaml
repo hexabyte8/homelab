@@ -1,0 +1,50 @@
+---
+# Namespaces for plain-manifest apps that do not ship their own
+# `namespace.yaml` and are not created by a Helm chart with
+# `install.createNamespace: true`.
+#
+# Apps whose namespace is created elsewhere (and so are *not* listed here):
+#   - argocd          (created during ArgoCD install)
+#   - kube-system     (cluster default — used by traefik-config)
+#   - authentik       (created by the authentik HelmRelease)
+#   - cert-manager    (created by the cert-manager HelmRelease)
+#   - cnpg-system     (created by the cnpg-operator HelmRelease)
+#   - longhorn-system (created by the longhorn-operator HelmRelease)
+#   - tailscale       (has its own k3s/manifests/tailscale/namespace.yaml)
+#   - cloudflared     (has its own k3s/manifests/cloudflared/namespace.yaml)
+#   - calibre-web/jellyfin (calibre-web manifests target the `jellyfin` ns; jellyfin Namespace declared below)
+#   - dashy, fail2ban, healthygames, mcp-kubernetes, mcp-proxmox, stalwart
+#                     (each ships its own namespace.yaml under k3s/manifests/<svc>/)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: adguard
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: docs
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jellyfin
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: metallb-system
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ntfy
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: uptime-kuma

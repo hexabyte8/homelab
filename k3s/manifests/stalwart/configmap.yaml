@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stalwart-config
+  namespace: stalwart
+data:
+  config.toml: |
+    [server]
+    hostname = "mail.chronobyte.net"
+
+    # HTTP: admin UI, webmail, JMAP
+    [server.listener.http]
+    bind = "[::]:8080"
+    protocol = "http"
+
+    # SMTP submission (for internal services like Authentik)
+    [server.listener.submission]
+    bind = "[::]:587"
+    protocol = "smtp"
+    auth.require-tls = false
+
+    # Allow PLAIN/LOGIN on port 587 regardless of TLS (internal cluster traffic)
+    [[session.auth.mechanisms]]
+    if = "local_port != 25"
+    then = "[plain, login, oauthbearer, xoauth2]"
+
+    [[session.auth.mechanisms]]
+    else = "false"
+
+    [[session.auth.directory]]
+    if = "local_port != 25"
+    then = "'internal'"
+
+    [[session.auth.directory]]
+    else = "false"
+
+    # IMAP
+    [server.listener.imap]
+    bind = "[::]:993"
+    protocol = "imap"
+    tls.implicit = true
+
+    # RocksDB storage backend
+    [store.rocksdb]
+    type = "rocksdb"
+    path = "/opt/stalwart/data"
+    compression = "lz4"
+
+    [storage]
+    data = "rocksdb"
+    fts = "rocksdb"
+    blob = "rocksdb"
+    lookup = "rocksdb"
+    directory = "internal"
+
+    # Internal directory (users stored in the database)
+    [directory.internal]
+    type = "internal"
+    store = "rocksdb"
+
+    # Fallback admin account — secret is a SHA-512-crypt hash injected by init container
+    [authentication.fallback-admin]
+    user = "admin"
+    secret = "__STALWART_ADMIN_SECRET_HASH__"
+
+    # Logging
+    [tracer.stdout]
+    type = "stdout"
+    level = "info"
+    enable = true
+
+    # Routing strategy: local domains → local store, everything else → resend relay
+    [[queue.strategy.route]]
+    if = "is_local_domain('', rcpt_domain)"
+    then = "'local'"
+
+    [[queue.strategy.route]]
+    else = "'resend'"
+
+    # Outbound relay: route all external mail through Resend (avoids port 25 blocking)
+    [queue.route.resend]
+    type = "relay"
+    address = "smtp.resend.com"
+    port = 465
+    protocol = "smtp"
+
+    [queue.route.resend.tls]
+    implicit = true
+    allow-invalid-certs = false
+
+    [queue.route.resend.auth]
+    username = "resend"
+    secret = "__RESEND_API_KEY__"

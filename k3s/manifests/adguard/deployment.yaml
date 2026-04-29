@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adguard-home
+  namespace: adguard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: adguard-home
+  template:
+    metadata:
+      labels:
+        app: adguard-home
+    spec:
+      containers:
+        - name: adguard-home
+          image: adguard/adguardhome:v0.107.63
+          ports:
+            - name: web
+              containerPort: 3000
+              protocol: TCP
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+          volumeMounts:
+            - name: conf
+              mountPath: /opt/adguardhome/conf
+            - name: work
+              mountPath: /opt/adguardhome/work
+          resources:
+            requests:
+              cpu: 250m
+              memory: 3Gi
+            limits:
+              memory: 6Gi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: conf
+          persistentVolumeClaim:
+            claimName: adguard-conf
+        - name: work
+          persistentVolumeClaim:
+            claimName: adguard-work

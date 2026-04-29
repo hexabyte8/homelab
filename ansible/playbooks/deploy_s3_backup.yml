@@ -1,0 +1,262 @@
+---
+# Flexible S3 backup playbook.
+#
+# Creates a backup script, a credentials environment file, and a systemd
+# service + timer on the target host.  Re-running is idempotent and safe.
+#
+# Required environment variables:
+#   BACKUP_NAME            - Identifier for this backup job (e.g. "minecraft")
+#   BACKUP_DIRS            - Colon-separated list of absolute paths to back up
+#                            (e.g. "/home/ubuntu/server:/home/ubuntu/config")
+#   S3_BACKUP_BUCKET_NAME  - Name of the destination S3 bucket
+#   AWS_ACCESS_KEY_ID      - AWS IAM access key ID
+#   AWS_SECRET_ACCESS_KEY  - AWS IAM secret access key
+#
+# Optional environment variables:
+#   AWS_REGION      - AWS region (default: us-east-1)
+#   BACKUP_SCHEDULE - systemd OnCalendar expression (default: *-*-* 03:00:00)
+
+- name: Deploy S3 backup service
+  hosts: gameserver
+  become: true
+
+  vars:
+    backup_name: "{{ lookup('env', 'BACKUP_NAME') }}"
+    backup_dirs: "{{ lookup('env', 'BACKUP_DIRS') }}"
+    s3_bucket: "{{ lookup('env', 'S3_BACKUP_BUCKET_NAME') }}"
+    aws_region: "{{ lookup('env', 'AWS_REGION') | default('us-east-1', true) }}"
+    aws_access_key_id: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+    aws_secret_access_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+    backup_schedule: "{{ lookup('env', 'BACKUP_SCHEDULE') | default('*-*-* 03:00:00', true) }}"
+    archive_prefix: "{{ lookup('env', 'ARCHIVE_PREFIX') | default('', true) }}"
+    # Derived values
+    backup_dirs_list: "{{ backup_dirs.split(':') | map('trim') | select | list }}"
+    service_name: "s3-backup-{{ backup_name }}"
+    backup_env_file: "/etc/s3-backup/{{ backup_name }}.env"
+    backup_script: "/usr/local/bin/s3-backup-{{ backup_name }}.sh"
+
+  pre_tasks:
+    - name: Validate required environment variables
+      ansible.builtin.assert:
+        that:
+          - backup_name | length > 0
+          - backup_dirs | length > 0
+          - s3_bucket | length > 0
+          - aws_access_key_id | length > 0
+          - aws_secret_access_key | length > 0
+        fail_msg: >
+          Required environment variables must be set:
+          BACKUP_NAME, BACKUP_DIRS, S3_BACKUP_BUCKET_NAME,
+          AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY.
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  tasks:
+    # ------------------------------------------------------------------ #
+    # AWS CLI                                                             #
+    # ------------------------------------------------------------------ #
+    - name: Install AWS CLI prerequisites
+      ansible.builtin.apt:
+        name:
+          - unzip
+          - curl
+        state: present
+
+    - name: Check if AWS CLI v2 is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/aws
+      register: aws_cli_binary
+
+    - name: Download AWS CLI v2 installer
+      ansible.builtin.get_url:
+        url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        dest: /tmp/awscliv2.zip
+        mode: '0644'
+      when: not aws_cli_binary.stat.exists
+
+    - name: Unzip AWS CLI v2 installer
+      ansible.builtin.unarchive:
+        src: /tmp/awscliv2.zip
+        dest: /tmp
+        remote_src: true
+      when: not aws_cli_binary.stat.exists
+
+    - name: Install AWS CLI v2
+      ansible.builtin.command:
+        cmd: /tmp/aws/install
+        creates: /usr/local/bin/aws
+      when: not aws_cli_binary.stat.exists
+
+    - name: Clean up AWS CLI v2 installer
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/awscliv2.zip
+        - /tmp/aws
+      when: not aws_cli_binary.stat.exists
+
+    # ------------------------------------------------------------------ #
+    # AWS credentials environment file                                    #
+    # ------------------------------------------------------------------ #
+    - name: Create /etc/s3-backup directory
+      ansible.builtin.file:
+        path: /etc/s3-backup
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Write AWS credentials environment file
+      ansible.builtin.copy:
+        dest: "{{ backup_env_file }}"
+        owner: root
+        group: root
+        mode: '0600'
+        content: |
+          AWS_ACCESS_KEY_ID={{ aws_access_key_id }}
+          AWS_SECRET_ACCESS_KEY={{ aws_secret_access_key }}
+          AWS_DEFAULT_REGION={{ aws_region }}
+      notify: Restart backup timer
+      no_log: true
+
+    # ------------------------------------------------------------------ #
+    # Backup script                                                       #
+    # ------------------------------------------------------------------ #
+    - name: Write backup script
+      ansible.builtin.copy:
+        dest: "{{ backup_script }}"
+        owner: root
+        group: root
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          # Auto-generated by Ansible — deploy_s3_backup.yml
+          # Backup name : {{ backup_name }}
+          # Directories : {{ backup_dirs_list | join(', ') }}
+          # S3 bucket   : {{ s3_bucket }}
+          set -uo pipefail
+
+          BACKUP_NAME="{{ backup_name }}"
+          S3_BUCKET="{{ s3_bucket }}"
+          AWS_REGION="{{ aws_region }}"
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          WORKDIR=$(mktemp -d)
+          FAILED=0
+
+          cleanup() { rm -rf "$WORKDIR"; }
+          trap cleanup EXIT
+
+          echo "[$(date -Iseconds)] Starting backup: $BACKUP_NAME"
+
+          {% for dir in backup_dirs_list %}
+          DIR="{{ dir }}"
+          BASENAME=$(basename "$DIR")
+          {% if archive_prefix %}
+          {% if backup_dirs_list | length == 1 %}
+          ARCHIVE_FILE="{{ archive_prefix }}-${TIMESTAMP}.tar.gz"
+          {% else %}
+          ARCHIVE_FILE="{{ archive_prefix }}-${BASENAME}-${TIMESTAMP}.tar.gz"
+          {% endif %}
+          S3_KEY="${ARCHIVE_FILE}"
+          {% else %}
+          ARCHIVE_FILE="${BACKUP_NAME}-${BASENAME}-${TIMESTAMP}.tar.gz"
+          S3_KEY="${BACKUP_NAME}/${BASENAME}/${ARCHIVE_FILE}"
+          {% endif %}
+          ARCHIVE="$WORKDIR/${ARCHIVE_FILE}"
+
+          echo "[$(date -Iseconds)] Compressing $DIR"
+          if tar -czf "$ARCHIVE" -C "$(dirname "$DIR")" "$BASENAME"; then
+            echo "[$(date -Iseconds)] Uploading to s3://${S3_BUCKET}/${S3_KEY}"
+            if aws s3 cp "$ARCHIVE" "s3://${S3_BUCKET}/${S3_KEY}" --region "$AWS_REGION"; then
+              echo "[$(date -Iseconds)] Uploaded: s3://${S3_BUCKET}/${S3_KEY}"
+            else
+              echo "[$(date -Iseconds)] ERROR: Upload failed for $DIR (s3://${S3_BUCKET}/${S3_KEY})" >&2
+              FAILED=1
+            fi
+          else
+            echo "[$(date -Iseconds)] ERROR: Compression failed for $DIR" >&2
+            FAILED=1
+          fi
+
+          {% endfor %}
+          if [ "$FAILED" -ne 0 ]; then
+            echo "[$(date -Iseconds)] Backup finished with errors: $BACKUP_NAME" >&2
+            exit 1
+          fi
+          echo "[$(date -Iseconds)] Backup complete: $BACKUP_NAME"
+      notify: Restart backup timer
+
+    # ------------------------------------------------------------------ #
+    # systemd service + timer                                             #
+    # ------------------------------------------------------------------ #
+    - name: Create systemd service for backup
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ service_name }}.service"
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=S3 Backup - {{ backup_name }}
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=oneshot
+          User=root
+          EnvironmentFile={{ backup_env_file }}
+          ExecStart={{ backup_script }}
+          StandardOutput=journal
+          StandardError=journal
+      notify: Restart backup timer
+
+    - name: Create systemd timer for backup
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ service_name }}.timer"
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=S3 Backup Timer - {{ backup_name }}
+
+          [Timer]
+          OnCalendar={{ backup_schedule }}
+          Persistent=true
+
+          [Install]
+          WantedBy=timers.target
+      notify: Restart backup timer
+
+    - name: Enable and start backup timer
+      ansible.builtin.systemd:
+        name: "{{ service_name }}.timer"
+        state: started
+        enabled: true
+        daemon_reload: true
+
+    - name: Display S3 backup deployment summary
+      ansible.builtin.debug:
+        msg: |
+          ================================
+          S3 Backup Setup Complete
+          ================================
+          Backup name   : {{ backup_name }}
+          Directories   : {{ backup_dirs_list | join(', ') }}
+          S3 bucket     : {{ s3_bucket }}
+          AWS region    : {{ aws_region }}
+          Schedule      : {{ backup_schedule }}
+          Timer         : {{ service_name }}.timer
+          Script        : {{ backup_script }}
+
+          Useful commands:
+            sudo systemctl status {{ service_name }}.timer
+            sudo systemctl start {{ service_name }}.service  # run now
+            sudo journalctl -u {{ service_name }}.service -f
+
+  handlers:
+    - name: Restart backup timer
+      ansible.builtin.systemd:
+        name: "{{ service_name }}.timer"
+        state: restarted
+        daemon_reload: true

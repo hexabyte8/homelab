@@ -1,0 +1,32 @@
+# OpenTofu / Terraform files
+**/.terraform/*
+**/.opentofu/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfplan
+!terraform.auto.tfvars.example
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+.tofurc
+terraform.rc
+opentofu/varfile
+
+# Generated cloud-init files
+opentofu/files/*.yml
+
+# Ansible
+ansible/inventory
+ansible/inventory.yml
+!ansible/inventory.example
+*.retry
+
+# Kubernetes configs
+**/kubeconfig
+**/*kubeconfig*.yaml
+.kube/
+.ansible/

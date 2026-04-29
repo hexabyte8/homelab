@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calibre-web
+  namespace: jellyfin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: calibre-web
+  template:
+    metadata:
+      labels:
+        app: calibre-web
+    spec:
+      # jellyfin-media is ReadWriteOnce — must be on the same node as Jellyfin.
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: jellyfin
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: calibre-web
+          image: crocodilestick/calibre-web-automated:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8083
+              name: http
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "UTC"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            # The Calibre library lives inside the shared media volume so that
+            # Jellyfin and Filebrowser can also see the books directory.
+            - name: media
+              mountPath: /calibre-library
+              subPath: books
+            # Drop new books here; CWA automatically imports them into the library.
+            - name: media
+              mountPath: /cwa-book-ingest
+              subPath: cwa-ingest
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+              ephemeral-storage: 100Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+              ephemeral-storage: 512Mi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: calibre-web-config
+        - name: media
+          persistentVolumeClaim:
+            claimName: jellyfin-media

@@ -1,0 +1,81 @@
+---
+- name: Deploy k3s Worker Node (Tailscale Network)
+  hosts: k3s_workers
+  become: true
+
+  pre_tasks:
+    - name: Validate required environment variables
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'K3S_TOKEN') | length > 0
+          - lookup('env', 'K3S_URL') | length > 0
+        fail_msg: "K3S_TOKEN and K3S_URL environment variables must be set"
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  tasks:
+    - name: Install prerequisites
+      ansible.builtin.apt:
+        name:
+          - curl
+          - apt-transport-https
+          - ca-certificates
+        state: present
+
+    - name: Check if k3s is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_binary
+
+    - name: Ensure /etc/rancher/k3s directory exists
+      ansible.builtin.file:
+        path: /etc/rancher/k3s
+        state: directory
+        mode: '0755'
+
+    - name: Get Tailscale IP
+      ansible.builtin.command: tailscale ip -4
+      register: tailscale_ip
+      changed_when: false
+
+    - name: Write k3s agent config (Tailscale Flannel interface)
+      ansible.builtin.copy:
+        dest: /etc/rancher/k3s/config.yaml
+        content: |
+          node-ip: "{{ tailscale_ip.stdout | trim }}"
+          node-external-ip: "{{ tailscale_ip.stdout | trim }}"
+          flannel-iface: tailscale0
+          kubelet-arg:
+            # Start GC-ing images at 80% disk use; target 70% to reclaim space.
+            # Default thresholds (85%/80%) leave too little runway before the
+            # 5% eviction threshold triggers pod evictions.
+            - "image-gc-high-threshold=80"
+            - "image-gc-low-threshold=70"
+            # Evict at 10% free space (not the default 5%) so eviction fires
+            # while there is still enough room to reschedule pods.
+            - "eviction-hard=nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<10%"
+        mode: '0644'
+
+    - name: Download and install k3s agent
+      ansible.builtin.shell:
+        cmd: curl -sfL https://get.k3s.io | sh -s - agent
+      environment:
+        K3S_URL: "{{ lookup('env', 'K3S_URL') }}"
+        K3S_TOKEN: "{{ lookup('env', 'K3S_TOKEN') }}"
+        INSTALL_K3S_SKIP_START: "false"
+      when: not k3s_binary.stat.exists
+      changed_when: true
+
+    - name: Enable and start k3s-agent service
+      ansible.builtin.systemd:
+        name: k3s-agent
+        enabled: true
+        state: started
+        daemon_reload: true
+
+    - name: Wait for node to register with server
+      ansible.builtin.wait_for:
+        timeout: 30

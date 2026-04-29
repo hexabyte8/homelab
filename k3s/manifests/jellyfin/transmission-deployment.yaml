@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transmission
+  namespace: jellyfin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: transmission
+  template:
+    metadata:
+      labels:
+        app: transmission
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2026-03-20T17:15:00Z"
+    spec:
+      # Must run on the same node as Jellyfin because both share the
+      # ReadWriteOnce jellyfin-media PVC (k3s local-path only supports RWO).
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: jellyfin
+              topologyKey: kubernetes.io/hostname
+      # NET_ADMIN is required for the OpenVPN tun interface.
+      # The init container ensures /dev/net/tun exists on the node.
+      initContainers:
+        - name: init-tun
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /dev/net
+              [ -c /dev/net/tun ] || mknod /dev/net/tun c 10 200
+              chmod 0666 /dev/net/tun
+          securityContext:
+            capabilities:
+              add:
+                - MKNOD
+          volumeMounts:
+            - name: dev-net
+              mountPath: /dev/net
+        # Copy the VPN config from the read-only secret mount to a writable
+        # emptyDir so that modify-openvpn-config.sh can edit it in-place at
+        # startup. The file must be named default.ovpn for the custom provider.
+        - name: copy-vpn-config
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - cp /vpn-secret/vpn.ovpn /etc/openvpn/custom/default.ovpn
+          volumeMounts:
+            - name: vpn-secret
+              mountPath: /vpn-secret
+              readOnly: true
+            - name: openvpn-custom-dir
+              mountPath: /etc/openvpn/custom
+      containers:
+        - name: transmission
+          # haugene/transmission-openvpn runs Transmission inside an OpenVPN
+          # tunnel — all torrent traffic leaves through the VPN.
+          image: haugene/transmission-openvpn:5.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9091
+              name: http
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          env:
+            # -- Custom .ovpn config file mode --
+            # The config is staged to /etc/openvpn/custom/default.ovpn by the
+            # copy-vpn-config init container. AirVPN embeds all certificates and
+            # auth inside the .ovpn file; OPENVPN_USERNAME/PASSWORD below are
+            # placeholder values required by haugene's startup credential check.
+            - name: OPENVPN_PROVIDER
+              value: "custom"
+            - name: OPENVPN_USERNAME
+              value: "NONE"
+            - name: OPENVPN_PASSWORD
+              value: "NONE"
+            # -- Transmission web UI auth (from Secret) --
+            - name: TRANSMISSION_RPC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: transmission-openvpn-credentials
+                  key: TRANSMISSION_RPC_USERNAME
+            - name: TRANSMISSION_RPC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: transmission-openvpn-credentials
+                  key: TRANSMISSION_RPC_PASSWORD
+            # -- Transmission settings --
+            - name: TRANSMISSION_RPC_AUTHENTICATION_REQUIRED
+              value: "true"
+            - name: TRANSMISSION_DOWNLOAD_DIR
+              value: /media/downloads
+            - name: TRANSMISSION_INCOMPLETE_DIR
+              value: /media/downloads/incomplete
+            - name: TRANSMISSION_INCOMPLETE_DIR_ENABLED
+              value: "true"
+            # -- Networking --
+            - name: LOCAL_NETWORK
+              value: "192.168.1.0/24"
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "America/New_York"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: media
+              mountPath: /media
+            - name: dev-net
+              mountPath: /dev/net
+            # Mount the writable emptyDir populated by copy-vpn-config init
+            # container. haugene/transmission-openvpn modifies the config in
+            # place at startup, so the directory must be writable.
+            - name: openvpn-custom-dir
+              mountPath: /etc/openvpn/custom
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+              ephemeral-storage: 100Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+              ephemeral-storage: 1Gi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: transmission-config
+        - name: media
+          persistentVolumeClaim:
+            claimName: jellyfin-media
+        - name: dev-net
+          emptyDir: {}
+        # The secret is mounted read-only under /vpn-secret; the copy-vpn-config
+        # init container writes it to the writable openvpn-custom-dir emptyDir.
+        - name: vpn-secret
+          secret:
+            secretName: transmission-openvpn-credentials
+            items:
+              - key: vpn.ovpn
+                path: vpn.ovpn
+        - name: openvpn-custom-dir
+          emptyDir: {}

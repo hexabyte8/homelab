@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: healthygames
+  namespace: healthygames
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: healthygames.chronobyte.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: healthygames
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - healthygames.chronobyte.net
+      secretName: healthygames-tls

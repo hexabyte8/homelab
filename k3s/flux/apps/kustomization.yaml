@@ -1,0 +1,35 @@
+---
+# Bundle of every per-service Flux Kustomization / HelmRelease.
+# Reconciled by the root `apps` Kustomization in
+# ../clusters/k3s/apps.yaml.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespaces.yaml
+  # Helm-based infrastructure
+  - cert-manager.yaml
+  - cnpg-operator.yaml
+  - longhorn-operator.yaml
+  - tailscale-operator.yaml
+  - authentik.yaml
+  # Plain-manifest infrastructure config
+  - cert-manager-config.yaml
+  - longhorn-config.yaml
+  - tailscale-config.yaml
+  - authentik-config.yaml
+  - traefik-config.yaml
+  - cloudflared.yaml
+  - metallb-config.yaml
+  # Workloads
+  - adguard.yaml
+  - calibre-web.yaml
+  - dashy.yaml
+  - docs.yaml
+  - fail2ban.yaml
+  - healthygames.yaml
+  - jellyfin.yaml
+  - mcp-kubernetes.yaml
+  - mcp-proxmox.yaml
+  - ntfy.yaml
+  - stalwart.yaml
+  - uptime-kuma.yaml

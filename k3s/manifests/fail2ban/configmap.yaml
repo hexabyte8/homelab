@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fail2ban-config
+  namespace: fail2ban
+data:
+  jail.local: |
+    [DEFAULT]
+    # Never ban loopback or any Tailscale peer (100.64.0.0/10 CGNAT range).
+    # This guarantees a fallback path into every node via the tailnet even if
+    # all other access is locked out.
+    ignoreip = 127.0.0.1/8 ::1 100.64.0.0/10
+
+    # Ban hosts for 1 hour on first offence
+    bantime  = 1h
+    # Look back 10 minutes for repeated failures
+    findtime = 10m
+    # Allow 5 failures before banning
+    maxretry = 5
+    # Use nftables (default for modern kernels; falls back to iptables)
+    banaction = nftables-multiport
+    banaction_allports = nftables-allports
+
+    [sshd]
+    enabled  = true
+    port     = ssh
+    filter   = sshd
+    # Host log path is bind-mounted at /var/log/host inside the container.
+    # Covers Debian/Ubuntu (auth.log) and RHEL/CentOS (secure).
+    logpath  = /var/log/host/auth.log
+             /var/log/host/secure
+    maxretry = 3
+    bantime  = 24h
+
+    [k3s-apiserver]
+    enabled  = true
+    filter   = k3s-apiserver
+    port     = 0:65535
+    # k3s forwards logs to syslog (via rsyslog). The host /var/log is already
+    # bind-mounted at /var/log/host so syslog is accessible without a separate
+    # journal mount. The systemd backend is not available in the Alpine image.
+    logpath  = /var/log/host/syslog
+    maxretry = 10
+    bantime  = 1h
+
+  k3s-apiserver.conf: |
+    [Definition]
+    # Match failed authentication attempts logged by the k3s API server.
+    # k3s surfaces these as structured log lines, e.g.:
+    #   k3s-server ... authentication attempt failed: user="" reason="..."
+    failregex = ^.*k3s.*authentication.*failed.*from.*<HOST>.*$
+                ^.*k3s.*Unauthorized.*<HOST>.*$
+                ^.*audit.*"verb":".*"sourceIPs":\["<HOST>"\].*"code":401.*$
+    ignoreregex =
+

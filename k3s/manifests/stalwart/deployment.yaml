@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stalwart
+  namespace: stalwart
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: stalwart
+  template:
+    metadata:
+      labels:
+        app: stalwart
+    spec:
+      initContainers:
+        # Hash the admin password and substitute all secrets into config.toml.
+        # Uses alpine for openssl SHA-512-crypt support (stalwart requires hashed passwords).
+        - name: config-init
+          image: alpine:3.19
+          command:
+            - sh
+            - -c
+            - |
+              apk add --no-cache openssl >/dev/null 2>&1
+              HASH=$(openssl passwd -6 "${STALWART_ADMIN_SECRET}")
+              sed \
+                -e "s|__STALWART_ADMIN_SECRET_HASH__|${HASH}|g" \
+                -e "s|__RESEND_API_KEY__|${RESEND_API_KEY}|g" \
+                /config-template/config.toml > /etc/stalwart/config.toml
+              echo "Config written with hashed credentials."
+          env:
+            - name: STALWART_ADMIN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-secrets
+                  key: admin-password
+            - name: RESEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stalwart-secrets
+                  key: resend-api-key
+          volumeMounts:
+            - name: config-template
+              mountPath: /config-template
+            - name: config-rendered
+              mountPath: /etc/stalwart
+      containers:
+        - name: stalwart
+          image: stalwartlabs/stalwart:v0.15
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: smtp
+              containerPort: 587
+              protocol: TCP
+            - name: imap
+              containerPort: 993
+              protocol: TCP
+          env:
+            - name: TZ
+              value: UTC
+          volumeMounts:
+            - name: data
+              mountPath: /opt/stalwart
+            - name: config-rendered
+              mountPath: /opt/stalwart/etc
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: stalwart-data
+        - name: config-template
+          configMap:
+            name: stalwart-config
+        - name: config-rendered
+          emptyDir: {}

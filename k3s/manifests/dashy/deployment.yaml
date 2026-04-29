@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashy
+  namespace: dashy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dashy
+  template:
+    metadata:
+      labels:
+        app: dashy
+      annotations:
+        # Update this timestamp to trigger a rolling restart when the ConfigMap changes.
+        # Example: kubectl rollout restart deployment/dashy -n dashy
+        kubectl.kubernetes.io/restartedAt: "2026-04-28T16:25:00Z"
+    spec:
+      containers:
+        - name: dashy
+          image: lissy93/dashy:3.1.13
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /app/user-data/conf.yml
+              subPath: conf.yml
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 120
+            periodSeconds: 15
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 300
+            periodSeconds: 30
+      volumes:
+        - name: config
+          configMap:
+            name: dashy-config
+            items:
+              - key: conf.yml
+                path: conf.yml

@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jellyfin-cloudflare
+  namespace: jellyfin
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    # Jellyfin is *not* fronted by Authentik ForwardAuth. Native Jellyfin
+    # clients (TVs, phones, console apps) cannot complete an interactive
+    # browser-based SSO flow, so the public endpoint must serve Jellyfin's
+    # own login page. Authentication is delegated to Authentik via the
+    # Jellyfin LDAP-Auth plugin (LDAP outpost), so user accounts are still
+    # centrally managed by Authentik.
+    #
+    # cloudflare-https-scheme rewrites X-Forwarded-Proto from http -> https
+    # so Jellyfin generates correct https URLs for clients behind the tunnel.
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      kube-system-cloudflare-https-scheme@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: jellyfin.chronobyte.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jellyfin
+                port:
+                  number: 8096
+  tls:
+    - hosts:
+        - jellyfin.chronobyte.net
+      secretName: jellyfin-cloudflare-tls

@@ -1,0 +1,217 @@
+---
+- name: Manage fail2ban via kubectl exec into DaemonSet pods
+  hosts: k3s-server
+  gather_facts: false
+
+  vars:
+    f2b_jail: sshd
+    f2b_ip: ""
+    f2b_output_dir: "/tmp/fail2ban-output"
+    f2b_report_date: "{{ lookup('pipe', 'date -u +%Y-%m-%d') }}"
+    f2b_nodes:
+      - k3s-server
+      - k3s-agent-1
+      - k3s-agent-2
+    f2b_all_jails:
+      - sshd
+      - k3s-apiserver
+
+  pre_tasks:
+    - name: Ensure output directory exists
+      ansible.builtin.file:
+        path: "{{ f2b_output_dir }}"
+        state: directory
+        mode: '0755'
+      delegate_to: localhost
+
+    - name: Validate required variables
+      ansible.builtin.assert:
+        that:
+          - f2b_action is defined
+          - f2b_action in ['list_bans', 'ban', 'unban']
+        fail_msg: "f2b_action must be one of: list_bans, ban, unban"
+
+    - name: Validate IP is provided for ban/unban
+      ansible.builtin.assert:
+        that:
+          - f2b_ip | length > 0
+        fail_msg: "f2b_ip is required when f2b_action is '{{ f2b_action }}'"
+      when: f2b_action in ['ban', 'unban']
+
+  tasks:
+    # ── Discover pods ────────────────────────────────────────────────────────
+    - name: Find fail2ban pod on each node
+      ansible.builtin.command:
+        cmd: >
+          kubectl get pods -n fail2ban
+          --field-selector spec.nodeName={{ item }}
+          -o jsonpath='{.items[0].metadata.name}'
+      loop: "{{ f2b_nodes }}"
+      register: f2b_pods
+      changed_when: false
+
+    # ── list_bans ────────────────────────────────────────────────────────────
+    - name: Build jail list for query
+      ansible.builtin.set_fact:
+        f2b_query_jails: "{{ f2b_all_jails if f2b_jail == 'all' else [f2b_jail] }}"
+      when: f2b_action == 'list_bans'
+
+    - name: Query jail status on each node
+      ansible.builtin.command:
+        cmd: >
+          kubectl exec -n fail2ban {{ f2b_pods.results[idx].stdout }}
+          -- fail2ban-client status {{ item[1] }}
+      loop: "{{ f2b_nodes | product(f2b_query_jails) | list }}"
+      loop_control:
+        index_var: loop_idx
+        label: "{{ item[0] }}/{{ item[1] }}"
+      vars:
+        idx: "{{ f2b_nodes.index(item[0]) }}"
+      register: jail_status_output
+      changed_when: false
+      when: f2b_action == 'list_bans'
+
+    - name: Display raw status output
+      ansible.builtin.debug:
+        msg: "=== {{ item.item[0] }} / {{ item.item[1] }} ===\n{{ item.stdout }}"
+      loop: "{{ jail_status_output.results }}"
+      loop_control:
+        label: "{{ item.item[0] }}/{{ item.item[1] }}"
+      when: f2b_action == 'list_bans' and not item.skipped | default(false)
+
+    - name: Parse jail status results into structured data
+      ansible.builtin.set_fact:
+        f2b_parsed_results: >-
+          {{ f2b_parsed_results | default([]) + [{
+            'node': item.item[0],
+            'jail': item.item[1],
+            'currently_banned': (item.stdout | regex_search('Currently banned:\t(\d+)', '\1') | first | default('0')),
+            'total_banned':     (item.stdout | regex_search('Total banned:\t(\d+)',     '\1') | first | default('0')),
+            'banned_ips':       (item.stdout | regex_search('Banned IP list:\t(.*)',    '\1') | first | default('') | split(' ') | reject('equalto', '') | list)
+          }] }}
+      loop: "{{ jail_status_output.results }}"
+      loop_control:
+        label: "{{ item.item[0] }}/{{ item.item[1] }}"
+      when: f2b_action == 'list_bans' and not item.skipped | default(false)
+
+    - name: Write CSV header
+      ansible.builtin.copy:
+        dest: "{{ f2b_output_dir }}/banned-ips.csv"
+        content: "date,node,jail,ip\n"
+        mode: '0644'
+      when: f2b_action == 'list_bans'
+      delegate_to: localhost
+
+    - name: Append banned IPs to CSV
+      ansible.builtin.shell:
+        cmd: |
+          for ip in {{ entry.banned_ips | join(' ') | default('') }}; do
+            echo "{{ f2b_report_date }},{{ entry.node }},{{ entry.jail }},$ip" \
+              >> "{{ f2b_output_dir }}/banned-ips.csv"
+          done
+        executable: /bin/bash
+      loop: "{{ f2b_parsed_results | default([]) }}"
+      loop_control:
+        loop_var: entry
+        label: "{{ entry.node }}/{{ entry.jail }}"
+      when: f2b_action == 'list_bans' and entry.banned_ips | length > 0
+      changed_when: true
+      delegate_to: localhost
+
+    - name: Render markdown report from template
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/fail2ban-report.md.j2"
+        dest: "{{ f2b_output_dir }}/report.md"
+        mode: '0644'
+      when: f2b_action == 'list_bans'
+      delegate_to: localhost
+
+    - name: Copy report to summary.md for step summary
+      ansible.builtin.copy:
+        src: "{{ f2b_output_dir }}/report.md"
+        dest: "{{ f2b_output_dir }}/summary.md"
+        remote_src: false
+      when: f2b_action == 'list_bans'
+      delegate_to: localhost
+
+    # ── ban / unban ──────────────────────────────────────────────────────────
+    - name: Ban IP on each node
+      ansible.builtin.command:
+        cmd: >
+          kubectl exec -n fail2ban {{ f2b_pods.results[idx].stdout }}
+          -- fail2ban-client set {{ f2b_jail }} banip {{ f2b_ip }}
+      loop: "{{ f2b_nodes }}"
+      loop_control:
+        index_var: idx
+      register: ban_output
+      when: f2b_action == 'ban'
+
+    - name: Unban IP on each node
+      ansible.builtin.command:
+        cmd: >
+          kubectl exec -n fail2ban {{ f2b_pods.results[idx].stdout }}
+          -- fail2ban-client set {{ f2b_jail }} unbanip {{ f2b_ip }}
+      loop: "{{ f2b_nodes }}"
+      loop_control:
+        index_var: idx
+      register: unban_output
+      when: f2b_action == 'unban'
+
+    - name: Write ban/unban summary header
+      ansible.builtin.copy:
+        dest: "{{ f2b_output_dir }}/summary.md"
+        content: |
+          ## Fail2ban — {{ 'Banned' if f2b_action == 'ban' else 'Unbanned' }} IP
+
+          | Field | Value |
+          |-------|-------|
+          | Date | {{ f2b_report_date }} |
+          | Action | `{{ f2b_action }}` |
+          | Jail | `{{ f2b_jail }}` |
+          | IP | `{{ f2b_ip }}` |
+
+          ### Results per node
+
+          | Node | Result |
+          |------|--------|
+        mode: '0644'
+      when: f2b_action in ['ban', 'unban']
+      delegate_to: localhost
+
+    - name: Append node results to ban/unban summary
+      ansible.builtin.shell:
+        cmd: |
+          STATUS="Success"
+          [ "{{ item.rc }}" != "0" ] && STATUS="Failed"
+          echo "| {{ item.item }} | $STATUS — \`{{ item.stdout | replace('`', "'") }}\` |" \
+            >> "{{ f2b_output_dir }}/summary.md"
+        executable: /bin/bash
+      loop: "{{ (ban_output.results if f2b_action == 'ban' else unban_output.results) | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: f2b_action in ['ban', 'unban']
+      changed_when: true
+      delegate_to: localhost
+
+    - name: Write ban/unban CSV header
+      ansible.builtin.copy:
+        dest: "{{ f2b_output_dir }}/action-log.csv"
+        content: "date,action,jail,ip,node,result\n"
+        mode: '0644'
+      when: f2b_action in ['ban', 'unban']
+      delegate_to: localhost
+
+    - name: Append ban/unban results to CSV
+      ansible.builtin.shell:
+        cmd: |
+          RESULT="success"
+          [ "{{ item.rc }}" != "0" ] && RESULT="failed"
+          echo "{{ f2b_report_date }},{{ f2b_action }},{{ f2b_jail }},{{ f2b_ip }},{{ item.item }},$RESULT" \
+            >> "{{ f2b_output_dir }}/action-log.csv"
+        executable: /bin/bash
+      loop: "{{ (ban_output.results if f2b_action == 'ban' else unban_output.results) | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: f2b_action in ['ban', 'unban']
+      changed_when: true
+      delegate_to: localhost

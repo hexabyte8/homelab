@@ -1,0 +1,44 @@
+name: Copilot Setup Steps
+
+# Automatically validate the setup on change, and allow manual runs via the
+# Actions tab. This workflow must live at this path and contain a single
+# `copilot-setup-steps` job for Copilot cloud agent to pick it up.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be named `copilot-setup-steps` or Copilot will not use it.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:copilot
+          version: 1.68.1
+
+      - name: Enable MagicDNS
+        run: sudo tailscale set --accept-dns=true | cat
+
+      - name: Wait for DNS to be available
+        run: |
+          echo "Waiting for Tailscale DNS to be ready..."
+          sleep 10

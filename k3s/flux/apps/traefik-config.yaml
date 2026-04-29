@@ -1,0 +1,18 @@
+---
+# Traefik itself ships with k3s; this only customises it via HelmChartConfig + middlewares.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: traefik-config
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 5m
+  prune: true
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./k3s/manifests/traefik
+  targetNamespace: kube-system

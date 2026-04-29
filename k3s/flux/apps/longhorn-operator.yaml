@@ -1,0 +1,44 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: longhorn-operator
+  namespace: flux-system
+spec:
+  interval: 30m
+  releaseName: longhorn-operator
+  targetNamespace: longhorn-system
+  install:
+    createNamespace: true
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: longhorn
+      version: 1.7.2
+      sourceRef:
+        kind: HelmRepository
+        name: longhorn
+        namespace: flux-system
+  values:
+    persistence:
+      # Do not replace local-path as the default StorageClass.
+      # Switch this to true once existing PVCs are migrated.
+      defaultClass: false
+      defaultClassReplicaCount: 2
+      defaultFsType: ext4
+    defaultSettings:
+      defaultReplicaCount: 2
+      defaultDataPath: /var/lib/longhorn/
+    csi:
+      # k3s stores kubelet state under this path (not the default /var/lib/kubelet)
+      kubeletRootDir: /var/lib/rancher/k3s/agent/kubelet
+    ingress:
+      enabled: false
+    preUpgradeChecker:
+      jobEnabled: false

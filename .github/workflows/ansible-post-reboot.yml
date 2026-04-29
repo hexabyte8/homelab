@@ -1,0 +1,80 @@
+name: Ansible - Post-Reboot Cluster Restore
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_host:
+        description: 'k3s server host (must be control-plane node)'
+        required: true
+        type: string
+        default: 'k3s-server'
+
+jobs:
+  post-reboot-restore:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            3289b15b-f52c-45aa-8b9f-b41600f5e14f > CLOUDFLARE_TUNNEL_TOKEN
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+          version: 1.68.1
+
+      - name: Enable MagicDNS
+        run: sudo tailscale set --accept-dns=true | cat
+
+      - name: Wait for DNS to be available
+        run: sleep 10
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Create inventory
+        run: |
+          cat > ansible/inventory.yml <<EOF
+          ---
+          all:
+            children:
+              k3s:
+                hosts:
+                  ${{ inputs.target_host }}:
+                    ansible_host: ${{ inputs.target_host }}.daggertooth-scala.ts.net
+                    ansible_user: ubuntu
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+                vars:
+                  ansible_python_interpreter: /usr/bin/python3
+          EOF
+
+      - name: Configure SSH known hosts
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          cat .ssh/known_hosts >> ~/.ssh/known_hosts
+
+      - name: Run post-reboot restore playbook
+        run: |
+          cd ansible
+          ansible-playbook playbooks/post_reboot_restore.yml
+        env:
+          CLOUDFLARE_TUNNEL_TOKEN: ${{ env.CLOUDFLARE_TUNNEL_TOKEN }}

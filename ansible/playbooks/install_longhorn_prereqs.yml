@@ -1,0 +1,43 @@
+---
+- name: Install Longhorn Prerequisites
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  tasks:
+    - name: Install open-iscsi and nfs-common
+      ansible.builtin.apt:
+        name:
+          - open-iscsi
+          - nfs-common
+          - util-linux  # provides lsblk, blkid — needed by Longhorn env check
+        state: present
+
+    - name: Enable and start iscsid service
+      ansible.builtin.systemd:
+        name: iscsid
+        enabled: true
+        state: started
+
+    - name: Load iscsi_tcp kernel module
+      community.general.modprobe:
+        name: iscsi_tcp
+        state: present
+
+    - name: Persist iscsi_tcp module across reboots
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/iscsi.conf
+        content: |
+          iscsi_tcp
+        mode: '0644'
+
+    - name: Verify iscsid is running
+      ansible.builtin.command: systemctl is-active iscsid
+      register: iscsid_status
+      changed_when: false
+      failed_when: iscsid_status.stdout != "active"

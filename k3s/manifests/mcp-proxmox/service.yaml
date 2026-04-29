@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-proxmox
+  namespace: mcp-proxmox
+spec:
+  type: ClusterIP
+  selector:
+    app: mcp-proxmox
+  ports:
+    - name: http
+      port: 8811
+      targetPort: 8811

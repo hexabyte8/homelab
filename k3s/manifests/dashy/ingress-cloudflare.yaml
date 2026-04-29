@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dashy-cloudflare
+  namespace: dashy
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    # cloudflare-https-scheme MUST come first: cloudflared connects over http,
+    # so without rewriting X-Forwarded-Proto Authentik builds http:// callback
+    # URLs and the ForwardAuth round-trip fails.
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      kube-system-cloudflare-https-scheme@kubernetescrd,authentik-authentik-forward-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: dashy.chronobyte.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dashy
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - dashy.chronobyte.net
+      secretName: dashy-cloudflare-tls

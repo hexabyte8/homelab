@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: uptime-kuma-cloudflare
+  namespace: uptime-kuma
+  annotations:
+    # cloudflare-https-scheme runs FIRST, setting X-Forwarded-Proto: https before
+    # Traefik copies headers into its ForwardAuth sub-request to Authentik.
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-cloudflare-https-scheme@kubernetescrd,authentik-authentik-forward-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: uptime.chronobyte.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: uptime-kuma
+                port:
+                  number: 3001

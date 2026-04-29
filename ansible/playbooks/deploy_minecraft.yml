@@ -1,0 +1,69 @@
+---
+- name: Deploy Minecraft Server as systemd service
+  hosts: gameserver
+  become: true
+
+  vars:
+    minecraft_user: ubuntu
+    minecraft_server_dir: /home/ubuntu/server
+    minecraft_start_script: "{{ minecraft_server_dir }}/start.sh"
+
+  pre_tasks:
+    - name: Check that start.sh exists
+      ansible.builtin.stat:
+        path: "{{ minecraft_start_script }}"
+      register: start_script
+
+    - name: Fail if start.sh is missing
+      ansible.builtin.fail:
+        msg: >
+          {{ minecraft_start_script }} was not found on the target host.
+          Please ensure the Minecraft server files are present before running
+          this playbook.
+      when: not start_script.stat.exists
+
+  tasks:
+    # ------------------------------------------------------------------ #
+    # Ensure the start script is executable                               #
+    # ------------------------------------------------------------------ #
+    - name: Ensure start.sh is executable
+      ansible.builtin.file:
+        path: "{{ minecraft_start_script }}"
+        mode: '0755'
+
+    # ------------------------------------------------------------------ #
+    # systemd service                                                     #
+    # ------------------------------------------------------------------ #
+    - name: Create Minecraft systemd service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/minecraft.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Minecraft Server
+          After=network.target
+
+          [Service]
+          User={{ minecraft_user }}
+          WorkingDirectory={{ minecraft_server_dir }}
+          ExecStart={{ minecraft_start_script }}
+          Restart=on-failure
+          RestartSec=5s
+
+          [Install]
+          WantedBy=multi-user.target
+      notify: Restart minecraft
+
+    - name: Enable and start Minecraft service
+      ansible.builtin.systemd:
+        name: minecraft
+        state: started
+        enabled: true
+        daemon_reload: true
+
+  handlers:
+    - name: Restart minecraft
+      ansible.builtin.systemd:
+        name: minecraft
+        state: restarted
+        daemon_reload: true

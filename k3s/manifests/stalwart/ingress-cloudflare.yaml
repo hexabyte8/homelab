@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stalwart-cloudflare
+  namespace: stalwart
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    # cloudflare-https-scheme runs FIRST, setting X-Forwarded-Proto: https before
+    # Traefik copies headers into its ForwardAuth sub-request to Authentik.
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      kube-system-cloudflare-https-scheme@kubernetescrd,authentik-authentik-forward-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: mail.chronobyte.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stalwart
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - mail.chronobyte.net
+      secretName: stalwart-tls

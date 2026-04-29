@@ -1,0 +1,32 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: traefik-dashboard-redirect
+  namespace: kube-system
+spec:
+  redirectRegex:
+    regex: "^https?://traefik\\.daggertooth-scala\\.ts\\.net/?$"
+    replacement: "https://traefik.daggertooth-scala.ts.net/dashboard/"
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard
+  namespace: kube-system
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`traefik.daggertooth-scala.ts.net`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
+      kind: Rule
+      services:
+        - name: api@internal
+          kind: TraefikService
+    - match: Host(`traefik.daggertooth-scala.ts.net`)
+      kind: Rule
+      middlewares:
+        - name: traefik-dashboard-redirect
+      services:
+        - name: api@internal
+          kind: TraefikService

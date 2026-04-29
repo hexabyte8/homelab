@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: filebrowser
+  namespace: jellyfin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: filebrowser
+  template:
+    metadata:
+      labels:
+        app: filebrowser
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2026-03-20T17:15:00Z"
+    spec:
+      # Must run on the same node as Jellyfin because both share the
+      # ReadWriteOnce jellyfin-media PVC (k3s local-path only supports RWO).
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: jellyfin
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: filebrowser
+          image: filebrowser/filebrowser:v2.31.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          args:
+            - --database=/config/filebrowser.db
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: media
+              mountPath: /srv
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+              ephemeral-storage: 50Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+              ephemeral-storage: 256Mi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: filebrowser-config
+        - name: media
+          persistentVolumeClaim:
+            claimName: jellyfin-media

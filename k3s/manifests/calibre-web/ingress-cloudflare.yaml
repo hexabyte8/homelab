@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: calibre-web-cloudflare
+  namespace: jellyfin
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    # cloudflare-https-scheme MUST come first: cloudflared connects over http,
+    # so Traefik sees X-Forwarded-Proto: http. This middleware rewrites it to
+    # https before the Authentik ForwardAuth sub-request is made, preventing
+    # Authentik from building an http:// OIDC callback URL (which causes a 400).
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      kube-system-cloudflare-https-scheme@kubernetescrd,authentik-authentik-forward-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: calibre.chronobyte.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: calibre-web
+                port:
+                  number: 8083
+  tls:
+    - hosts:
+        - calibre.chronobyte.net
+      secretName: calibre-web-tls

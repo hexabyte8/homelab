@@ -1,0 +1,45 @@
+---
+- name: Drain and remove k3s agent node from cluster
+  hosts: k3s
+  become: true
+  vars:
+    agent_node_name: "{{ hostvars[groups['k3s_agents'][0]]['inventory_hostname'] }}"
+  tasks:
+    - name: Drain the node (evict pods gracefully)
+      ansible.builtin.shell: |
+        k3s kubectl drain {{ agent_node_name }} \
+          --ignore-daemonsets \
+          --delete-emptydir-data \
+          --force \
+          --timeout=120s
+      changed_when: true
+      failed_when: false  # node may already be gone
+
+    - name: Delete node from cluster
+      ansible.builtin.shell: |
+        k3s kubectl delete node {{ agent_node_name }}
+      changed_when: true
+      failed_when: false
+
+    - name: Verify node removed
+      ansible.builtin.shell: k3s kubectl get nodes
+      changed_when: false
+      register: nodes_output
+
+    - name: Display cluster nodes
+      ansible.builtin.debug:
+        msg: "{{ nodes_output.stdout }}"
+
+- name: Uninstall k3s agent from the node
+  hosts: k3s_agents
+  become: true
+  tasks:
+    - name: Check if k3s-agent uninstall script exists
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s-agent-uninstall.sh
+      register: uninstall_script
+
+    - name: Run k3s-agent uninstall script
+      ansible.builtin.shell: /usr/local/bin/k3s-agent-uninstall.sh
+      when: uninstall_script.stat.exists
+      changed_when: true

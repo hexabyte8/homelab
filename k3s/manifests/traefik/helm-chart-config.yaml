@@ -1,0 +1,29 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    # Trust X-Forwarded-* headers from the pod network (cloudflared) and
+    # localhost. Without this, Authentik ForwardAuth sees requests as HTTP
+    # even though Cloudflare Tunnel terminates TLS, breaking the callback.
+    ports:
+      web:
+        forwardedHeaders:
+          trustedIPs:
+            - 127.0.0.1/32
+            - 10.0.0.0/8        # pod/service CIDR — covers cloudflared pods
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+        # Force X-Forwarded-Proto: https globally on the HTTP entrypoint.
+        # All traffic here comes from Cloudflare Tunnel (TLS terminated at edge).
+        middlewares:
+          - "kube-system-cloudflare-https-scheme@kubernetescrd"
+      websecure:
+        forwardedHeaders:
+          trustedIPs:
+            - 127.0.0.1/32
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16

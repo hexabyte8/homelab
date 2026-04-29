@@ -1,0 +1,94 @@
+# NOTE: Automatic GitOps sync from git → cluster is handled by Flux CD.
+# Flux reconciles this repo on its `interval` (default 10m) and applies changes automatically — no push-triggered job is needed.
+# This workflow is kept for manual operations only (e.g., applying a manifest on a feature
+# branch, bootstrapping a resource, or force-deleting resources without removing their file).
+
+name: k3s - Deploy Manifests
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - apply
+          - delete
+        default: apply
+      manifest_path:
+        description: 'Path to manifest file or directory relative to k3s/manifests/ (e.g., tutorial/ or tutorial/nginx-tutorial.yaml)'
+        required: true
+        type: string
+      target_host:
+        description: 'Target k3s server host (e.g., k3s-server)'
+        required: true
+        type: string
+        default: 'k3s-server'
+
+jobs:
+  deploy-manifests:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+          version: 1.68.1
+
+      - name: Enable MagicDNS
+        run: sudo tailscale set --accept-dns=true | cat
+
+      - name: Wait for DNS to be available
+        run: sleep 10
+
+      - name: Validate manifest path
+        run: |
+          MANIFEST_PATH="k3s/manifests/${{ inputs.manifest_path }}"
+          if [ ! -e "$MANIFEST_PATH" ]; then
+            echo "Error: Manifest path '$MANIFEST_PATH' does not exist in repository"
+            exit 1
+          fi
+          echo "MANIFEST_PATH=$MANIFEST_PATH" >> $GITHUB_ENV
+
+      - name: Configure SSH known hosts
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          cat .ssh/known_hosts >> ~/.ssh/known_hosts
+
+      - name: Get kubeconfig from k3s server
+        run: |
+          mkdir -p ~/.kube && chmod 700 ~/.kube
+          ssh ubuntu@${{ inputs.target_host }}.daggertooth-scala.ts.net \
+            "sudo cat /etc/rancher/k3s/k3s.yaml" \
+            | sed 's/127\.0\.0\.1/${{ inputs.target_host }}.daggertooth-scala.ts.net/g' \
+            | sed 's/certificate-authority-data:.*/insecure-skip-tls-verify: true/' \
+            > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Apply manifests
+        if: inputs.action == 'apply'
+        run: kubectl apply -f ${{ env.MANIFEST_PATH }} --recursive --validate=false
+
+      - name: Delete manifests
+        if: inputs.action == 'delete'
+        run: kubectl delete -f ${{ env.MANIFEST_PATH }} --recursive --validate=false

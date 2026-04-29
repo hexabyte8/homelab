@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-proxmox
+  namespace: mcp-proxmox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-proxmox
+  template:
+    metadata:
+      labels:
+        app: mcp-proxmox
+    spec:
+      containers:
+        - name: mcp-proxmox
+          # ProxmoxMCP-Plus's default CMD launches an OpenAPI proxy that wraps a
+          # stdio MCP subprocess and exposes only OpenAPI routes (no /mcp). The
+          # Copilot MCP client uses `type: http` (streamable HTTP transport) and
+          # hits /mcp directly, so we override the command to run the FastMCP
+          # server itself. With mcp.transport=STREAMABLE in config.json (see
+          # secret.yaml), FastMCP serves /mcp on mcp.host:mcp.port.
+          # https://github.com/RekklesNA/ProxmoxMCP-Plus
+          image: ghcr.io/rekklesna/proxmoxmcp-plus:v0.4.1
+          command: ["python", "-m", "proxmox_mcp.server"]
+          env:
+            - name: PROXMOX_MCP_CONFIG
+              value: /app/proxmox-config/config.json
+          ports:
+            - name: http
+              containerPort: 8811
+          volumeMounts:
+            - name: config
+              mountPath: /app/proxmox-config
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          # FastMCP's streamable-HTTP transport doesn't expose /health,
+          # so use TCP probes instead.
+          readinessProbe:
+            tcpSocket:
+              port: 8811
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 8811
+            initialDelaySeconds: 15
+            periodSeconds: 30
+      volumes:
+        - name: config
+          secret:
+            secretName: mcp-proxmox-secrets
+            items:
+              - key: config.json
+                path: config.json

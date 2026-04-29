@@ -1,0 +1,77 @@
+---
+# Run this after a cluster reboot to restore service connectivity.
+#
+# Required variables (injected from GitHub Actions via environment):
+#   CLOUDFLARE_TUNNEL_TOKEN  — Cloudflare Tunnel token
+
+- name: Restore cluster secrets after reboot
+  hosts: k3s
+  gather_facts: false
+  become: true
+
+  pre_tasks:
+    - name: Assert required environment variables are set
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'CLOUDFLARE_TUNNEL_TOKEN') != ''
+        fail_msg: "CLOUDFLARE_TUNNEL_TOKEN must be set in the environment"
+
+  tasks:
+    - name: Wait for k3s API server to be reachable
+      ansible.builtin.command: k3s kubectl get nodes
+      register: nodes_ready
+      retries: 20
+      delay: 15
+      until: nodes_ready.rc == 0
+      changed_when: false
+
+    - name: Show node status
+      ansible.builtin.debug:
+        msg: "{{ nodes_ready.stdout_lines }}"
+
+    - name: Patch cloudflared tunnel token
+      ansible.builtin.command: >
+        k3s kubectl patch secret cloudflared-tunnel-credentials
+        -n cloudflared
+        --type=merge
+        -p {{ patch_payload | to_json | quote }}
+      vars:
+        patch_payload:
+          stringData:
+            tunnel-token: "{{ lookup('env', 'CLOUDFLARE_TUNNEL_TOKEN') }}"
+      register: patch_cloudflared
+      changed_when: "'patched' in patch_cloudflared.stdout"
+
+    - name: Restart cloudflared deployment to pick up new token
+      ansible.builtin.command: >
+        k3s kubectl rollout restart deployment/cloudflared -n cloudflared
+      register: restart_cloudflared
+      changed_when: true
+
+    - name: Wait for cloudflared rollout to complete
+      ansible.builtin.command: >
+        k3s kubectl rollout status deployment/cloudflared -n cloudflared --timeout=90s
+      register: cloudflared_status
+      changed_when: false
+
+    - name: Verify cloudflared pods are running
+      ansible.builtin.command: >
+        k3s kubectl get pods -n cloudflared
+      register: cloudflared_pods
+      changed_when: false
+
+    - name: Show cloudflared pod status
+      ansible.builtin.debug:
+        msg: "{{ cloudflared_pods.stdout_lines }}"
+
+    - name: Check for any remaining CrashLoopBackOff or ImagePullBackOff pods
+      ansible.builtin.command: >
+        k3s kubectl get pods -A --field-selector=status.phase!=Running
+        --no-headers
+      register: unhealthy_pods
+      changed_when: false
+      failed_when: false
+
+    - name: Report unhealthy pods (if any)
+      ansible.builtin.debug:
+        msg: "{{ unhealthy_pods.stdout_lines | default(['All pods healthy']) }}"

@@ -1,0 +1,9 @@
+# calibre-web runs in the jellyfin namespace so it can share the ReadWriteOnce
+# jellyfin-media PVC (Longhorn RWO volumes can only be bound to one PVC at a time).
+# This manifest just ensures the namespace carries the expected labels.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jellyfin
+  labels:
+    app.kubernetes.io/part-of: media

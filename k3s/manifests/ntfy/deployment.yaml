@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ntfy
+  namespace: ntfy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ntfy
+  template:
+    metadata:
+      labels:
+        app: ntfy
+    spec:
+      containers:
+        - name: ntfy
+          image: binwiederhier/ntfy:v2.11.0
+          args:
+            - serve
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: NTFY_CACHE_FILE
+              value: /var/cache/ntfy/cache.db
+            - name: NTFY_BASE_URL
+              value: https://ntfy.daggertooth-scala.ts.net
+            - name: NTFY_BEHIND_PROXY
+              value: "true"
+          volumeMounts:
+            - name: data
+              mountPath: /var/cache/ntfy
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /v1/health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /v1/health
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ntfy-data

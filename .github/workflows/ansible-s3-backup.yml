@@ -1,0 +1,111 @@
+name: Ansible - Deploy S3 Backup Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_host:
+        description: 'Target host from Tailscale inventory (e.g., game-server)'
+        required: true
+        type: string
+        default: 'game-server'
+      backup_name:
+        description: 'Identifier for this backup job (e.g. minecraft). Used for service names and S3 prefixes.'
+        required: true
+        type: string
+        default: 'minecraft'
+      backup_dirs:
+        description: 'Colon-separated absolute paths to back up (e.g. /home/ubuntu/server:/home/ubuntu/config)'
+        required: true
+        type: string
+        default: '/home/ubuntu/server'
+      backup_schedule:
+        description: 'systemd OnCalendar expression for the backup schedule (default: daily at 03:00)'
+        required: false
+        type: string
+        default: '*-*-* 03:00:00'
+      archive_prefix:
+        description: 'Optional prefix for the archive filename and S3 key (e.g. "homestead"). When set, archives are named "<prefix>-<timestamp>.tar.gz" and uploaded to the root of the S3 bucket instead of a named subfolder.'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  deploy-s3-backup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            efb9a246-29d5-423e-98c4-b40f00cc81a6 > AWS_ACCESS_KEY_ID
+            735bb5f9-8a0e-427d-9f55-b40f00cc9c43 > AWS_SECRET_ACCESS_KEY
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+          version: 1.68.1
+
+      - name: Enable MagicDNS
+        run: sudo tailscale set --accept-dns=true | cat
+
+      - name: Wait for DNS to be available
+        run: |
+          echo "Waiting for Tailscale DNS to be ready..."
+          sleep 10
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Create inventory
+        run: |
+          cat > ansible/inventory.yml <<EOF
+          ---
+          all:
+            children:
+              gameserver:
+                hosts:
+                  ${{ inputs.target_host }}:
+                    ansible_host: ${{ inputs.target_host }}.daggertooth-scala.ts.net
+                    ansible_user: ubuntu
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+                vars:
+                  ansible_python_interpreter: /usr/bin/python3
+          EOF
+
+      - name: Setup SSH known hosts
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan ${{ inputs.target_host }}.daggertooth-scala.ts.net >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy S3 Backup Service
+        run: |
+          cd ansible
+          ansible-playbook playbooks/deploy_s3_backup.yml
+        env:
+          BACKUP_NAME: ${{ inputs.backup_name }}
+          BACKUP_DIRS: ${{ inputs.backup_dirs }}
+          BACKUP_SCHEDULE: ${{ inputs.backup_schedule }}
+          ARCHIVE_PREFIX: ${{ inputs.archive_prefix }}
+          S3_BACKUP_BUCKET_NAME: ${{ vars.S3_BACKUP_BUCKET_NAME }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}

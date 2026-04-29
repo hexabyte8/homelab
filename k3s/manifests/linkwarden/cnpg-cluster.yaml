@@ -1,0 +1,10 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: linkwarden-db
+  namespace: linkwarden
+spec:
+  instances: 1
+  storage:
+    size: 5Gi
+    storageClass: longhorn

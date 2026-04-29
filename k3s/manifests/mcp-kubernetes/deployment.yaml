@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-kubernetes
+  namespace: mcp-kubernetes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-kubernetes
+  template:
+    metadata:
+      labels:
+        app: mcp-kubernetes
+    spec:
+      serviceAccountName: mcp-kubernetes
+      containers:
+        - name: mcp-kubernetes
+          image: ghcr.io/azure/mcp-kubernetes:v0.0.13
+          args:
+            - --transport
+            - streamable-http
+            - --access-level
+            - readonly
+            - --host
+            - "0.0.0.0"
+          ports:
+            - name: http
+              containerPort: 8000
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
