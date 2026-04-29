@@ -12,16 +12,16 @@ flowchart LR
   vm --> netlab["netlab<br/>(pip3 networklab)"]
 ```
 
-| Fact | Value |
-|---|---|
-| VM name | `containerlab` |
-| Proxmox VMID | `105` |
-| LAN IP | `192.168.1.181/24` |
-| Tailnet name | `containerlab.tailnet.ts.net` |
-| Resources | 4 vCPU (`cpu type = host`), 16 GB RAM, 100 GB disk |
-| OS user | `ubuntu` (in `docker` group) |
-| Labs working dir | `/home/ubuntu/labs` |
-| Tailscale tag | `tag:server` (Tailscale SSH enabled) |
+| Fact             | Value                                              |
+| ---------------- | -------------------------------------------------- |
+| VM name          | `containerlab`                                     |
+| Proxmox VMID     | `105`                                              |
+| LAN IP           | `192.168.1.181/24`                                 |
+| Tailnet name     | `containerlab.tailnet.ts.net`                      |
+| Resources        | 4 vCPU (`cpu type = host`), 16 GB RAM, 100 GB disk |
+| OS user          | `ubuntu` (in `docker` group)                       |
+| Labs working dir | `/home/ubuntu/labs`                                |
+| Tailscale tag    | `tag:server` (Tailscale SSH enabled)               |
 
 The VM uses `cpu { type = "host" }` so that virtualisation extensions (VT-x / AMD-V) are exposed to the guest. This is required for VM-based NOS images such as Cisco IOSv / IOS XRv / CSR1000v and Arista vEOS that run inside ContainerLab via QEMU-backed kinds (`vrnetlab`).
 
@@ -41,15 +41,6 @@ ssh ubuntu@containerlab.tailnet.ts.net
 
 `tailscale ssh` is granted by the tailnet ACL (`src: autogroup:owner → dst: tag:server`), so it works from any of your tailnet nodes without per-host SSH keys.
 
-### Do I need to add a Tailscale Ingress?
-
-No. ContainerLab is a CLI tool — you drive it over SSH. The VM itself is already on the tailnet, so:
-
-- Running labs (`containerlab deploy`, `netlab up`) → SSH in and run the commands.
-- Reaching lab node management planes (SSH / NETCONF / gNMI / web UIs on individual nodes) → ContainerLab binds them to the VM's IP. Reach them directly via `containerlab.tailnet.ts.net:<mapped-port>` from any tailnet device.
-
-No Kubernetes Ingress, no Cloudflare Tunnel, no Tailscale Operator resource is needed or appropriate.
-
 ## Initial deployment
 
 The VM is provisioned automatically by OpenTofu (`opentofu/containerlab.tf`) when changes are pushed to `main`. After the VM is up and on the tailnet, run the Ansible workflow once to install Docker, ContainerLab, and netlab:
@@ -63,21 +54,21 @@ The workflow is idempotent — re-running it will pick up Docker / ContainerLab 
 
 ### What the playbook installs
 
-| Component | Source | Verify |
-|---|---|---|
-| Docker CE | `download.docker.com` apt repo | `docker info` |
-| ContainerLab | `https://containerlab.dev/setup` script | `containerlab version` |
-| netlab | `pip3 install networklab` | `netlab --version` |
-| sysctl tuning | `/etc/sysctl.d/30-containerlab.conf` | `sysctl net.ipv4.ip_forward` |
+| Component     | Source                                  | Verify                       |
+| ------------- | --------------------------------------- | ---------------------------- |
+| Docker CE     | `download.docker.com` apt repo          | `docker info`                |
+| ContainerLab  | `https://containerlab.dev/setup` script | `containerlab version`       |
+| netlab        | `pip3 install networklab`               | `netlab --version`           |
+| sysctl tuning | `/etc/sysctl.d/30-containerlab.conf`    | `sysctl net.ipv4.ip_forward` |
 
 ### Kernel tuning rationale
 
 `/etc/sysctl.d/30-containerlab.conf` sets four kernel parameters that ContainerLab topologies need:
 
-| Setting | Why |
-|---|---|
-| `net.ipv4.ip_forward = 1` and `net.ipv6.conf.all.forwarding = 1` | Required for routing between lab nodes. |
-| `net.ipv4.conf.all.rp_filter = 0` | ContainerLab wires nodes together with asymmetric veth pairs; strict reverse-path filtering drops legitimate lab traffic. |
+| Setting                                                                                | Why                                                                                                                             |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `net.ipv4.ip_forward = 1` and `net.ipv6.conf.all.forwarding = 1`                       | Required for routing between lab nodes.                                                                                         |
+| `net.ipv4.conf.all.rp_filter = 0`                                                      | ContainerLab wires nodes together with asymmetric veth pairs; strict reverse-path filtering drops legitimate lab traffic.       |
 | `net.bridge.bridge-nf-call-iptables = 0` and `net.bridge.bridge-nf-call-ip6tables = 0` | ContainerLab manages its own L2 bridging; passing bridged frames through iptables double-NATs and breaks topology connectivity. |
 
 ## Running your first lab
@@ -163,16 +154,6 @@ ls /dev/kvm && egrep -c '(vmx|svm)' /proc/cpuinfo
 ```
 
 Both should succeed with non-zero output. If not, the Proxmox VM is not using `cpu type = host` — check `opentofu/containerlab.tf`.
-
-### Docker cannot pull an image
-
-Confirm outbound network from the VM:
-
-```bash
-curl -I https://registry-1.docker.io/v2/
-```
-
-The VM uses `nameserver 8.8.8.8` and the default gateway `192.168.1.254`. DNS / firewall issues manifest as pull timeouts.
 
 ### Reaching a lab node from another tailnet device
 

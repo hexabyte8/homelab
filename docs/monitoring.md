@@ -6,18 +6,18 @@ This homelab uses [kube-prometheus-stack](https://github.com/prometheus-communit
 
 ## Overview
 
-| Component | Purpose |
-|---|---|
-| **Prometheus** | Scrapes metrics from k3s nodes, pods, kubelet, kube-state-metrics, and external targets |
-| **Grafana** | Dashboard UI — visualise Prometheus data |
-| **node-exporter** | DaemonSet on every k3s node — exposes OS-level metrics (CPU, memory, disk, network) |
-| **kube-state-metrics** | Exposes Kubernetes object state metrics (pod counts, deployment status, etc.) |
+| Component              | Purpose                                                                                 |
+| ---------------------- | --------------------------------------------------------------------------------------- |
+| **Prometheus**         | Scrapes metrics from k3s nodes, pods, kubelet, kube-state-metrics, and external targets |
+| **Grafana**            | Dashboard UI — visualise Prometheus data                                                |
+| **node-exporter**      | DaemonSet on every k3s node — exposes OS-level metrics (CPU, memory, disk, network)     |
+| **kube-state-metrics** | Exposes Kubernetes object state metrics (pod counts, deployment status, etc.)           |
 
 ### Access URLs
 
-| Service | URL |
-|---|---|
-| Grafana | <https://grafana.tailnet.ts.net> |
+| Service    | URL                                 |
+| ---------- | ----------------------------------- |
+| Grafana    | <https://grafana.tailnet.ts.net>    |
 | Prometheus | <https://prometheus.tailnet.ts.net> |
 
 Both are exposed via Tailscale Ingress — accessible only to tailnet members (no public internet exposure).
@@ -36,8 +36,8 @@ graph TD
 
 ## Manifests
 
-| File | Purpose |
-|---|---|
+| File                                        | Purpose                                           |
+| ------------------------------------------- | ------------------------------------------------- |
 | `k3s/manifests/monitoring/helmrelease.yaml` | Flux HelmRelease — Helm chart source + all values |
 
 All configuration lives in the HelmRelease's inline Helm values. To change any setting, edit that file and push to `main`. Flux reconciles within ~10 minutes.
@@ -56,17 +56,9 @@ kubectl patch secret monitoring-grafana -n monitoring --type=merge \
 ```
 
 !!! warning "Do not use `kubectl apply`"
-    Flux uses Server-Side Apply. Always use `kubectl patch --type=merge` to avoid field ownership conflicts.
+Flux uses Server-Side Apply. Always use `kubectl patch --type=merge` to avoid field ownership conflicts.
 
 The secret carries the annotation `kustomize.toolkit.fluxcd.io/reconcile: disabled` to prevent Flux from overwriting the patched value on the next reconcile.
-
-### 2. Log in to Grafana
-
-- URL: <https://grafana.tailnet.ts.net>
-- Username: `admin`
-- Password: whatever you patched in step 1
-
-Prometheus is pre-configured as Grafana's default data source by the Helm chart — no manual setup needed.
 
 ---
 
@@ -111,14 +103,14 @@ kubectl rollout restart deployment/monitoring-grafana -n monitoring
 
 The `role_attribute_path` in `monitoring-app.yaml` maps Authentik groups to Grafana roles:
 
-| Authentik group | Grafana role |
-|---|---|
-| `Grafana Admins` | Admin |
-| `Grafana Editors` | Editor |
-| *(any other user)* | Viewer |
+| Authentik group    | Grafana role |
+| ------------------ | ------------ |
+| `Grafana Admins`   | Admin        |
+| `Grafana Editors`  | Editor       |
+| _(any other user)_ | Viewer       |
 
 !!! note "Local admin fallback"
-    The Grafana `admin` local account remains active as a fallback. The login form is not disabled so you can always reach it at `https://grafana.tailnet.ts.net/login` even if OIDC is misconfigured.
+The Grafana `admin` local account remains active as a fallback. The login form is not disabled so you can always reach it at `https://grafana.tailnet.ts.net/login` even if OIDC is misconfigured.
 
 ---
 
@@ -160,19 +152,19 @@ Open `k3s/manifests/monitoring/helmrelease.yaml` and find the `additionalScrapeC
 
 ```yaml
 additionalScrapeConfigs:
-  - job_name: 'game-server-node'
+  - job_name: "game-server-node"
     scrape_interval: 30s
     static_configs:
-      - targets: ['GAME_SERVER_TAILSCALE_IP:9100']
+      - targets: ["GAME_SERVER_TAILSCALE_IP:9100"]
         labels:
-          instance: 'game-server'
-          job: 'node'
+          instance: "game-server"
+          job: "node"
 ```
 
 Replace `GAME_SERVER_TAILSCALE_IP` with the actual IP from step 2:
 
 ```yaml
-      - targets: ['100.x.y.z:9100']
+- targets: ["100.x.y.z:9100"]
 ```
 
 Commit and push to `main`. Flux will reconcile and Prometheus will reload its config within ~10 minutes.
@@ -182,10 +174,10 @@ Commit and push to `main`. Flux will reconcile and Prometheus will reload its co
 Open <https://prometheus.tailnet.ts.net/targets> and confirm the `game-server-node` job shows **UP**.
 
 !!! note "Firewall"
-    If the game server has `ufw` or `iptables` rules, ensure port `9100` is accessible from the k3s-server Tailscale IP (`100.94.165.115`):
-    ```bash
+If the game server has `ufw` or `iptables` rules, ensure port `9100` is accessible from the k3s-server Tailscale IP (`100.94.165.115`):
+`bash
     sudo ufw allow from 100.94.165.115 to any port 9100
-    ```
+    `
 
 ---
 
@@ -193,10 +185,10 @@ Open <https://prometheus.tailnet.ts.net/targets> and confirm the `game-server-no
 
 Import these community dashboards via **Grafana → Dashboards → Import → enter ID**.
 
-| Dashboard | ID | Purpose |
-|---|---|---|
-| Node Exporter Full | `1860` | Per-node CPU, memory, disk, network — works for both k3s nodes and the game server |
-| Kubernetes Cluster | `7249` | Cluster-level overview: pod counts, resource usage, namespace breakdown |
+| Dashboard                      | ID       | Purpose                                                                                     |
+| ------------------------------ | -------- | ------------------------------------------------------------------------------------------- |
+| Node Exporter Full             | `1860`   | Per-node CPU, memory, disk, network — works for both k3s nodes and the game server          |
+| Kubernetes Cluster             | `7249`   | Cluster-level overview: pod counts, resource usage, namespace breakdown                     |
 | kube-prometheus-stack defaults | built-in | Several dashboards are pre-installed by the Helm chart (look under the `Kubernetes` folder) |
 
 ---
@@ -205,12 +197,12 @@ Import these community dashboards via **Grafana → Dashboards → Import → en
 
 k3s differs from a standard Kubernetes cluster in ways that affect kube-prometheus-stack:
 
-| Setting | Value | Reason |
-|---|---|---|
-| `kubeProxy.enabled` | `false` | k3s does not run kube-proxy |
-| `kubeEtcd.enabled` | `false` | k3s uses SQLite, not etcd |
+| Setting                           | Value              | Reason                                         |
+| --------------------------------- | ------------------ | ---------------------------------------------- |
+| `kubeProxy.enabled`               | `false`            | k3s does not run kube-proxy                    |
+| `kubeEtcd.enabled`                | `false`            | k3s uses SQLite, not etcd                      |
 | `kubeControllerManager.endpoints` | `[100.94.165.115]` | Controller manager runs on the k3s-server node |
-| `kubeScheduler.endpoints` | `[100.94.165.115]` | Scheduler also runs on k3s-server |
+| `kubeScheduler.endpoints`         | `[100.94.165.115]` | Scheduler also runs on k3s-server              |
 
 These are already set in `monitoring-app.yaml`. If the cluster topology changes, update the endpoint IPs there.
 
@@ -218,10 +210,10 @@ These are already set in `monitoring-app.yaml`. If the cluster topology changes,
 
 ## Storage
 
-| Component | PVC size | StorageClass |
-|---|---|---|
-| Grafana | 1 Gi | `longhorn` |
-| Prometheus | 20 Gi | `longhorn` |
+| Component  | PVC size | StorageClass |
+| ---------- | -------- | ------------ |
+| Grafana    | 1 Gi     | `longhorn`   |
+| Prometheus | 20 Gi    | `longhorn`   |
 
 Data retention is set to **15 days** in Prometheus. Adjust `prometheusSpec.retention` in `monitoring-app.yaml` if needed.
 

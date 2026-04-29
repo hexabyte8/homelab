@@ -16,6 +16,7 @@ its dependencies. You can think of it like a shipping container — standardized
 and isolated.
 
 **What Kubernetes does:**
+
 - Runs containers across multiple machines
 - Restarts containers if they crash
 - Scales containers up or down based on demand
@@ -25,9 +26,10 @@ and isolated.
 
 **Why not just run Docker directly?**  
 Docker runs containers on a single machine. Kubernetes manages containers across a
-*cluster* of machines, providing high availability and resource sharing.
+_cluster_ of machines, providing high availability and resource sharing.
 
 **References:**
+
 - [Kubernetes official documentation](https://kubernetes.io/docs/concepts/)
 - [Kubernetes: What is Kubernetes? (video)](https://www.youtube.com/watch?v=PH-2FfFD2PU)
 - [CNCF: Kubernetes explained](https://www.cncf.io/blog/2019/08/19/how-kubernetes-works/)
@@ -38,6 +40,7 @@ Docker runs containers on a single machine. Kubernetes manages containers across
 
 **k3s** is a lightweight, certified Kubernetes distribution created by Rancher Labs
 (now SUSE). It is designed for:
+
 - **Edge computing** and **resource-constrained environments** (like homelabs)
 - **Simple installation** — a single binary, single command install
 - **Low resource overhead** — uses less RAM and CPU than full Kubernetes
@@ -46,15 +49,17 @@ k3s is **fully compatible** with standard Kubernetes — all the same commands, 
 and tools work with k3s.
 
 **k3s vs standard Kubernetes:**
-| Feature | Standard Kubernetes | k3s |
-|---------|--------------------|----|
-| Installation | Complex, many components | Single binary, one command |
-| RAM usage | 1+ GB per node | ~512 MB per node |
-| Default storage | Manual setup | SQLite built-in (or etcd) |
-| Default networking | Manual setup | Flannel included |
-| Default load balancer | None | ServiceLB (Klipper) included |
+
+| Feature               | Standard Kubernetes      | k3s                          |
+| --------------------- | ------------------------ | ---------------------------- |
+| Installation          | Complex, many components | Single binary, one command   |
+| RAM usage             | 1+ GB per node           | ~512 MB per node             |
+| Default storage       | Manual setup             | SQLite built-in (or etcd)    |
+| Default networking    | Manual setup             | Flannel included             |
+| Default load balancer | None                     | ServiceLB (Klipper) included |
 
 **References:**
+
 - [k3s official documentation](https://docs.k3s.io/)
 - [k3s GitHub repository](https://github.com/k3s-io/k3s)
 - [Rancher: k3s overview](https://www.rancher.com/products/k3s)
@@ -77,6 +82,7 @@ graph TD
 ### Control Plane (k3s-server)
 
 The control plane is the "brain" of the cluster:
+
 - **kube-apiserver:** The REST API that all kubectl commands talk to
 - **kube-scheduler:** Decides which node to run each pod on
 - **kube-controller-manager:** Ensures the desired state matches actual state
@@ -85,6 +91,7 @@ The control plane is the "brain" of the cluster:
 ### Worker Nodes (k3s-agent-1, k3s-agent-2)
 
 Workers are the "muscles" — they actually run the workloads:
+
 - **kubelet:** The agent that runs on every node, creates and manages pods
 - **kube-proxy:** Handles network routing for services
 - **Container runtime** (containerd): Actually runs the containers
@@ -107,10 +114,10 @@ metadata:
   namespace: default
 spec:
   containers:
-  - name: nginx
-    image: nginx:latest
-    ports:
-    - containerPort: 80
+    - name: nginx
+      image: nginx:latest
+      ports:
+        - containerPort: 80
 ```
 
 ### Deployment
@@ -123,18 +130,18 @@ kind: Deployment
 metadata:
   name: my-app
 spec:
-  replicas: 2          # Always keep 2 pods running
+  replicas: 2 # Always keep 2 pods running
   selector:
     matchLabels:
       app: my-app
-  template:            # Pod template
+  template: # Pod template
     metadata:
       labels:
         app: my-app
     spec:
       containers:
-      - name: my-app
-        image: my-app:v1.0
+        - name: my-app
+          image: my-app:v1.0
 ```
 
 ### Service
@@ -149,14 +156,15 @@ metadata:
   name: my-app-service
 spec:
   selector:
-    app: my-app        # Routes to pods with this label
+    app: my-app # Routes to pods with this label
   ports:
-  - port: 80
-    targetPort: 8080
-  type: ClusterIP      # Only accessible within the cluster
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP # Only accessible within the cluster
 ```
 
 **Service types:**
+
 - **ClusterIP:** Internal cluster access only (default)
 - **NodePort:** Accessible on each node's IP + a random port
 - **LoadBalancer:** Gets an external IP (provided by MetalLB in this homelab)
@@ -207,23 +215,24 @@ metadata:
   annotations:
     tailscale.com/funnel: "false"
 spec:
-  ingressClassName: tailscale    # Use Tailscale ingress class
+  ingressClassName: tailscale # Use Tailscale ingress class
   rules:
-  - host: dashy
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: dashy
-            port:
-              number: 80
+    - host: dashy
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dashy
+                port:
+                  number: 80
 ```
 
 ### PersistentVolume (PV) and PersistentVolumeClaim (PVC)
 
 Kubernetes workloads that need to store data use **PersistentVolumes**:
+
 - **PVC:** A request for storage (like asking for a specific size disk)
 - **PV:** The actual storage allocation
 - In this homelab, **Longhorn** provides the PVs when a PVC is created
@@ -235,20 +244,20 @@ Kubernetes workloads that need to store data use **PersistentVolumes**:
 ### Server Configuration (`/etc/rancher/k3s/config.yaml` on k3s-server)
 
 ```yaml
-write-kubeconfig-mode: "644"    # Makes kubeconfig world-readable
+write-kubeconfig-mode: "644" # Makes kubeconfig world-readable
 tls-san:
-  - "k3s-server"                # Valid hostnames for the API certificate
-  - "100.94.165.115"            # Tailscale IP must be in the cert
-node-ip: "100.94.165.115"       # Force k3s to use Tailscale IP
-flannel-iface: tailscale0       # Flannel uses tailscale0 interface (not eth0)
+  - "k3s-server" # Valid hostnames for the API certificate
+  - "100.94.165.115" # Tailscale IP must be in the cert
+node-ip: "100.94.165.115" # Force k3s to use Tailscale IP
+flannel-iface: tailscale0 # Flannel uses tailscale0 interface (not eth0)
 ```
 
 ### Agent Configuration (`/etc/rancher/k3s/config.yaml` on workers)
 
 ```yaml
-node-ip: "100.x.x.x"           # Tailscale IP of this agent
-node-external-ip: "100.x.x.x"  # Same Tailscale IP
-flannel-iface: tailscale0       # Flannel uses tailscale0 interface
+node-ip: "100.x.x.x" # Tailscale IP of this agent
+node-external-ip: "100.x.x.x" # Same Tailscale IP
+flannel-iface: tailscale0 # Flannel uses tailscale0 interface
 ```
 
 ### Why Flannel Over Tailscale?
