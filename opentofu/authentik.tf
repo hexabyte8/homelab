@@ -32,25 +32,12 @@ resource "authentik_group" "family_and_friends" {
   is_superuser = false
 }
 
-resource "authentik_group" "docs_users" {
-  name         = "docs-users"
-  is_superuser = false
-}
-
 # ---------- Proxy providers (one per ForwardAuth-protected app) ----------
 #
 # NOTE: Jellyfin is intentionally NOT behind ForwardAuth. Native Jellyfin
 # clients (TVs, mobile apps, etc.) can't complete a browser SSO round-trip,
 # so jellyfin.domain.net serves Jellyfin's own login page and uses the
 # Authentik LDAP outpost for authentication (see opentofu/authentik-ldap.tf).
-
-resource "authentik_provider_proxy" "docs" {
-  name               = "docs"
-  mode               = "forward_single"
-  external_host      = "https://docs.${var.cloudflare_zone_name}"
-  authorization_flow = data.authentik_flow.default_authorization.id
-  invalidation_flow  = data.authentik_flow.default_invalidation.id
-}
 
 resource "authentik_provider_proxy" "dashy" {
   name               = "dashy"
@@ -61,15 +48,6 @@ resource "authentik_provider_proxy" "dashy" {
 }
 
 # ---------- Applications ----------
-
-resource "authentik_application" "docs" {
-  name              = "Homelab Docs"
-  slug              = "docs"
-  protocol_provider = authentik_provider_proxy.docs.id
-  meta_launch_url   = "https://docs.${var.cloudflare_zone_name}"
-  meta_description  = "Homelab documentation site (public, ForwardAuth-protected)."
-  open_in_new_tab   = false
-}
 
 resource "authentik_application" "dashy" {
   name              = "Homelab Dashboard"
@@ -83,22 +61,9 @@ resource "authentik_application" "dashy" {
 # ---------- Policy bindings ----------
 #
 # Explicit group bindings restrict which groups can access each application.
-# docs:  accessible to docs-users and family&friends
 # dashy: no bindings → any authenticated user (admins only in practice)
 #
-# family&friends is scoped to docs + Jellyfin (LDAP binding in authentik-ldap.tf).
-
-resource "authentik_policy_binding" "docs_docs_users" {
-  target = authentik_application.docs.uuid
-  group  = authentik_group.docs_users.id
-  order  = 0
-}
-
-resource "authentik_policy_binding" "docs_family_and_friends" {
-  target = authentik_application.docs.uuid
-  group  = authentik_group.family_and_friends.id
-  order  = 10
-}
+# family&friends is currently scoped to Jellyfin (LDAP binding in authentik-ldap.tf).
 
 # ---------- Embedded outpost ----------
 #
@@ -114,7 +79,6 @@ resource "authentik_outpost" "embedded" {
   name = "authentik Embedded Outpost"
   type = "proxy"
   protocol_providers = [
-    authentik_provider_proxy.docs.id,
     authentik_provider_proxy.dashy.id,
   ]
 }

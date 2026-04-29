@@ -31,7 +31,7 @@ Proxmox server, managed via GitOps with Flux CD.
 | Calibre-Web | `calibre-web.tailnet.ts.net` · `calibre.example.com` (public) | Ebook library |
 | Stalwart Mail | `mail.tailnet.ts.net` · `mail.example.com` (public) | Mail server |
 | Ntfy | `ntfy.tailnet.ts.net` | Push notifications |
-| Docs (this site) | `docs.tailnet.ts.net` · `docs.example.com` (public, Authentik SSO) | Documentation |
+| Docs (this site) | `docs.chronobyte.net` (public, GitHub Pages) | Documentation |
 | Fail2ban | — | DaemonSet on all nodes — managed via [Ansible](fail2ban.md) |
 
 ## Guides
