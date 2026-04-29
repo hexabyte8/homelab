@@ -49,7 +49,7 @@ resource "cloudflare_dns_record" "resend_dmarc" {
   proxied = false
 }
 
-# GitHub Pages domain verification for user hexabyte8
+# GitHub Pages domain verification
 resource "cloudflare_dns_record" "github_pages_challenge" {
   zone_id = var.cloudflare_zone_id
   name    = "_github-pages-challenge-hexabyte8"
