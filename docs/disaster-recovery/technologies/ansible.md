@@ -13,12 +13,14 @@ It allows you to define what you want a server to look like in simple YAML files
 (called **playbooks**), and Ansible will make it so.
 
 **What makes Ansible different from other tools:**
+
 - **Agentless** — no software needs to be installed on the target servers
 - **Uses SSH** — connects via standard SSH (or Tailscale SSH in this homelab)
 - **Idempotent** — running the same playbook multiple times has the same result (safe to re-run)
 - **Declarative** — you describe the desired state, not the steps to get there
 
 **Without Ansible:**
+
 ```bash
 # Manually SSH to every node and run:
 ssh ubuntu@k3s-server.tailnet.ts.net
@@ -28,12 +30,14 @@ curl -sfL https://get.k3s.io | sh -  # What flags? I forgot...
 ```
 
 **With Ansible:**
+
 ```bash
 # One command, handles everything, safe to re-run:
 ansible-playbook playbooks/deploy_k3s.yml
 ```
 
 **References:**
+
 - [Ansible official documentation](https://docs.ansible.com/)
 - [Ansible Best Practices](https://docs.ansible.com/ansible/latest/tips_tricks/ansible_tips_tricks.html)
 - [Ansible module index](https://docs.ansible.com/ansible/latest/collections/index_module.html)
@@ -56,7 +60,7 @@ all:
         k3s-server:
           ansible_host: k3s-server.tailnet.ts.net
           ansible_user: ubuntu
-          ansible_ssh_common_args: '-o StrictHostKeyChecking=yes'
+          ansible_ssh_common_args: "-o StrictHostKeyChecking=yes"
       vars:
         ansible_python_interpreter: /usr/bin/python3
 ```
@@ -64,6 +68,7 @@ all:
 ### Playbook
 
 A **playbook** is a YAML file that describes automation tasks. Each playbook:
+
 - Targets specific hosts (from the inventory)
 - Runs a list of tasks in order
 - Can include variables, conditionals, loops, and error handling
@@ -71,15 +76,15 @@ A **playbook** is a YAML file that describes automation tasks. Each playbook:
 ```yaml
 # Example structure of a playbook
 - name: Deploy k3s server
-  hosts: k3s                   # Which hosts to target
-  become: true                  # Run as root (sudo)
-  
+  hosts: k3s # Which hosts to target
+  become: true # Run as root (sudo)
+
   pre_tasks:
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: true
-        cache_valid_time: 3600  # Don't update if done in the last hour
-  
+        cache_valid_time: 3600 # Don't update if done in the last hour
+
   tasks:
     - name: Install k3s
       ansible.builtin.shell:
@@ -90,16 +95,16 @@ A **playbook** is a YAML file that describes automation tasks. Each playbook:
 
 An Ansible **module** is a reusable unit of automation. Modules handle specific tasks:
 
-| Module | What It Does |
-|--------|-------------|
-| `ansible.builtin.apt` | Install/remove packages on Debian/Ubuntu |
-| `ansible.builtin.shell` | Run shell commands |
-| `ansible.builtin.copy` | Copy files to servers |
-| `ansible.builtin.template` | Copy Jinja2 template files |
-| `ansible.builtin.service` | Start/stop/enable systemd services |
-| `ansible.builtin.file` | Create/delete files and directories |
-| `ansible.builtin.get_url` | Download files from URLs |
-| `ansible.builtin.assert` | Validate conditions (fail with message if not met) |
+| Module                     | What It Does                                       |
+| -------------------------- | -------------------------------------------------- |
+| `ansible.builtin.apt`      | Install/remove packages on Debian/Ubuntu           |
+| `ansible.builtin.shell`    | Run shell commands                                 |
+| `ansible.builtin.copy`     | Copy files to servers                              |
+| `ansible.builtin.template` | Copy Jinja2 template files                         |
+| `ansible.builtin.service`  | Start/stop/enable systemd services                 |
+| `ansible.builtin.file`     | Create/delete files and directories                |
+| `ansible.builtin.get_url`  | Download files from URLs                           |
+| `ansible.builtin.assert`   | Validate conditions (fail with message if not met) |
 
 ### FQCN (Fully Qualified Collection Name)
 
@@ -110,6 +115,7 @@ This is best practice as it avoids ambiguity and works correctly with all Ansibl
 
 An **idempotent** operation produces the same result whether run once or many times.
 Most Ansible modules are idempotent:
+
 - `ansible.builtin.apt: name=curl state=present` — installs curl if not installed, does nothing if already installed
 - `ansible.builtin.service: name=k3s state=started` — starts k3s if not running, does nothing if already running
 
@@ -118,113 +124,6 @@ Most Ansible modules are idempotent:
 ## Ansible Playbooks in This Homelab
 
 All playbooks are in `ansible/playbooks/`.
-
-### deploy_k3s.yml
-
-**Purpose:** Deploys the k3s control plane node
-
-**What it does:**
-1. Gets the Tailscale IP of the server (`tailscale ip -4`)
-2. Creates `/etc/rancher/k3s/config.yaml` with Tailscale IP config
-3. Installs k3s server via official install script
-4. Waits for the node to be `Ready`
-
-**Run via:** GitHub Actions → "Ansible - Deploy k3s"
-
-### deploy_k3s_worker_tailscale.yml
-
-**Purpose:** Joins a k3s worker node to the cluster
-
-**What it does:**
-1. Gets the worker's Tailscale IP
-2. Creates `/etc/rancher/k3s/config.yaml` with Tailscale IP config
-3. Installs k3s agent with cluster join credentials
-
-**Required environment variables:** `K3S_TOKEN`, `K3S_URL`  
-**Run via:** GitHub Actions → "Ansible - Add k3s Worker Node (Tailscale)"
-
-### fix_k3s_tailscale_startup.yml
-
-**Purpose:** Prevents k3s from starting before Tailscale is ready
-
-**What it does:**
-1. Creates a systemd drop-in file at `/etc/systemd/system/k3s[-agent].service.d/after-tailscale.conf`
-2. The drop-in makes k3s wait for `tailscale0` to have a `100.x.x.x` IP before starting
-
-**Run via:** GitHub Actions → "Ansible - Fix k3s Tailscale Startup Order"
-
-### install_longhorn_prereqs.yml
-
-**Purpose:** Prepares nodes for Longhorn distributed storage
-
-**What it does:**
-1. Installs `open-iscsi`, `nfs-common`, `util-linux`
-2. Loads the `iscsi_tcp` kernel module
-3. Enables and starts the `iscsid` service
-
-**Run via:** GitHub Actions → "Ansible - Install Longhorn Prerequisites"
-
-### manage_fail2ban.yml
-
-**Purpose:** Manage fail2ban bans across all k3s nodes
-
-**What it does:**
-1. Connects to `k3s-server` (the only node with `kubectl`)
-2. Discovers the fail2ban pod running on each of the 3 nodes via `kubectl get pods --field-selector spec.nodeName=<node>`
-3. Runs the requested action via `kubectl exec` into each pod:
-   - `list_bans` — runs `fail2ban-client status <jail>` on all nodes and prints output
-   - `ban` — runs `fail2ban-client set <jail> banip <ip>` on all nodes
-   - `unban` — runs `fail2ban-client set <jail> unbanip <ip>` on all nodes
-
-**Variables:** `f2b_action` (list_bans/ban/unban), `f2b_jail` (default: sshd), `f2b_ip` (required for ban/unban)  
-**Run via:** GitHub Actions → "Ansible - Manage Fail2ban"
-
-### deploy_s3_backup.yml
-
-**Purpose:** Sets up automated S3 backups for the game server
-
-**What it does:**
-1. Installs AWS CLI v2
-2. Writes a backup script (tarballs game data, uploads to S3)
-3. Creates a systemd service and timer for scheduled execution
-4. Stores AWS credentials in `/etc/aws/credentials`
-
-**Required environment variables:** `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BACKUP_BUCKET_NAME`  
-**Run via:** GitHub Actions → "Ansible - Deploy S3 Backup"
-
-### run_s3_backup.yml
-
-**Purpose:** Runs the S3 backup job immediately
-
-**What it does:**
-1. Starts the `minecraft-backup.service`
-2. Collects and displays logs
-3. Fails the playbook if backup exit code is non-zero
-4. Lists the S3 bucket contents to verify the upload
-
-**Run via:** GitHub Actions → "Ansible - Run Backup Now"
-
-### deploy_minecraft.yml
-
-**Purpose:** Deploys the Minecraft server as a systemd service
-
-**What it does:**
-1. Creates the Minecraft systemd service file
-2. Enables and starts the service
-3. Verifies the service is running
-
-**Run via:** GitHub Actions → "Ansible - Deploy Minecraft"
-
-### remove_k3s_agent.yml
-
-**Purpose:** Cleanly removes a worker node from the cluster
-
-**What it does:**
-1. Drains the node (moves all pods off it)
-2. Deletes the node from the cluster
-3. SSHes to the agent and runs the k3s uninstall script
-
-**Run via:** Manual execution (no GitHub Actions workflow — it's destructive)
 
 ---
 
@@ -296,6 +195,7 @@ pick up where it left off without breaking things that already succeeded.
 ### "No module named 'ansible'"
 
 Ansible is not installed:
+
 ```bash
 pip install ansible
 # or
@@ -305,11 +205,13 @@ pip3 install ansible
 ### Known hosts verification fails
 
 If a VM was recreated (new host key), remove the old entry:
+
 ```bash
 ssh-keygen -R k3s-server.tailnet.ts.net
 ```
 
 Or repopulate the host key with `ssh-keyscan`:
+
 ```bash
 ssh-keyscan k3s-server.tailnet.ts.net >> ~/.ssh/known_hosts
 ```

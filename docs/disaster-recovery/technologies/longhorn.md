@@ -22,6 +22,7 @@ Kubernetes solves this with **Persistent Volumes (PVs)** — network-attached st
 that persists across container restarts and can follow a container when it moves between nodes.
 
 **What Longhorn provides:**
+
 - Persistent block storage volumes
 - Data replication across multiple nodes (so data survives a node failure)
 - Automatic volume snapshots and backups
@@ -42,6 +43,7 @@ graph TD
 ```
 
 **References:**
+
 - [Longhorn official documentation](https://longhorn.io/docs/)
 - [Longhorn GitHub repository](https://github.com/longhorn/longhorn)
 - [Rancher: Longhorn overview](https://rancher.com/products/longhorn)
@@ -80,6 +82,7 @@ PersistentVolumeClaim without specifying a class, Longhorn fulfills it.
 ### Snapshots and Backups
 
 Longhorn supports:
+
 - **Snapshots:** Point-in-time copies of a volume stored on the same disk (fast)
 - **Backups:** Copies of snapshots stored in remote storage (S3, NFS) — used for disaster recovery
 
@@ -103,21 +106,17 @@ modprobe iscsi_tcp
 ```
 
 **Why these packages?**
+
 - `open-iscsi` — Longhorn uses iSCSI to mount volumes into pods
 - `nfs-common` — for potential NFS-based backups
 - `iscsi_tcp` — kernel module for iSCSI protocol
-
-### CRD Drift Issue (Historical)
-
-In earlier versions of this cluster (before the Flux CD migration), Longhorn had a known
-issue with ArgoCD where 7 Custom Resource Definitions (CRDs) appeared as permanently
-`OutOfSync`. This is no longer relevant as ArgoCD has been replaced by Flux CD.
 
 ---
 
 ## Longhorn Web UI
 
 If a Longhorn UI ingress is configured, you can access the Longhorn dashboard to:
+
 - See all volumes and their health status
 - View replica placement across nodes
 - Create and manage snapshots
@@ -170,6 +169,7 @@ kubectl get pods -n longhorn-system -l app=longhorn-manager
 ### Volume degraded (replica missing)
 
 This happens if a node was down and a replica was lost:
+
 ```bash
 # Check replica status
 kubectl get replicas.longhorn.io -n longhorn-system
@@ -182,6 +182,7 @@ kubectl describe volume.longhorn.io <name> -n longhorn-system | grep -i rebuild
 ### open-iscsi not running
 
 If Longhorn volumes fail to mount, check iSCSI is working:
+
 ```bash
 # On the affected node
 sudo systemctl status iscsid
@@ -194,15 +195,12 @@ lsmod | grep iscsi_tcp
 sudo modprobe iscsi_tcp
 ```
 
-### Longhorn CRD drift (historical)
-
-This issue only applied when ArgoCD was used as the GitOps controller (prior to the Flux CD migration). Flux CD does not have this problem with Longhorn CRDs.
-
 ---
 
 ## Storage Planning
 
 Current node disk allocation:
+
 - k3s-server: 50 GB total
 - k3s-agent-1: 50 GB total
 - k3s-agent-2: 50 GB total
