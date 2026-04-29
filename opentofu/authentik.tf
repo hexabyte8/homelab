@@ -41,7 +41,7 @@ resource "authentik_group" "docs_users" {
 #
 # NOTE: Jellyfin is intentionally NOT behind ForwardAuth. Native Jellyfin
 # clients (TVs, mobile apps, etc.) can't complete a browser SSO round-trip,
-# so jellyfin.chronobyte.net serves Jellyfin's own login page and uses the
+# so jellyfin.domain.net serves Jellyfin's own login page and uses the
 # Authentik LDAP outpost for authentication (see opentofu/authentik-ldap.tf).
 
 resource "authentik_provider_proxy" "docs" {
