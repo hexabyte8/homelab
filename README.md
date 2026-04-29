@@ -15,7 +15,7 @@ A single, opinionated, end-to-end implementation of the patterns some tutorials 
 - **One repo → entire stack.** Cloud DNS, virtual machines, the cluster, every workload, and the CI/CD that drives them all live here.
 - **GitOps reconciliation.** Push to `main`; Flux CD applies the cluster changes, GitHub Actions applies the cloud/VM changes. No `kubectl apply` involved in normal operations.
 - **Zero secrets in git.** Every credential is a `REPLACE_ME` placeholder backed by Bitwarden Secrets Manager and patched into the cluster (or into Terraform variables) at deploy time.
-- **Two-tier networking.** Private services live on Tailscale (`*.domain.ts.net`); public services come out of a Cloudflare Tunnel (`*.domain.net`) — no ports forwarded on the home router.
+- **Two-tier networking.** Private services live on Tailscale (`*.domain.ts.net`); public services come out of a Cloudflare Tunnel (`*.domain.net`) — no ports forwarded.
 - **Auth everywhere it matters.** Public services chain through Authentik via Traefik ForwardAuth.
 
 If you're trying to learn how to wire up Flux + Tailscale + Cloudflare Tunnel + Authentik + cert-manager into something that actually works together, this repo is meant to be readable evidence that it can be done.
