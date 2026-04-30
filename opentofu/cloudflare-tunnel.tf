@@ -28,10 +28,6 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "homelab" {
   config = {
     ingress = [
       {
-        hostname = "code.${var.cloudflare_zone_name}"
-        service  = "http://traefik.kube-system.svc.cluster.local:80"
-      },
-      {
         hostname = "uptime.${var.cloudflare_zone_name}"
         service  = "http://traefik.kube-system.svc.cluster.local:80"
       },
@@ -40,23 +36,11 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "homelab" {
         service  = "http://traefik.kube-system.svc.cluster.local:80"
       },
       {
-        hostname = "links.${var.cloudflare_zone_name}"
-        service  = "http://traefik.kube-system.svc.cluster.local:80"
-      },
-      {
         hostname = "calibre.${var.cloudflare_zone_name}"
         service  = "http://traefik.kube-system.svc.cluster.local:80"
       },
       {
         hostname = "jellyfin.${var.cloudflare_zone_name}"
-        service  = "http://traefik.kube-system.svc.cluster.local:80"
-      },
-      {
-        hostname = "healthygames.${var.cloudflare_zone_name}"
-        service  = "http://traefik.kube-system.svc.cluster.local:80"
-      },
-      {
-        hostname = "gabe.${var.cloudflare_zone_name}"
         service  = "http://traefik.kube-system.svc.cluster.local:80"
       },
       {
@@ -74,15 +58,6 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "homelab" {
 # DNS — CNAME each public hostname to the tunnel endpoint.
 # proxied = true hides the tunnel CNAME behind Cloudflare's edge.
 
-resource "cloudflare_dns_record" "code_server" {
-  zone_id = var.cloudflare_zone_id
-  name    = "code"
-  content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"
-  type    = "CNAME"
-  ttl     = 1
-  proxied = true
-}
-
 resource "cloudflare_dns_record" "uptime_kuma" {
   zone_id = var.cloudflare_zone_id
   name    = "uptime"
@@ -95,15 +70,6 @@ resource "cloudflare_dns_record" "uptime_kuma" {
 resource "cloudflare_dns_record" "stalwart_mail" {
   zone_id = var.cloudflare_zone_id
   name    = "mail"
-  content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"
-  type    = "CNAME"
-  ttl     = 1
-  proxied = true
-}
-
-resource "cloudflare_dns_record" "linkwarden" {
-  zone_id = var.cloudflare_zone_id
-  name    = "links"
   content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"
   type    = "CNAME"
   ttl     = 1
@@ -138,24 +104,6 @@ resource "cloudflare_dns_record" "docs" {
   type    = "CNAME"
   ttl     = 1
   proxied = false
-}
-
-resource "cloudflare_dns_record" "healthygames" {
-  zone_id = var.cloudflare_zone_id
-  name    = "healthygames"
-  content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"
-  type    = "CNAME"
-  ttl     = 1
-  proxied = true
-}
-
-resource "cloudflare_dns_record" "jokes" {
-  zone_id = var.cloudflare_zone_id
-  name    = "gabe"
-  content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"
-  type    = "CNAME"
-  ttl     = 1
-  proxied = true
 }
 
 resource "cloudflare_dns_record" "dashy" {
