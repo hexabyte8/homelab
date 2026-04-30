@@ -107,5 +107,7 @@ resource "authentik_outpost" "embedded" {
   type = "proxy"
   protocol_providers = [
     authentik_provider_proxy.dashy.id,
+    authentik_provider_proxy.calibre.id,
+    authentik_provider_proxy.uptime_kuma.id,
   ]
 }
