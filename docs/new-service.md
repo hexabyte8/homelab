@@ -13,6 +13,7 @@ Every service follows the same GitOps flow:
 3. Commit and push — Flux reconciles within the interval (default 10 min) or immediately if you run `flux reconcile kustomization apps -n flux-system`
 
 Optionally:
+
 - Add a DNS record and tunnel ingress entry in `opentofu/cloudflare-tunnel.tf` (for Cloudflare Tunnel services)
 - Configure Authentik to protect the service behind SSO
 - To park (disable) the service later, remove its entry from `k3s/flux/apps/kustomization.yaml` and commit
@@ -23,15 +24,15 @@ Optionally:
 
 Before writing any YAML, answer these four questions:
 
-| Question | Options |
-|---|---|
-| **Ingress** | [Tailscale](#option-a-tailscale-ingress) (private, tailnet only) · [Cloudflare Tunnel](#option-b-cloudflare-tunnel-ingress) (public internet) |
-| **Authentication** | None · [Authentik ForwardAuth](#step-4-add-authentik-protection) (Traefik only) |
-| **Storage** | Ephemeral (no PVC) · [Longhorn PVC](#pvcyaml-optional) |
-| **Database** | None · CNPG PostgreSQL (see existing `authentik-db` cluster as reference) |
+| Question           | Options                                                                                                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ingress**        | [Tailscale](#option-a-tailscale-ingress) (private, tailnet only) · [Cloudflare Tunnel](#option-b-cloudflare-tunnel-ingress) (public internet) |
+| **Authentication** | None · [Authentik ForwardAuth](#step-4-add-authentik-protection) (Traefik only)                                                               |
+| **Storage**        | Ephemeral (no PVC) · [Longhorn PVC](#pvcyaml-optional)                                                                                        |
+| **Database**       | None · CNPG PostgreSQL (see existing `authentik-db` cluster as reference)                                                                     |
 
 !!! note "Authentik ForwardAuth requires Traefik"
-    The `authentik-forward-auth` middleware only applies to Traefik-routed traffic. If you choose Tailscale Ingress, Authentik ForwardAuth is **not available** — Tailscale proxies bypass Traefik entirely. For public services requiring SSO, use Cloudflare Tunnel.
+The `authentik-forward-auth` middleware only applies to Traefik-routed traffic. If you choose Tailscale Ingress, Authentik ForwardAuth is **not available** — Tailscale proxies bypass Traefik entirely. For public services requiring SSO, use Cloudflare Tunnel.
 
 ---
 
@@ -57,9 +58,9 @@ metadata:
 ```
 
 !!! tip
-    The Flux Kustomization can create namespaces automatically, but including a `namespace.yaml`
-    is good practice — it lets you add namespace-level labels and ensures the namespace is tracked
-    in git. Alternatively, add the namespace to `k3s/flux/apps/namespaces.yaml`.
+The Flux Kustomization can create namespaces automatically, but including a `namespace.yaml`
+is good practice — it lets you add namespace-level labels and ensures the namespace is tracked
+in git. Alternatively, add the namespace to `k3s/flux/apps/namespaces.yaml`.
 
 ### `deployment.yaml`
 
@@ -101,10 +102,10 @@ spec:
 ```
 
 !!! note "Resource limits"
-    Always set `resources.requests` and `resources.limits`. This ensures the scheduler places the pod correctly and prevents a runaway container from starving the node.
+Always set `resources.requests` and `resources.limits`. This ensures the scheduler places the pod correctly and prevents a runaway container from starving the node.
 
 !!! note "Image tags and Flux"
-    Flux reconciles based on the manifest content in git. If you change `:1.0.0` → `:1.0.1` in git and push, Flux applies the update. If you use `:latest`, Flux will only redeploy when something else in the manifest changes. Prefer immutable tags for predictable rollouts.
+Flux reconciles based on the manifest content in git. If you change `:1.0.0` → `:1.0.1` in git and push, Flux applies the update. If you use `:latest`, Flux will only redeploy when something else in the manifest changes. Prefer immutable tags for predictable rollouts.
 
 ### `service.yaml`
 
@@ -174,7 +175,7 @@ spec:
                   number: 8080
   tls:
     - hosts:
-        - myapp   # ← hostname only, no domain
+        - myapp # ← hostname only, no domain
 ```
 
 The value under `tls.hosts` becomes the MagicDNS hostname. After Flux syncs, the service is available at:
@@ -184,7 +185,7 @@ https://myapp.tailnet.ts.net
 ```
 
 !!! tip "Tailscale Funnel (public access via Tailscale)"
-    To make a Tailscale-hosted service reachable on the public internet without Cloudflare, add the Funnel annotations:
+To make a Tailscale-hosted service reachable on the public internet without Cloudflare, add the Funnel annotations:
 
     ```yaml
     metadata:
@@ -277,7 +278,7 @@ metadata:
 ```
 
 !!! note "Two middlewares required for Cloudflare Tunnel"
-    When traffic arrives via Cloudflare Tunnel, `cloudflared` connects to Traefik over plain `http://`, causing Traefik to set `X-Forwarded-Proto: http`. Authentik uses this header to build the OIDC callback URL — if it says `http`, Authentik rejects the callback as invalid.
+When traffic arrives via Cloudflare Tunnel, `cloudflared` connects to Traefik over plain `http://`, causing Traefik to set `X-Forwarded-Proto: http`. Authentik uses this header to build the OIDC callback URL — if it says `http`, Authentik rejects the callback as invalid.
 
     The `kube-system-cloudflare-https-scheme@kubernetescrd` middleware (defined in `k3s/manifests/traefik/cloudflare-https-middleware.yaml`) rewrites `X-Forwarded-Proto` to `https` **before** ForwardAuth runs. Always chain it first.
 
@@ -287,7 +288,7 @@ Add a `authentik_provider_proxy` + `authentik_application` block in `opentofu/au
 append the provider's id to `authentik_outpost.embedded.protocol_providers`, then push to
 `main` (OpenTofu Apply runs automatically).
 
-**Then configure the application in the Authentik web UI:**
+**Or configure the application in the Authentik web UI (If not managing via Terraform/Tofu):**
 
 1. Log in at **<https://authentik.tailnet.ts.net>**
 2. Go to **Applications → Providers → Create**
@@ -305,7 +306,7 @@ append the provider's id to `authentik_outpost.embedded.protocol_providers`, the
 After the outpost updates (usually within 30 seconds), unauthenticated requests to `myapp.example.com` will be redirected to the Authentik login page.
 
 !!! tip "If the service has a built-in login page"
-    Add `UPTIME_KUMA_DISABLE_AUTH: "1"` (or the service's equivalent env var) to the Deployment so users only see the Authentik login. Without this, users must authenticate twice. The env var approach is DR-resilient (survives PVC loss) vs. a UI toggle stored only in the volume. See [authentik.md](authentik.md#forwardauth-with-services-that-have-built-in-auth) for a table of common env vars and the Tailscale backdoor caveat.
+Add `UPTIME_KUMA_DISABLE_AUTH: "1"` (or the service's equivalent env var) to the Deployment so users only see the Authentik login. Without this, users must authenticate twice. The env var approach is DR-resilient (survives PVC loss) vs. a UI toggle stored only in the volume. See [authentik.md](authentik.md#forwardauth-with-services-that-have-built-in-auth) for a table of common env vars and the Tailscale backdoor caveat.
 
 See [authentik.md](authentik.md) for more detail on provider types and the ForwardAuth architecture.
 
@@ -375,7 +376,7 @@ The `content` uses a resource reference so the tunnel UUID never needs to be har
 Pushing to `main` automatically triggers the **OpenTofu Apply** GitHub Actions workflow — no manual `tofu apply` is needed.
 
 !!! note "Skip this step for Tailscale"
-    Tailscale Ingress and Funnel manage their own DNS automatically. No OpenTofu changes are needed.
+Tailscale Ingress and Funnel manage their own DNS automatically. No OpenTofu changes are needed.
 
 ---
 
@@ -417,13 +418,13 @@ Add a tile for the new service in `k3s/manifests/dashy/configmap.yaml` so it app
 1. Find the appropriate section under `sections:` (or add a new one)
 2. Append a new item:
 
-    ```yaml
-    - title: My App
-      description: What it does
-      url: https://myapp.tailnet.ts.net   # or example.com URL
-      icon: hl-myapp    # see docs/dashy.md for icon options
-      target: newtab
-    ```
+   ```yaml
+   - title: My App
+     description: What it does
+     url: https://myapp.tailnet.ts.net # or example.com URL
+     icon: hl-myapp # see docs/dashy.md for icon options
+     target: newtab
+   ```
 
 3. Bump the `kubectl.kubernetes.io/restartedAt` annotation in `k3s/manifests/dashy/deployment.yaml` to the current timestamp — this ensures Flux rolls the Dashy pod to pick up the new config.
 
@@ -707,11 +708,11 @@ env:
 ```
 
 !!! warning "Secrets in git"
-    Never commit real secret values. Commit a placeholder (`REPLACE_ME`) and patch the
-    live value with `kubectl patch` after Flux creates the object. Annotate the secret with
-    `kustomize.toolkit.fluxcd.io/reconcile: disabled` so Flux never resets it. See
-    [gitops-flux.md](gitops-flux.md#patched-secrets) for the full pattern and the list of
-    currently patched secrets.
+Never commit real secret values. Commit a placeholder (`REPLACE_ME`) and patch the
+live value with `kubectl patch` after Flux creates the object. Annotate the secret with
+`kustomize.toolkit.fluxcd.io/reconcile: disabled` so Flux never resets it. See
+[gitops-flux.md](gitops-flux.md#patched-secrets) for the full pattern and the list of
+currently patched secrets.
 
 ### Init container for permission fixing
 
@@ -749,11 +750,11 @@ ports:
 
 ### Resource limits reference
 
-| Service size | CPU request | CPU limit | Memory request | Memory limit |
-|---|---|---|---|---|
-| Small (static site, exporter) | `10m` | `100m` | `32Mi` | `128Mi` |
-| Medium (typical web app) | `50m` | `500m` | `128Mi` | `512Mi` |
-| Large (media, database) | `200m` | `2000m` | `512Mi` | `2Gi` |
+| Service size                  | CPU request | CPU limit | Memory request | Memory limit |
+| ----------------------------- | ----------- | --------- | -------------- | ------------ |
+| Small (static site, exporter) | `10m`       | `100m`    | `32Mi`         | `128Mi`      |
+| Medium (typical web app)      | `50m`       | `500m`    | `128Mi`        | `512Mi`      |
+| Large (media, database)       | `200m`      | `2000m`   | `512Mi`        | `2Gi`        |
 
 ---
 
