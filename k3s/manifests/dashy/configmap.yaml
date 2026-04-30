@@ -68,27 +68,6 @@ data:
             icon: hl-dashy
             target: newtab
 
-          - title: Linkwarden
-            description: Bookmark & link archive
-            url: https://linkwarden.daggertooth-scala.ts.net
-            statusCheckUrl: http://linkwarden.linkwarden.svc.cluster.local:3000
-            icon: hl-linkwarden
-            target: newtab
-
-          - title: Linkwarden (Public)
-            description: Bookmark & link archive (public)
-            url: https://links.chronobyte.net
-            statusCheckUrl: http://linkwarden.linkwarden.svc.cluster.local:3000
-            icon: hl-linkwarden
-            target: newtab
-
-          - title: Pegaprox
-            description: HTTP/HTTPS proxy
-            url: https://pegaprox.daggertooth-scala.ts.net
-            statusCheckUrl: http://pegaprox.pegaprox.svc.cluster.local:5000
-            icon: fas fa-network-wired
-            target: newtab
-
       - name: Media
         icon: fas fa-film
         items:
@@ -175,36 +154,12 @@ data:
             icon: hl-stalwart-mail
             target: newtab
 
-          - title: Stalwart Mail (Public)
-            description: Public webmail & admin
-            url: https://mail.chronobyte.net
-            statusCheckUrl: http://stalwart.stalwart.svc.cluster.local:8080
-            icon: hl-stalwart-mail
-            target: newtab
-
       - name: Documentation
         icon: fas fa-book
         items:
           - title: Docs
-            description: Homelab documentation (MkDocs)
-            url: https://docs.daggertooth-scala.ts.net
-            statusCheckUrl: http://docs.docs.svc.cluster.local:8000
-            icon: hl-mkdocs
-            target: newtab
-
-          - title: Docs (Public)
-            description: Public documentation (Authentik-protected)
+            description: Public documentation
             url: https://docs.chronobyte.net
-            statusCheckUrl: http://docs.docs.svc.cluster.local:8000
+            statusCheckUrl: http://docs.chronobyte.net
             icon: hl-mkdocs
-            target: newtab
-
-      - name: Games
-        icon: fas fa-gamepad
-        items:
-          - title: Healthy Games (Public)
-            description: HTML5 games site
-            url: https://healthygames.chronobyte.net
-            statusCheckUrl: http://healthygames.healthygames.svc.cluster.local
-            icon: fas fa-gamepad
             target: newtab

@@ -33,16 +33,27 @@ resource "authentik_group" "family_and_friends" {
 }
 
 # ---------- Proxy providers (one per ForwardAuth-protected app) ----------
-#
-# NOTE: Jellyfin is intentionally NOT behind ForwardAuth. Native Jellyfin
-# clients (TVs, mobile apps, etc.) can't complete a browser SSO round-trip,
-# so jellyfin.domain.net serves Jellyfin's own login page and uses the
-# Authentik LDAP outpost for authentication (see opentofu/authentik-ldap.tf).
 
 resource "authentik_provider_proxy" "dashy" {
   name               = "dashy"
   mode               = "forward_single"
   external_host      = "https://dashy.${var.cloudflare_zone_name}"
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+}
+
+resource "authentik_provider_proxy" "calibre" {
+  name               = "calibre"
+  mode               = "forward_single"
+  external_host      = "https://calibre.${var.cloudflare_zone_name}"
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+}
+
+resource "authentik_provider_proxy" "uptime_kuma" {
+  name               = "uptime-kuma"
+  mode               = "forward_single"
+  external_host      = "https://uptime-kuma.${var.cloudflare_zone_name}"
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id
 }
@@ -58,12 +69,28 @@ resource "authentik_application" "dashy" {
   open_in_new_tab   = false
 }
 
+resource "authentik_application" "calibre" {
+  name              = "Calibre Web"
+  slug              = "calibre"
+  protocol_provider = authentik_provider_proxy.calibre.id
+  meta_launch_url   = "https://calibre.${var.cloudflare_zone_name}"
+  meta_description  = "Calibre Web eBook server (public, ForwardAuth-protected)."
+  open_in_new_tab   = false
+}
+
+resource "authentik_application" "uptime_kuma" {
+  name              = "Uptime Kuma"
+  slug              = "uptime-kuma"
+  protocol_provider = authentik_provider_proxy.uptime_kuma.id
+  meta_launch_url   = "https://uptime-kuma.${var.cloudflare_zone_name}"
+  meta_description  = "Uptime Kuma monitoring dashboard (public, ForwardAuth-protected)."
+  open_in_new_tab   = false
+}
+
+
 # ---------- Policy bindings ----------
 #
 # Explicit group bindings restrict which groups can access each application.
-# dashy: no bindings → any authenticated user (admins only in practice)
-#
-# family&friends is currently scoped to Jellyfin (LDAP binding in authentik-ldap.tf).
 
 # ---------- Embedded outpost ----------
 #
