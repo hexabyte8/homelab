@@ -50,7 +50,7 @@ resource "authentik_provider_proxy" "calibre" {
   invalidation_flow  = data.authentik_flow.default_invalidation.id
 }
 
-resource "authentik_proxy_provider" "uptime_kuma" {
+resource "authentik_provider_proxy" "uptime_kuma" {
   name               = "uptime-kuma"
   mode               = "forward_single"
   external_host      = "https://uptime-kuma.${var.cloudflare_zone_name}"
