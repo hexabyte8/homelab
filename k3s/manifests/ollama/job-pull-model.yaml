@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ollama-pull-qwen3-devops
+  namespace: ollama
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: pull
+          image: curlimages/curl:8.10.1
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              echo "Waiting for Ollama API..."
+              until curl -fsS http://ollama.ollama.svc.cluster.local:11434/ >/dev/null; do
+                sleep 5
+              done
+              # Skip if the model already exists
+              if curl -fsS http://ollama.ollama.svc.cluster.local:11434/api/tags \
+                   | grep -q '"name":"qwen3-devops'; then
+                echo "qwen3-devops already present; nothing to do."
+                exit 0
+              fi
+              echo "Creating qwen3-devops model from Modelfile..."
+              # JSON-escape the Modelfile (newlines + quotes)
+              MODELFILE_JSON=$(awk 'BEGIN{ORS="\\n"} {gsub(/\\/,"\\\\"); gsub(/"/,"\\\""); print}' /modelfile/Modelfile)
+              curl -fsS -X POST http://ollama.ollama.svc.cluster.local:11434/api/create \
+                -H 'Content-Type: application/json' \
+                -d "{\"name\":\"qwen3-devops\",\"modelfile\":\"${MODELFILE_JSON}\",\"stream\":false}" \
+                --max-time 1800
+              echo
+              echo "Model created. Available models:"
+              curl -fsS http://ollama.ollama.svc.cluster.local:11434/api/tags
+          volumeMounts:
+            - name: modelfile
+              mountPath: /modelfile
+      volumes:
+        - name: modelfile
+          configMap:
+            name: ollama-modelfile

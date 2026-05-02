@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ollama-modelfile
+  namespace: ollama
+data:
+  # Modelfile for ubermorgen/qwen3-devops (Qwen3-1.7B fine-tuned for DevOps tool calls).
+  # FROM points at the HuggingFace GGUF repo so Ollama downloads & caches the model
+  # into the PVC on first `ollama create`. Template + params copied from the
+  # upstream Modelfile (https://huggingface.co/ubermorgen/qwen3-devops).
+  Modelfile: |
+    FROM hf.co/ubermorgen/qwen3-devops
+
+    TEMPLATE """{{- if .System }}
+    <|im_start|>system
+    {{ .System }}<|im_end|>
+    {{ end }}
+    {{- range .Messages }}
+    {{- if eq .Role "user" }}
+    <|im_start|>user
+    {{ .Content }}<|im_end|>
+    {{ else if eq .Role "assistant" }}
+    <|im_start|>assistant
+    {{ .Content }}<|im_end|>
+    {{ else if eq .Role "tool" }}
+    <|im_start|>user
+    <tool_response>
+    {{ .Content }}
+    </tool_response><|im_end|>
+    {{ end }}
+    {{- end }}
+    <|im_start|>assistant
+    """
+
+    PARAMETER temperature 0.7
+    PARAMETER top_k 40
+    PARAMETER top_p 0.9
+    PARAMETER num_predict 512
+    PARAMETER stop <|im_end|>
+    PARAMETER stop <|im_start|>
