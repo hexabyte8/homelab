@@ -24,9 +24,7 @@ resources:
   - adguard.yaml
   - calibre-web.yaml
   - dashy.yaml
-  - docs.yaml
   - fail2ban.yaml
-  - healthygames.yaml
   - jellyfin.yaml
   - mcp-kubernetes.yaml
   - mcp-proxmox.yaml
