@@ -9,7 +9,7 @@ data:
   # into the PVC on first `ollama create`. Template + params copied from the
   # upstream Modelfile (https://huggingface.co/ubermorgen/qwen3-devops).
   Modelfile: |
-    FROM hf.co/ubermorgen/qwen3-devops
+    FROM ./qwen3-devops.gguf
 
     TEMPLATE """{{- if .System }}
     <|im_start|>system
