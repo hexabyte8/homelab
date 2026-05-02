@@ -9,37 +9,64 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      containers:
-        - name: pull
+      # Share the Ollama PVC so we can drop the GGUF into the model store and
+      # reference it via a relative path from the Modelfile.
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ollama-data
+        - name: modelfile
+          configMap:
+            name: ollama-modelfile
+      initContainers:
+        # Download the GGUF into the shared PVC (idempotent).
+        - name: download-gguf
           image: curlimages/curl:8.10.1
           command: ["/bin/sh", "-c"]
           args:
             - |
               set -e
-              echo "Waiting for Ollama API..."
-              until curl -fsS http://ollama.ollama.svc.cluster.local:11434/ >/dev/null; do
+              cd /data
+              if [ -s qwen3-devops.gguf ]; then
+                echo "GGUF already present ($(wc -c < qwen3-devops.gguf) bytes); skipping download."
+                exit 0
+              fi
+              echo "Downloading qwen3-devops.gguf from HuggingFace ..."
+              curl -L --fail -o qwen3-devops.gguf \
+                https://huggingface.co/ubermorgen/qwen3-devops/resolve/main/qwen3-devops.gguf
+              ls -lh qwen3-devops.gguf
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      containers:
+        - name: pull
+          image: ollama/ollama:0.11.4
+          # Override the image entrypoint (which is `ollama serve`).
+          command: ["/bin/sh", "-c"]
+          env:
+            - name: OLLAMA_HOST
+              value: http://ollama.ollama.svc.cluster.local:11434
+          args:
+            - |
+              set -e
+              echo "Waiting for Ollama API at $OLLAMA_HOST ..."
+              until ollama list >/dev/null 2>&1; do
                 sleep 5
               done
-              # Skip if the model already exists
-              if curl -fsS http://ollama.ollama.svc.cluster.local:11434/api/tags \
-                   | grep -q '"name":"qwen3-devops'; then
+              if ollama list | awk 'NR>1 {print $1}' | grep -q '^qwen3-devops'; then
                 echo "qwen3-devops already present; nothing to do."
                 exit 0
               fi
-              echo "Creating qwen3-devops model from Modelfile..."
-              # JSON-escape the Modelfile (newlines + quotes)
-              MODELFILE_JSON=$(awk 'BEGIN{ORS="\\n"} {gsub(/\\/,"\\\\"); gsub(/"/,"\\\""); print}' /modelfile/Modelfile)
-              curl -fsS -X POST http://ollama.ollama.svc.cluster.local:11434/api/create \
-                -H 'Content-Type: application/json' \
-                -d "{\"name\":\"qwen3-devops\",\"modelfile\":\"${MODELFILE_JSON}\",\"stream\":false}" \
-                --max-time 1800
-              echo
-              echo "Model created. Available models:"
-              curl -fsS http://ollama.ollama.svc.cluster.local:11434/api/tags
+              # The Modelfile uses `FROM ./qwen3-devops.gguf`, so run create
+              # from /data where the GGUF was downloaded.
+              cp /modelfile/Modelfile /data/Modelfile
+              cd /data
+              echo "Creating qwen3-devops from local GGUF ..."
+              ollama create qwen3-devops -f Modelfile
+              echo "Done. Models:"
+              ollama list
           volumeMounts:
+            - name: data
+              mountPath: /data
             - name: modelfile
               mountPath: /modelfile
-      volumes:
-        - name: modelfile
-          configMap:
-            name: ollama-modelfile
