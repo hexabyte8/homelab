@@ -114,7 +114,7 @@ jobs:
 
       - name: Upload report artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fail2ban-report-${{ github.run_id }}
           path: ansible/output/
