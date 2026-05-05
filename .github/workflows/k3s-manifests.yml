@@ -83,7 +83,7 @@ jobs:
           chmod 600 ~/.kube/config
 
       - name: Install kubectl
-        uses: azure/setup-kubectl@v4
+        uses: azure/setup-kubectl@v5
 
       - name: Apply manifests
         if: inputs.action == 'apply'
