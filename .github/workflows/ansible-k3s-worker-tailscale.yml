@@ -31,7 +31,7 @@ jobs:
             2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
             9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
       - name: Setup Tailscale
-        uses: tailscale/github-action@v2
+        uses: tailscale/github-action@v4
         with:
           oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
