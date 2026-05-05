@@ -30,3 +30,11 @@ ansible/inventory.yml
 **/*kubeconfig*.yaml
 .kube/
 .ansible/
+
+# Credentials / keys / VPN configs
+*.ovpn
+*.pem
+*.key
+*.p12
+*.pfx
+!opentofu/**/*.pem.example
