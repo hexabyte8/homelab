@@ -4,4 +4,3 @@ resources:
   - namespace.yaml
   - pvc.yaml
   - ingress.yaml
-  - ingress-cloudflare.yaml
