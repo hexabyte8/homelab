@@ -45,3 +45,12 @@ metadata:
 spec:
   interval: 1h
   url: https://pkgs.tailscale.com/helmcharts
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: gitea
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://dl.gitea.com/charts/
