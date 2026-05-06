@@ -31,9 +31,9 @@ spec:
         existingSecret: gitea-admin-credentials
       config:
         server:
-          DOMAIN: git.chronobyte.net
-          ROOT_URL: https://git.chronobyte.net
-          SSH_DOMAIN: git.chronobyte.net
+          DOMAIN: git.daggertooth-scala.ts.net
+          ROOT_URL: https://git.daggertooth-scala.ts.net
+          SSH_DOMAIN: git.daggertooth-scala.ts.net
           SSH_PORT: 22
           SSH_LISTEN_PORT: 2222
         database:
