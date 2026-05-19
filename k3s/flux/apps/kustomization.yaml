@@ -33,5 +33,4 @@ resources:
   - stalwart.yaml
   - gitea.yaml
   - gitea-config.yaml
-  - minecraft.yaml
   - uptime-kuma.yaml
