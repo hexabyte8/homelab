@@ -31,6 +31,4 @@ resources:
   - ntfy.yaml
   - ollama.yaml
   - stalwart.yaml
-  - gitea.yaml
-  - gitea-config.yaml
   - uptime-kuma.yaml
