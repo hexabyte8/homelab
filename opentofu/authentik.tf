@@ -26,7 +26,7 @@ data "authentik_flow" "default_invalidation" {
 }
 
 # Scope mappings for OIDC providers (openid + email + profile)
-data "authentik_scope_mapping" "oidc_standard" {
+data "authentik_property_mapping_provider_scope" "oidc_standard" {
   managed_list = [
     "goauthentik.io/providers/oauth2/scope-openid",
     "goauthentik.io/providers/oauth2/scope-email",
@@ -142,7 +142,7 @@ resource "authentik_provider_oauth2" "grafana" {
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id
   signing_key        = data.authentik_certificate_key_pair.default.id
-  property_mappings  = data.authentik_scope_mapping.oidc_standard.ids
+  property_mappings  = data.authentik_property_mapping_provider_scope.oidc_standard.ids
   redirect_uris = [
     {
       matching_mode = "strict"
