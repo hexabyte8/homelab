@@ -1,0 +1,47 @@
+server:
+  http_listen_port: {{ suricata_promtail_port }}
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/promtail-positions.yaml
+
+clients:
+  - url: https://loki.daggertooth-scala.ts.net/loki/api/v1/push
+
+scrape_configs:
+  - job_name: suricata-eve
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: suricata
+          host: {{ ansible_hostname }}
+          __path__: {{ suricata_log_dir }}/eve.json
+
+    pipeline_stages:
+      # Parse the top-level JSON fields from the EVE log entry
+      - json:
+          expressions:
+            event_type: event_type
+            src_ip: src_ip
+            dest_ip: dest_ip
+            proto: proto
+            timestamp: timestamp
+
+      # Promote useful fields as Loki stream labels (keep low-cardinality)
+      - labels:
+          event_type:
+          proto:
+
+      # Promote alert-specific fields when event_type == alert
+      - match:
+          selector: '{event_type="alert"}'
+          stages:
+            - json:
+                expressions:
+                  alert_signature: alert.signature
+                  alert_severity: alert.severity
+                  alert_category: alert.category
+            - labels:
+                alert_severity:
+                alert_category:

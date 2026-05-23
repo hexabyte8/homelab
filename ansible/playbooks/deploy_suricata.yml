@@ -1,0 +1,30 @@
+---
+# Deploy Suricata IDS/IPS to a target host.
+#
+# Required variables (passed via -e or workflow inputs):
+#   suricata_interface  - Network interface to monitor (e.g. eth0, ens18)
+#   target_host         - Hostname from inventory (e.g. suricata-vm)
+#
+# Optional variables (have defaults in roles/suricata/defaults/main.yml):
+#   suricata_home_net   - LAN subnets in Suricata format
+#   suricata_rule_sources - List of suricata-update sources
+
+- name: Deploy Suricata IDS/IPS
+  hosts: suricata
+  become: true
+
+  pre_tasks:
+    - name: Validate required variables
+      ansible.builtin.assert:
+        that:
+          - suricata_interface is defined
+          - suricata_interface | length > 0
+        fail_msg: "suricata_interface must be set (e.g. eth0)"
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  roles:
+    - suricata

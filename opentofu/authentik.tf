@@ -25,6 +25,20 @@ data "authentik_flow" "default_invalidation" {
   slug = "default-provider-invalidation-flow"
 }
 
+# Scope mappings for OIDC providers (openid + email + profile)
+data "authentik_property_mapping_provider_scope" "oidc_standard" {
+  managed_list = [
+    "goauthentik.io/providers/oauth2/scope-openid",
+    "goauthentik.io/providers/oauth2/scope-email",
+    "goauthentik.io/providers/oauth2/scope-profile",
+  ]
+}
+
+# Default self-signed cert used as signing key for OIDC tokens
+data "authentik_certificate_key_pair" "default" {
+  name = "authentik Self-signed Certificate"
+}
+
 # ---------- Groups ----------
 
 resource "authentik_group" "family_and_friends" {
@@ -110,4 +124,55 @@ resource "authentik_outpost" "embedded" {
     authentik_provider_proxy.calibre.id,
     authentik_provider_proxy.uptime_kuma.id,
   ]
+}
+
+# ---------- OAuth2/OIDC provider — Grafana (Tailscale-only) ----------
+#
+# Grafana uses the generic OAuth2 provider to authenticate against Authentik.
+# The client_id is deterministic ("grafana"); the client_secret is auto-generated
+# and exposed via the sensitive output below. Patch it into the cluster secret:
+#
+#   kubectl patch secret grafana-oauth-secret -n monitoring --type=merge \
+#     -p '{"stringData":{"GF_AUTH_GENERIC_OAUTH_CLIENT_ID":"grafana",
+#           "GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET":"<tofu output -raw grafana_oauth2_client_secret>"}}'
+
+resource "authentik_provider_oauth2" "grafana" {
+  name               = "Grafana"
+  client_id          = "grafana"
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+  signing_key        = data.authentik_certificate_key_pair.default.id
+  property_mappings  = data.authentik_property_mapping_provider_scope.oidc_standard.ids
+  allowed_redirect_uris = [
+    {
+      matching_mode = "strict"
+      url           = "https://grafana.daggertooth-scala.ts.net/login/generic_oauth"
+    }
+  ]
+  sub_mode                    = "hashed_user_id"
+  include_claims_in_id_token  = true
+  access_token_validity       = "hours=1"
+  refresh_token_validity      = "days=30"
+}
+
+resource "authentik_application" "grafana" {
+  name              = "Grafana"
+  slug              = "grafana"
+  protocol_provider = authentik_provider_oauth2.grafana.id
+  meta_launch_url   = "https://grafana.daggertooth-scala.ts.net"
+  meta_description  = "Grafana monitoring dashboard (Tailscale-only, SSO via Authentik OIDC)."
+  open_in_new_tab   = false
+}
+
+# ---------- Outputs ----------
+
+output "grafana_oauth2_client_id" {
+  description = "Authentik OAuth2 client_id for Grafana."
+  value       = authentik_provider_oauth2.grafana.client_id
+}
+
+output "grafana_oauth2_client_secret" {
+  description = "Authentik OAuth2 client_secret for Grafana. Use to patch grafana-oauth-secret in the monitoring namespace."
+  value       = authentik_provider_oauth2.grafana.client_secret
+  sensitive   = true
 }

@@ -1,0 +1,190 @@
+---
+# ── Install ────────────────────────────────────────────────────────────────
+
+- name: Install Suricata and suricata-update
+  ansible.builtin.apt:
+    name:
+      - suricata
+      - suricata-update
+      - python3-yaml
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+# ── Configuration ──────────────────────────────────────────────────────────
+
+- name: Ensure Suricata log directory exists
+  ansible.builtin.file:
+    path: "{{ suricata_log_dir }}"
+    state: directory
+    owner: suricata
+    group: suricata
+    mode: "0750"
+
+- name: Deploy suricata.yaml from template
+  ansible.builtin.template:
+    src: suricata.yaml.j2
+    dest: /etc/suricata/suricata.yaml
+    owner: root
+    group: suricata
+    mode: "0640"
+    backup: true
+  notify: Restart suricata
+
+# ── Rules ──────────────────────────────────────────────────────────────────
+
+- name: Enable rule sources via suricata-update
+  ansible.builtin.command:
+    cmd: suricata-update enable-source {{ item }}
+  loop: "{{ suricata_rule_sources }}"
+  register: enable_src
+  changed_when: "'already enabled' not in enable_src.stdout"
+
+- name: Fetch and compile rules
+  ansible.builtin.command:
+    cmd: suricata-update
+  register: rule_update
+  changed_when: true
+  notify: Reload suricata rules
+
+- name: Install cron job for daily rule updates
+  ansible.builtin.cron:
+    name: suricata-update
+    job: /usr/bin/suricata-update && /usr/bin/suricatasc -c reload-rules
+    minute: "{{ suricata_update_schedule.split(' ')[0] }}"
+    hour: "{{ suricata_update_schedule.split(' ')[1] }}"
+    day: "{{ suricata_update_schedule.split(' ')[2] }}"
+    month: "{{ suricata_update_schedule.split(' ')[3] }}"
+    weekday: "{{ suricata_update_schedule.split(' ')[4] }}"
+    user: root
+    state: present
+
+# ── Service ────────────────────────────────────────────────────────────────
+
+- name: Enable and start Suricata service
+  ansible.builtin.systemd:
+    name: suricata
+    state: started
+    enabled: true
+    daemon_reload: true
+
+# ── Verify ─────────────────────────────────────────────────────────────────
+
+- name: Verify Suricata is running
+  ansible.builtin.command:
+    cmd: systemctl is-active suricata
+  register: suricata_status
+  changed_when: false
+  failed_when: suricata_status.stdout != 'active'
+
+- name: Display deployment summary
+  ansible.builtin.debug:
+    msg: |
+      ================================
+      Suricata IDS/IPS Deployed
+      ================================
+      Interface  : {{ suricata_interface }}
+      HOME_NET   : {{ suricata_home_net }}
+      Log dir    : {{ suricata_log_dir }}
+      Rule update: {{ suricata_update_schedule }} (cron)
+      Status     : {{ suricata_status.stdout }}
+
+      Useful commands:
+        sudo systemctl status suricata
+        sudo tail -f {{ suricata_log_dir }}/eve.json
+        sudo suricata-update && sudo suricatasc -c reload-rules
+
+# ── Promtail ───────────────────────────────────────────────────────────────
+
+- name: Install Promtail block
+  when: suricata_promtail_enabled
+  block:
+    - name: Check if Promtail is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/promtail
+      register: promtail_binary
+
+    - name: Download Promtail binary
+      ansible.builtin.get_url:
+        url: "https://github.com/grafana/loki/releases/download/v{{ suricata_promtail_version }}/promtail-linux-amd64.zip"
+        dest: /tmp/promtail.zip
+        mode: '0644'
+      when: not promtail_binary.stat.exists
+
+    - name: Unzip Promtail
+      ansible.builtin.unarchive:
+        src: /tmp/promtail.zip
+        dest: /tmp
+        remote_src: true
+      when: not promtail_binary.stat.exists
+
+    - name: Install Promtail binary
+      ansible.builtin.copy:
+        src: /tmp/promtail-linux-amd64
+        dest: /usr/local/bin/promtail
+        mode: '0755'
+        remote_src: true
+      when: not promtail_binary.stat.exists
+
+    - name: Clean up Promtail download artifacts
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/promtail.zip
+        - /tmp/promtail-linux-amd64
+      when: not promtail_binary.stat.exists
+
+    - name: Create Promtail config directory
+      ansible.builtin.file:
+        path: /etc/promtail
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Deploy Promtail config from template
+      ansible.builtin.template:
+        src: promtail-config.yaml.j2
+        dest: /etc/promtail/config.yml
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart promtail
+
+    - name: Create Promtail systemd service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/promtail.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Promtail log shipper (Suricata EVE JSON → Loki)
+          After=network-online.target suricata.service
+          Wants=network-online.target
+
+          [Service]
+          Type=simple
+          User=root
+          ExecStart=/usr/local/bin/promtail -config.file=/etc/promtail/config.yml
+          Restart=on-failure
+          RestartSec=10
+          StandardOutput=journal
+          StandardError=journal
+
+          [Install]
+          WantedBy=multi-user.target
+      notify: Restart promtail
+
+    - name: Enable and start Promtail
+      ansible.builtin.systemd:
+        name: promtail
+        state: started
+        enabled: true
+        daemon_reload: true
+
+    - name: Verify Promtail is running
+      ansible.builtin.command:
+        cmd: systemctl is-active promtail
+      register: promtail_status
+      changed_when: false
+      failed_when: promtail_status.stdout != 'active'
