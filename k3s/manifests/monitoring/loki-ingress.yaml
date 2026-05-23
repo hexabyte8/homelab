@@ -1,0 +1,26 @@
+---
+# Expose the Loki push/query API on Tailscale so external hosts (e.g. the
+# Suricata VM running Promtail) can ship logs to the in-cluster Loki instance.
+# Access is restricted to the Tailnet — no public exposure.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: loki
+  namespace: monitoring
+  annotations:
+    tailscale.com/proxy-class: "prod"
+spec:
+  ingressClassName: tailscale
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: loki
+                port:
+                  number: 3100
+  tls:
+    - hosts:
+        - loki

@@ -1,0 +1,19 @@
+---
+# Plain Kubernetes manifests for the monitoring stack that live outside the
+# kube-prometheus-stack and Loki HelmReleases (e.g. extra Ingress resources).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: monitoring-manifests
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 5m
+  prune: true
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./k3s/manifests/monitoring
+  targetNamespace: monitoring

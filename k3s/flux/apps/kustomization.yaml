@@ -9,7 +9,10 @@ resources:
   # Helm-based infrastructure
   - cert-manager.yaml
   - cnpg-operator.yaml
+  - falco.yaml
   - longhorn-operator.yaml
+  - loki.yaml
+  - monitoring.yaml
   - tailscale-operator.yaml
   - authentik.yaml
   # Plain-manifest infrastructure config
@@ -20,6 +23,8 @@ resources:
   - traefik-config.yaml
   - cloudflared.yaml
   - metallb-config.yaml
+  - monitoring-config.yaml
+  - monitoring-manifests.yaml
   # Workloads
   - adguard.yaml
   - calibre-web.yaml

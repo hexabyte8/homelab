@@ -1,0 +1,196 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: monitoring
+  namespace: flux-system
+spec:
+  interval: 30m
+  releaseName: monitoring
+  targetNamespace: monitoring
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: "69.x"
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+  values:
+    # ── Grafana ──────────────────────────────────────────────────────────────
+    grafana:
+      enabled: true
+
+      # Admin credentials come from a patched secret (REPLACE_ME → real values
+      # via kubectl patch or the k3s-patch-secrets workflow)
+      admin:
+        existingSecret: grafana-admin-secret
+        userKey: admin-user
+        passwordKey: admin-password
+
+      # OAuth env vars injected from the Authentik OIDC secret
+      envFromSecret: grafana-oauth-secret
+
+      grafana.ini:
+        server:
+          root_url: https://grafana.daggertooth-scala.ts.net
+        auth:
+          disable_login_form: false
+          oauth_auto_login: false
+        auth.generic_oauth:
+          enabled: true
+          name: Authentik
+          allow_sign_up: true
+          client_id: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_ID}
+          client_secret: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}
+          scopes: openid email profile
+          # Authentik is now served via Cloudflare Tunnel at chronobyte.net
+          auth_url: https://authentik.chronobyte.net/application/o/grafana/authorize/
+          token_url: https://authentik.chronobyte.net/application/o/grafana/token/
+          api_url: https://authentik.chronobyte.net/application/o/userinfo/
+          role_attribute_path: contains(groups[*], 'authentik Admins') && 'Admin' || 'Viewer'
+
+      ingress:
+        enabled: true
+        ingressClassName: tailscale
+        annotations:
+          tailscale.com/proxy-class: "prod"
+        # Empty host — Tailscale derives the hostname from tls.hosts
+        hosts:
+          - ""
+        tls:
+          - hosts:
+              - grafana
+
+      persistence:
+        enabled: true
+        storageClassName: longhorn
+        size: 5Gi
+
+      # Pre-load community dashboards for Falco and node monitoring
+      dashboardProviders:
+        dashboardproviders.yaml:
+          apiVersion: 1
+          providers:
+            - name: default
+              orgId: 1
+              folder: ""
+              type: file
+              disableDeletion: false
+              editable: true
+              options:
+                path: /var/lib/grafana/dashboards/default
+
+      dashboards:
+        default:
+          # Falco official dashboard
+          falco:
+            gnetId: 11914
+            revision: 1
+            datasource: Prometheus
+          # Node Exporter full
+          node-exporter:
+            gnetId: 1860
+            revision: 37
+            datasource: Prometheus
+          # Kubernetes cluster overview
+          k8s-cluster:
+            gnetId: 7249
+            revision: 1
+            datasource: Prometheus
+          # Suricata / Loki log explorer (community dashboard for EVE JSON)
+          suricata-loki:
+            gnetId: 13950
+            revision: 2
+            datasource: Loki
+
+      additionalDataSources:
+        - name: Loki
+          type: loki
+          url: http://loki.monitoring.svc.cluster.local:3100
+          access: proxy
+          isDefault: false
+
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+    # ── Prometheus ────────────────────────────────────────────────────────────
+    prometheus:
+      ingress:
+        enabled: true
+        ingressClassName: tailscale
+        annotations:
+          tailscale.com/proxy-class: "prod"
+        hosts:
+          - ""
+        tls:
+          - hosts:
+              - prometheus
+
+      prometheusSpec:
+        retention: 15d
+        # Scrape any ServiceMonitor in any namespace (picks up Falco, etc.)
+        serviceMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: longhorn
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 20Gi
+
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+
+    # ── Alertmanager ──────────────────────────────────────────────────────────
+    alertmanager:
+      ingress:
+        enabled: true
+        ingressClassName: tailscale
+        annotations:
+          tailscale.com/proxy-class: "prod"
+        hosts:
+          - ""
+        tls:
+          - hosts:
+              - alertmanager
+
+      alertmanagerSpec:
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: longhorn
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 2Gi
+
+    # ── Exporters ─────────────────────────────────────────────────────────────
+    nodeExporter:
+      enabled: true
+
+    kubeStateMetrics:
+      enabled: true
+
+    # ── CRD install ───────────────────────────────────────────────────────────
+    crds:
+      enabled: true

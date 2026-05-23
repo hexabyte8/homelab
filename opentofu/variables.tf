@@ -63,7 +63,7 @@ variable "s3_backup_bucket_name" {
 variable "authentik_url" {
   description = "Base URL of the Authentik instance (used by the goauthentik/authentik provider)."
   type        = string
-  default     = "https://authentik.daggertooth-scala.ts.net"
+  default     = "https://authentik.chronobyte.net"
 }
 
 variable "authentik_api_token" {

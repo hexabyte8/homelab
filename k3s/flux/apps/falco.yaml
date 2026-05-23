@@ -1,0 +1,65 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: falco
+  namespace: flux-system
+spec:
+  interval: 30m
+  releaseName: falco
+  targetNamespace: falco
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: falco
+      version: "4.x"
+      sourceRef:
+        kind: HelmRepository
+        name: falcosecurity
+        namespace: flux-system
+  values:
+    # modern_ebpf requires no kernel headers — best choice for k3s nodes
+    driver:
+      kind: modern_ebpf
+
+    # Structured JSON output for easier ingestion by log tools
+    falco:
+      jsonOutput: true
+      jsonIncludeOutputProperty: true
+      logLevel: info
+      # Increase priority threshold to reduce noise in a homelab
+      priority: WARNING
+
+    # Enrich events with Kubernetes pod/namespace/deployment metadata
+    collectors:
+      enabled: true
+      kubernetes:
+        enabled: true
+
+    # Falcosidekick disabled by default; enable later to route alerts to ntfy/Slack
+    falcosidekick:
+      enabled: false
+
+    # Expose Prometheus metrics so kube-prometheus-stack can scrape Falco
+    metrics:
+      enabled: true
+      interval: 15s
+
+    serviceMonitor:
+      create: true
+      labels:
+        release: monitoring
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi

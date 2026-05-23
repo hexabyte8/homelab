@@ -4,12 +4,15 @@ metadata:
   name: authentik
   namespace: authentik
   annotations:
-    tailscale.com/proxy-class: "funnel"
-    tailscale.com/funnel: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    # Rewrite X-Forwarded-Proto so Authentik builds correct https:// redirect URLs
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      kube-system-cloudflare-https-scheme@kubernetescrd
 spec:
-  ingressClassName: tailscale
+  ingressClassName: traefik
   rules:
-    - http:
+    - host: authentik.chronobyte.net
+      http:
         paths:
           - path: /
             pathType: Prefix
@@ -20,4 +23,5 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - authentik
+        - authentik.chronobyte.net
+      secretName: authentik-cloudflare-tls

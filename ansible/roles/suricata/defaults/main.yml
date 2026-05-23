@@ -1,0 +1,41 @@
+---
+# Network interface Suricata will inspect (set per-host in inventory or vars)
+suricata_interface: eth0
+
+# AF-packet threads per interface (tune to CPU count; 1 is fine for homelab)
+suricata_af_packet_threads: 1
+
+# Run mode: af-packet (inline/passive) is standard; ids mode is passive-only
+suricata_runmode: autofp
+
+# Log directory on the target host
+suricata_log_dir: /var/log/suricata
+
+# Enable EVE JSON unified log (feeds Grafana, ELK, etc.)
+suricata_eve_enabled: true
+
+# Sources for suricata-update (ET/Open is free; add ET/Pro key if you have one)
+suricata_rule_sources:
+  - et/open
+
+# Cron schedule for automatic rule updates (daily at 02:00)
+suricata_update_schedule: "0 2 * * *"
+
+# HOME_NET — adjust to match your LAN subnet(s)
+suricata_home_net: "[192.168.0.0/16,10.0.0.0/8,172.16.0.0/12]"
+
+# EXTERNAL_NET
+suricata_external_net: "!$HOME_NET"
+
+# ── Promtail (ships Suricata EVE JSON logs to Loki) ────────────────────────
+# Set to false to skip Promtail installation
+suricata_promtail_enabled: true
+
+# Loki push URL — reachable from the VM via Tailscale
+suricata_loki_url: "https://loki.daggertooth-scala.ts.net/loki/api/v1/push"
+
+# Port Promtail's local HTTP server listens on (health/metrics)
+suricata_promtail_port: 9080
+
+# Version of Promtail to install (keep in sync with your Loki chart version)
+suricata_promtail_version: "3.0.0"

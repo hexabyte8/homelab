@@ -1,0 +1,21 @@
+---
+# Applies the Grafana secrets (admin credentials + Authentik OAuth) into the
+# monitoring namespace. The kustomize.toolkit.fluxcd.io/reconcile: disabled
+# annotation on each secret prevents Flux from overwriting values patched in
+# by the k3s-patch-secrets workflow.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: monitoring-config
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 5m
+  prune: true
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./k3s/manifests/monitoring-config
+  targetNamespace: monitoring

@@ -1,0 +1,128 @@
+name: Ansible - Deploy Suricata IDS/IPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_host:
+        description: 'Tailscale hostname of the target VM (without domain suffix)'
+        required: true
+        type: string
+        default: 'suricata'
+      ansible_user:
+        description: 'SSH user on the target VM'
+        required: true
+        type: string
+        default: 'ubuntu'
+      interface:
+        description: 'Network interface Suricata will monitor (e.g. eth0, ens18)'
+        required: true
+        type: string
+        default: 'eth0'
+      home_net:
+        description: 'HOME_NET in Suricata format (e.g. [192.168.1.0/24,10.0.0.0/8])'
+        required: false
+        type: string
+        default: '[192.168.0.0/16,10.0.0.0/8,172.16.0.0/12]'
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - deploy
+          - update-rules
+        default: deploy
+
+jobs:
+  suricata:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+          version: 1.68.1
+
+      - name: Enable MagicDNS
+        run: sudo tailscale set --accept-dns=true | cat
+
+      - name: Wait for DNS
+        run: sleep 10
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Configure SSH known hosts
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan ${{ inputs.target_host }}.daggertooth-scala.ts.net >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Build inventory
+        run: |
+          cat > ansible/inventory.yml <<EOF
+          ---
+          all:
+            hosts:
+              ${{ inputs.target_host }}:
+                ansible_host: ${{ inputs.target_host }}.daggertooth-scala.ts.net
+                ansible_user: ${{ inputs.ansible_user }}
+                ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+            children:
+              suricata:
+                hosts:
+                  ${{ inputs.target_host }}:
+            vars:
+              ansible_python_interpreter: /usr/bin/python3
+          EOF
+
+      - name: Deploy Suricata
+        if: inputs.action == 'deploy'
+        run: |
+          cd ansible
+          ansible-playbook playbooks/deploy_suricata.yml \
+            -e "suricata_interface=${{ inputs.interface }}" \
+            -e "suricata_home_net='${{ inputs.home_net }}'"
+
+      - name: Update Suricata rules only
+        if: inputs.action == 'update-rules'
+        run: |
+          cd ansible
+          ansible suricata -i inventory.yml \
+            -m shell \
+            -a "suricata-update && suricatasc -c reload-rules" \
+            --become
+
+      - name: Build step summary
+        if: always()
+        run: |
+          echo "## Suricata IDS/IPS — ${{ inputs.action }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Target host | \`${{ inputs.target_host }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Interface | \`${{ inputs.interface }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| HOME_NET | \`${{ inputs.home_net }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Action | \`${{ inputs.action }}\` |" >> $GITHUB_STEP_SUMMARY
