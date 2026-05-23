@@ -143,7 +143,7 @@ resource "authentik_provider_oauth2" "grafana" {
   invalidation_flow  = data.authentik_flow.default_invalidation.id
   signing_key        = data.authentik_certificate_key_pair.default.id
   property_mappings  = data.authentik_property_mapping_provider_scope.oidc_standard.ids
-  redirect_uris = [
+  allowed_redirect_uris = [
     {
       matching_mode = "strict"
       url           = "https://grafana.daggertooth-scala.ts.net/login/generic_oauth"
