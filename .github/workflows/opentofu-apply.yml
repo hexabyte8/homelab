@@ -68,18 +68,6 @@ jobs:
             sleep 5
           done
 
-      - name: Wait for Authentik DNS
-        run: |
-          echo "Waiting for authentik.daggertooth-scala.ts.net to resolve..."
-          for i in $(seq 1 60); do
-            if getent hosts authentik.daggertooth-scala.ts.net; then
-              echo "DNS resolved successfully"
-              break
-            fi
-            echo "Attempt $i/60 failed, retrying in 5s..."
-            sleep 5
-          done
-
       - name: Setup OpenTofu
         uses: opentofu/setup-opentofu@v2
         with:
@@ -96,7 +84,6 @@ jobs:
           aws_region = "${{ vars.AWS_REGION }}"
           s3_backup_bucket_name = "${{ vars.S3_BACKUP_BUCKET_NAME }}"
           authentik_api_token   = "$AUTHENTIK_API_TOKEN"
-          authentik_url         = "https://authentik.daggertooth-scala.ts.net"
           admin_email           = "$ADMIN_EMAIL"
           public_ip      = "$PUBLIC_IP"
           peer_public_ip = "$PEER_PUBLIC_IP"
