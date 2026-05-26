@@ -28,10 +28,6 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "homelab" {
   config = {
     ingress = [
       {
-        hostname = "authentik.${var.cloudflare_zone_name}"
-        service  = "http://traefik.kube-system.svc.cluster.local:80"
-      },
-      {
         hostname = "uptime.${var.cloudflare_zone_name}"
         service  = "http://traefik.kube-system.svc.cluster.local:80"
       },
@@ -61,15 +57,6 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "homelab" {
 
 # DNS — CNAME each public hostname to the tunnel endpoint.
 # proxied = true hides the tunnel CNAME behind Cloudflare's edge.
-
-resource "cloudflare_dns_record" "authentik" {
-  zone_id = var.cloudflare_zone_id
-  name    = "authentik"
-  content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"
-  type    = "CNAME"
-  ttl     = 1
-  proxied = true
-}
 
 resource "cloudflare_dns_record" "uptime_kuma" {
   zone_id = var.cloudflare_zone_id
