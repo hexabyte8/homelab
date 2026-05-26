@@ -68,18 +68,6 @@ jobs:
             sleep 5
           done
 
-      - name: Wait for Authentik DNS
-        run: |
-          echo "Waiting for authentik.chronobyte.net to resolve..."
-          for i in $(seq 1 60); do
-            if dig +short authentik.chronobyte.net @1.1.1.1 | grep -q '.'; then
-              echo "DNS resolved successfully"
-              break
-            fi
-            echo "Attempt $i/60 failed, retrying in 5s..."
-            sleep 5
-          done
-
       - name: Setup OpenTofu
         uses: opentofu/setup-opentofu@v2
         with:
@@ -102,11 +90,11 @@ jobs:
           EOF
 
       - name: OpenTofu Init
-        run: tofu init
+        run: tofu init -no-color
         working-directory: ./opentofu
 
       - name: OpenTofu Apply
-        run: tofu apply -auto-approve
+        run: tofu apply -auto-approve -no-color
         working-directory: ./opentofu
         env:
           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
