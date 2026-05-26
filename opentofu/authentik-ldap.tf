@@ -159,7 +159,7 @@ resource "authentik_outpost" "ldap" {
   # AUTHENTIK_HOST that the embedded outpost reaches (in-cluster, http).
   config = jsonencode({
     authentik_host                 = "http://authentik-server.authentik.svc.cluster.local"
-    authentik_host_browser         = "https://authentik.daggertooth-scala.ts.net"
+    authentik_host_browser         = "https://authentik.chronobyte.net"
     authentik_host_insecure        = false
     log_level                      = "info"
     object_naming_template         = "ak-outpost-%(name)s"
