@@ -124,6 +124,10 @@ resource "authentik_outpost" "embedded" {
     authentik_provider_proxy.calibre.id,
     authentik_provider_proxy.uptime_kuma.id,
   ]
+  config = jsonencode({
+    authentik_host          = "https://authentik.${var.cloudflare_zone_name}"
+    authentik_host_insecure = false
+  })
 }
 
 # ---------- OAuth2/OIDC provider — Grafana (Tailscale-only) ----------
