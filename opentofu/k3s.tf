@@ -33,7 +33,7 @@ resource "proxmox_vm_qemu" "k3s-server" {
       scsi0 {
         disk {
           storage = "local-lvm"
-          size    = "500G"
+          size    = "150G"
         }
       }
     }
@@ -90,7 +90,7 @@ resource "proxmox_vm_qemu" "k3s-agent-1" {
       scsi0 {
         disk {
           storage = "local-lvm"
-          size    = "500G"
+          size    = "150G"
         }
       }
     }
@@ -147,7 +147,7 @@ resource "proxmox_vm_qemu" "k3s-agent-2" {
       scsi0 {
         disk {
           storage = "local-lvm"
-          size    = "500G"
+          size    = "150G"
         }
       }
     }
