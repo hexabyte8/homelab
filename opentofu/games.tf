@@ -33,7 +33,7 @@ resource "proxmox_vm_qemu" "game-server" {
       scsi0 {
         disk {
           storage = "local-lvm"
-          size    = "500G"
+          size    = "200G"
         }
       }
     }

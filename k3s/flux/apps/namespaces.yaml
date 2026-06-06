@@ -4,7 +4,6 @@
 # `install.createNamespace: true`.
 #
 # Apps whose namespace is created elsewhere (and so are *not* listed here):
-#   - argocd          (created during ArgoCD install)
 #   - kube-system     (cluster default — used by traefik-config)
 #   - authentik       (created by the authentik HelmRelease)
 #   - cert-manager    (created by the cert-manager HelmRelease)

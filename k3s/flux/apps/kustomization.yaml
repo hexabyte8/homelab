@@ -32,7 +32,6 @@ resources:
   - fail2ban.yaml
   - jellyfin.yaml
   - mcp-kubernetes.yaml
-  - mcp-proxmox.yaml
   - ntfy.yaml
   - ollama.yaml
   - stalwart.yaml
