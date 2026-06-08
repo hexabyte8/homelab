@@ -1,4 +1,4 @@
-# Monitoring — Prometheus + Grafana
+# Monitoring - Prometheus + Grafana
 
 This homelab uses [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) to provide cluster-wide metrics collection and dashboards. The stack is deployed via Flux CD as a Helm chart (HelmRelease) and runs entirely inside the k3s cluster.
 
@@ -9,8 +9,8 @@ This homelab uses [kube-prometheus-stack](https://github.com/prometheus-communit
 | Component              | Purpose                                                                                 |
 | ---------------------- | --------------------------------------------------------------------------------------- |
 | **Prometheus**         | Scrapes metrics from k3s nodes, pods, kubelet, kube-state-metrics, and external targets |
-| **Grafana**            | Dashboard UI — visualise Prometheus data                                                |
-| **node-exporter**      | DaemonSet on every k3s node — exposes OS-level metrics (CPU, memory, disk, network)     |
+| **Grafana**            | Dashboard UI - visualise Prometheus data                                                |
+| **node-exporter**      | DaemonSet on every k3s node - exposes OS-level metrics (CPU, memory, disk, network)     |
 | **kube-state-metrics** | Exposes Kubernetes object state metrics (pod counts, deployment status, etc.)           |
 
 ### Access URLs
@@ -20,7 +20,7 @@ This homelab uses [kube-prometheus-stack](https://github.com/prometheus-communit
 | Grafana    | <https://grafana.tailnet.ts.net>    |
 | Prometheus | <https://prometheus.tailnet.ts.net> |
 
-Both are exposed via Tailscale Ingress — accessible only to tailnet members (no public internet exposure).
+Both are exposed via Tailscale Ingress - accessible only to tailnet members (no public internet exposure).
 
 ### Architecture
 
@@ -38,7 +38,7 @@ graph TD
 
 | File                                        | Purpose                                           |
 | ------------------------------------------- | ------------------------------------------------- |
-| `k3s/manifests/monitoring/helmrelease.yaml` | Flux HelmRelease — Helm chart source + all values |
+| `k3s/manifests/monitoring/helmrelease.yaml` | Flux HelmRelease - Helm chart source + all values |
 
 All configuration lives in the HelmRelease's inline Helm values. To change any setting, edit that file and push to `main`. Flux reconciles within ~10 minutes.
 
@@ -68,20 +68,20 @@ Grafana is configured to use Authentik as an OAuth2/OIDC provider. After deployi
 
 ### Step 1: Create the provider and application in Authentik
 
-1. **Create an OAuth2/OpenID Connect Provider** — Applications → Providers → Create
+1. **Create an OAuth2/OpenID Connect Provider** - Applications → Providers → Create
    - Name: `Grafana`
    - Client type: `Confidential`
    - Redirect URIs: `https://grafana.tailnet.ts.net/login/generic_oauth`
    - Signing key: select your existing key
-   - Copy the **Client ID** and **Client Secret** — you'll need them below
+   - Copy the **Client ID** and **Client Secret** - you'll need them below
 
-2. **Create an Application** — Applications → Applications → Create
+2. **Create an Application** - Applications → Applications → Create
    - Name: `Grafana`
    - Slug: `grafana`
    - Provider: select the provider from step 1
    - Launch URL: `https://grafana.tailnet.ts.net`
 
-3. **Optionally create a Grafana Admins group** in Authentik — users in this group receive the `Admin` role in Grafana. Users not in any mapped group default to `Viewer`.
+3. **Optionally create a Grafana Admins group** in Authentik - users in this group receive the `Admin` role in Grafana. Users not in any mapped group default to `Viewer`.
 
 ### Step 2: Patch the credentials secret
 
@@ -118,7 +118,7 @@ The Grafana `admin` local account remains active as a fallback. The login form i
 
 The scrape config in `monitoring-app.yaml` includes a placeholder job for a game-server VM running node-exporter. Follow these steps to activate it.
 
-### Step 1 — Install node-exporter on the game server
+### Step 1 - Install node-exporter on the game server
 
 SSH into the game-server VM and run:
 
@@ -136,7 +136,7 @@ curl http://localhost:9100/metrics | head -20
 
 node-exporter listens on port `9100` by default.
 
-### Step 2 — Find the game server's Tailscale IP
+### Step 2 - Find the game server's Tailscale IP
 
 On the game-server VM:
 
@@ -146,7 +146,7 @@ tailscale ip -4
 
 Note the IPv4 address (e.g. `<game-server-ts-ip>`). The game server must be joined to the same tailnet (`your-tailnet`) for Prometheus to reach it.
 
-### Step 3 — Update the scrape config
+### Step 3 - Update the scrape config
 
 Open `k3s/manifests/monitoring/helmrelease.yaml` and find the `additionalScrapeConfigs` block:
 
@@ -169,7 +169,7 @@ Replace `GAME_SERVER_TAILSCALE_IP` with the actual IP from step 2:
 
 Commit and push to `main`. Flux will reconcile and Prometheus will reload its config within ~10 minutes.
 
-### Step 4 — Verify in Prometheus
+### Step 4 - Verify in Prometheus
 
 Open <https://prometheus.tailnet.ts.net/targets> and confirm the `game-server-node` job shows **UP**.
 
@@ -187,7 +187,7 @@ Import these community dashboards via **Grafana → Dashboards → Import → en
 
 | Dashboard                      | ID       | Purpose                                                                                     |
 | ------------------------------ | -------- | ------------------------------------------------------------------------------------------- |
-| Node Exporter Full             | `1860`   | Per-node CPU, memory, disk, network — works for both k3s nodes and the game server          |
+| Node Exporter Full             | `1860`   | Per-node CPU, memory, disk, network - works for both k3s nodes and the game server          |
 | Kubernetes Cluster             | `7249`   | Cluster-level overview: pod counts, resource usage, namespace breakdown                     |
 | kube-prometheus-stack defaults | built-in | Several dashboards are pre-installed by the Helm chart (look under the `Kubernetes` folder) |
 
@@ -236,6 +236,6 @@ See the [kube-prometheus-stack docs](https://github.com/prometheus-community/hel
 
 ## See Also
 
-- [gitops-flux.md](gitops-flux.md) — How Flux sync and reconciliation work
-- [tailscale-operator.md](tailscale-operator.md) — Tailscale Ingress details
-- [new-service.md](new-service.md) — Guide for adding new services to the cluster
+- [gitops-flux.md](gitops-flux.md) - How Flux sync and reconciliation work
+- [tailscale-operator.md](tailscale-operator.md) - Tailscale Ingress details
+- [new-service.md](new-service.md) - Guide for adding new services to the cluster

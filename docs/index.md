@@ -33,19 +33,19 @@ Proxmox server, managed via GitOps with Flux CD.
 | Ntfy | `ntfy.tailnet.ts.net` | Push notifications |
 | Grafana / Prometheus | `grafana.tailnet.ts.net` / `prometheus.tailnet.ts.net` | Monitoring (see [monitoring.md](monitoring.md)) |
 | Docs (this site) | `docs.chronobyte.net` (public, GitHub Pages) | Documentation |
-| Fail2ban | — | DaemonSet on all nodes — managed via [Ansible](fail2ban.md) |
+| Fail2ban | - | DaemonSet on all nodes - managed via [Ansible](fail2ban.md) |
 
 ## Guides
 
-- **[GitOps with Flux CD](gitops-flux.md)** — Bootstrap, adding services, patched secrets
-- **[Adding a New Service](new-service.md)** — End-to-end guide: manifests → Flux → ingress → Authentik
-- **[Cloudflare Tunnels](cloudflare-tunnels.md)** — Public ingress via Cloudflare Tunnel
-- **[Tailscale Operator](tailscale-operator.md)** — Exposing services on the tailnet
-- **[Flannel over Tailscale](flannel-over-tailscale.md)** — Cross-node pod networking via Tailscale IPs
-- **[Manifests & Helm](manifests-and-helm.md)** — Cluster overview and manual `kubectl` / `helm` escape hatches
-- **[Monitoring](monitoring.md)** — Prometheus, Grafana, and alerting
-- **[Disaster Recovery](disaster-recovery/index.md)** — Full rebuild from scratch
-- **[Fail2ban](fail2ban.md)** — DaemonSet deployment, jail config, ban management, troubleshooting
+- **[GitOps with Flux CD](gitops-flux.md)** - Bootstrap, adding services, patched secrets
+- **[Adding a New Service](new-service.md)** - End-to-end guide: manifests → Flux → ingress → Authentik
+- **[Cloudflare Tunnels](cloudflare-tunnels.md)** - Public ingress via Cloudflare Tunnel
+- **[Tailscale Operator](tailscale-operator.md)** - Exposing services on the tailnet
+- **[Flannel over Tailscale](flannel-over-tailscale.md)** - Cross-node pod networking via Tailscale IPs
+- **[Manifests & Helm](manifests-and-helm.md)** - Cluster overview and manual `kubectl` / `helm` escape hatches
+- **[Monitoring](monitoring.md)** - Prometheus, Grafana, and alerting
+- **[Disaster Recovery](disaster-recovery/index.md)** - Full rebuild from scratch
+- **[Fail2ban](fail2ban.md)** - DaemonSet deployment, jail config, ban management, troubleshooting
 
 ## Authentik & Identity
 

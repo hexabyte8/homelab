@@ -1,4 +1,4 @@
-# Kubernetes / k3s — Technology Guide
+# Kubernetes / k3s - Technology Guide
 
 > This guide explains what Kubernetes is, the key concepts you need to understand,
 > and how k3s (the lightweight Kubernetes distribution) is configured in this homelab.
@@ -12,7 +12,7 @@
 deployment, scaling, and management of containerized applications**.
 
 A **container** is a lightweight, portable package that contains an application and all
-its dependencies. You can think of it like a shipping container — standardized, portable,
+its dependencies. You can think of it like a shipping container - standardized, portable,
 and isolated.
 
 **What Kubernetes does:**
@@ -42,10 +42,10 @@ _cluster_ of machines, providing high availability and resource sharing.
 (now SUSE). It is designed for:
 
 - **Edge computing** and **resource-constrained environments** (like homelabs)
-- **Simple installation** — a single binary, single command install
-- **Low resource overhead** — uses less RAM and CPU than full Kubernetes
+- **Simple installation** - a single binary, single command install
+- **Low resource overhead** - uses less RAM and CPU than full Kubernetes
 
-k3s is **fully compatible** with standard Kubernetes — all the same commands, APIs,
+k3s is **fully compatible** with standard Kubernetes - all the same commands, APIs,
 and tools work with k3s.
 
 **k3s vs standard Kubernetes:**
@@ -90,7 +90,7 @@ The control plane is the "brain" of the cluster:
 
 ### Worker Nodes (k3s-agent-1, k3s-agent-2)
 
-Workers are the "muscles" — they actually run the workloads:
+Workers are the "muscles" - they actually run the workloads:
 
 - **kubelet:** The agent that runs on every node, creates and manages pods
 - **kube-proxy:** Handles network routing for services
@@ -189,7 +189,7 @@ kubectl get namespaces
 ### ConfigMap and Secret
 
 - **ConfigMap:** Stores non-sensitive configuration as key-value pairs
-- **Secret:** Stores sensitive data (passwords, tokens) — base64 encoded but not encrypted by default
+- **Secret:** Stores sensitive data (passwords, tokens) - base64 encoded but not encrypted by default
 
 ```bash
 # View all secrets in a namespace

@@ -1,4 +1,4 @@
-# Longhorn — Technology Guide
+# Longhorn - Technology Guide
 
 > This guide explains what Longhorn is, how it works, and how it provides persistent
 > storage for Kubernetes workloads in this homelab.
@@ -14,11 +14,11 @@ data in this homelab cluster.
 
 **The problem Longhorn solves:**
 
-Kubernetes containers are **ephemeral** — when a container restarts or moves to a
+Kubernetes containers are **ephemeral** - when a container restarts or moves to a
 different node, any data it wrote to its local filesystem is lost. For applications
 like databases, this is unacceptable.
 
-Kubernetes solves this with **Persistent Volumes (PVs)** — network-attached storage
+Kubernetes solves this with **Persistent Volumes (PVs)** - network-attached storage
 that persists across container restarts and can follow a container when it moves between nodes.
 
 **What Longhorn provides:**
@@ -59,7 +59,7 @@ stores volume data across multiple nodes for redundancy.
 
 ### Replicas
 
-Each Longhorn volume has a configurable number of **replicas** — copies of the data
+Each Longhorn volume has a configurable number of **replicas** - copies of the data
 stored on different nodes. With 3 nodes and 2 replicas, data survives the loss of
 one node.
 
@@ -84,7 +84,7 @@ PersistentVolumeClaim without specifying a class, Longhorn fulfills it.
 Longhorn supports:
 
 - **Snapshots:** Point-in-time copies of a volume stored on the same disk (fast)
-- **Backups:** Copies of snapshots stored in remote storage (S3, NFS) — used for disaster recovery
+- **Backups:** Copies of snapshots stored in remote storage (S3, NFS) - used for disaster recovery
 
 ---
 
@@ -107,9 +107,9 @@ modprobe iscsi_tcp
 
 **Why these packages?**
 
-- `open-iscsi` — Longhorn uses iSCSI to mount volumes into pods
-- `nfs-common` — for potential NFS-based backups
-- `iscsi_tcp` — kernel module for iSCSI protocol
+- `open-iscsi` - Longhorn uses iSCSI to mount volumes into pods
+- `nfs-common` - for potential NFS-based backups
+- `iscsi_tcp` - kernel module for iSCSI protocol
 
 ---
 
@@ -151,7 +151,7 @@ kubectl describe volume.longhorn.io <name> -n longhorn-system
 
 ## Common Troubleshooting
 
-### Pod stuck in Pending — no volumes available
+### Pod stuck in Pending - no volumes available
 
 ```bash
 # Check if the PVC is bound

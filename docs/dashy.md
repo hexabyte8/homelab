@@ -1,4 +1,4 @@
-# Dashy — Service Dashboard
+# Dashy - Service Dashboard
 
 [Dashy](https://github.com/Lissy93/dashy) is the homelab's service dashboard. It is reachable two ways:
 
@@ -13,7 +13,7 @@ It provides a visual overview of every service, with live status checks so you c
 
 ### Config-as-code
 
-Dashy's entire configuration — layout, sections, service entries, theme — lives in a single YAML file committed to this repository:
+Dashy's entire configuration - layout, sections, service entries, theme - lives in a single YAML file committed to this repository:
 
 ```
 k3s/manifests/dashy/configmap.yaml
@@ -28,7 +28,7 @@ GitHub PR merged → Flux syncs ConfigMap → pod restart picks up new config
 ### GitOps update flow
 
 1. Edit `k3s/manifests/dashy/configmap.yaml`
-2. Also bump the `kubectl.kubernetes.io/restartedAt` annotation in `k3s/manifests/dashy/deployment.yaml` to the current timestamp — this triggers a rolling restart when Flux applies the change
+2. Also bump the `kubectl.kubernetes.io/restartedAt` annotation in `k3s/manifests/dashy/deployment.yaml` to the current timestamp - this triggers a rolling restart when Flux applies the change
 3. Commit both files together and push (or open a PR to `main`)
 4. Flux picks up the changes within ~10 minutes and performs a rolling restart
 
@@ -123,7 +123,7 @@ The `appConfig` block controls global appearance:
 
 ```yaml
 appConfig:
-  theme: colorful          # built-in theme name — see https://dashy.to/docs/theming
+  theme: colorful          # built-in theme name - see https://dashy.to/docs/theming
   layout: auto             # auto | vertical | horizontal
   iconSize: medium         # small | medium | large
   statusCheck: true        # poll each URL and show up/down indicator
@@ -186,7 +186,7 @@ See the [Dashy status check docs](https://dashy.to/docs/status-indicators) for t
 
 | File | Purpose |
 |---|---|
-| `k3s/manifests/dashy/configmap.yaml` | **The dashboard configuration** — edit this to change anything visible |
+| `k3s/manifests/dashy/configmap.yaml` | **The dashboard configuration** - edit this to change anything visible |
 | `k3s/manifests/dashy/deployment.yaml` | Dashy pod spec; bump `restartedAt` annotation when updating the ConfigMap |
 | `k3s/manifests/dashy/service.yaml` | ClusterIP service on port 8080 |
 | `k3s/manifests/dashy/ingress.yaml` | Tailscale ingress → `dashy.tailnet.ts.net` |
@@ -198,6 +198,6 @@ See the [Dashy status check docs](https://dashy.to/docs/status-indicators) for t
 
 ## See Also
 
-- [new-service.md](new-service.md) — Full guide for deploying a new service, including adding it to this dashboard
-- [gitops-flux.md](gitops-flux.md) — How Flux sync and reconciliation work
-- [Dashy documentation](https://dashy.to/docs/) — Official upstream config reference
+- [new-service.md](new-service.md) - Full guide for deploying a new service, including adding it to this dashboard
+- [gitops-flux.md](gitops-flux.md) - How Flux sync and reconciliation work
+- [Dashy documentation](https://dashy.to/docs/) - Official upstream config reference

@@ -1,4 +1,4 @@
-# Bitwarden — Technology Guide
+# Bitwarden - Technology Guide
 
 > This guide explains what Bitwarden is and how it is used as the central secrets
 > management system for this homelab.
@@ -40,7 +40,7 @@ This homelab uses **two Bitwarden products**:
 
 ### 1. Bitwarden Password Manager
 
-The **consumer password manager** — used for storing human-readable credentials
+The **consumer password manager** - used for storing human-readable credentials
 that you access manually.
 
 **Access at:** [vault.bitwarden.com](https://vault.bitwarden.com)
@@ -56,7 +56,7 @@ Log in to the web vault and copy credentials as needed.
 
 ### 2. Bitwarden Secrets Manager
 
-A **machine-to-machine secrets management** service — used for storing secrets
+A **machine-to-machine secrets management** service - used for storing secrets
 that are loaded by GitHub Actions workflows at runtime.
 
 **Access at:** [sm.bitwarden.com](https://sm.bitwarden.com)
@@ -109,7 +109,7 @@ Every GitHub Actions workflow in this homelab follows this pattern:
 ## Setting Up BW_ACCESS_TOKEN
 
 `BW_ACCESS_TOKEN` is the single credential that enables all workflows. It must be
-set as a GitHub Actions **repository secret** (not in Bitwarden SM itself — it's the
+set as a GitHub Actions **repository secret** (not in Bitwarden SM itself - it's the
 key that unlocks everything else).
 
 ### Getting the Token
@@ -202,16 +202,16 @@ Projects/
    - Without 2FA, anyone with your master password can access all homelab credentials
    - Use an authenticator app (not SMS)
 
-2. **Use a strong master password** — Bitwarden encrypts everything with this password
+2. **Use a strong master password** - Bitwarden encrypts everything with this password
    - If you forget it, your vault is unrecoverable (Bitwarden cannot reset it for you)
 
-3. **Store the master password safely** — consider writing it down and storing it in
+3. **Store the master password safely** - consider writing it down and storing it in
    a physically secure location (safe, safety deposit box)
 
-4. **Export the vault periodically** — make an encrypted export for offline backup:
+4. **Export the vault periodically** - make an encrypted export for offline backup:
    - Bitwarden → Tools → Export vault → Encrypted JSON
 
-5. **Review connected devices** — check that only your devices are authorized:
+5. **Review connected devices** - check that only your devices are authorized:
    - Bitwarden vault → Settings → Active sessions
 
 ---

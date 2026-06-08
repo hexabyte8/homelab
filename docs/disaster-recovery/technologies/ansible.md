@@ -1,4 +1,4 @@
-# Ansible — Technology Guide
+# Ansible - Technology Guide
 
 > This guide explains what Ansible is, how it works, and how it is used to automate
 > node setup and application deployment in this homelab.
@@ -14,10 +14,10 @@ It allows you to define what you want a server to look like in simple YAML files
 
 **What makes Ansible different from other tools:**
 
-- **Agentless** — no software needs to be installed on the target servers
-- **Uses SSH** — connects via standard SSH (or Tailscale SSH in this homelab)
-- **Idempotent** — running the same playbook multiple times has the same result (safe to re-run)
-- **Declarative** — you describe the desired state, not the steps to get there
+- **Agentless** - no software needs to be installed on the target servers
+- **Uses SSH** - connects via standard SSH (or Tailscale SSH in this homelab)
+- **Idempotent** - running the same playbook multiple times has the same result (safe to re-run)
+- **Declarative** - you describe the desired state, not the steps to get there
 
 **Without Ansible:**
 
@@ -116,8 +116,8 @@ This is best practice as it avoids ambiguity and works correctly with all Ansibl
 An **idempotent** operation produces the same result whether run once or many times.
 Most Ansible modules are idempotent:
 
-- `ansible.builtin.apt: name=curl state=present` — installs curl if not installed, does nothing if already installed
-- `ansible.builtin.service: name=k3s state=started` — starts k3s if not running, does nothing if already running
+- `ansible.builtin.apt: name=curl state=present` - installs curl if not installed, does nothing if already installed
+- `ansible.builtin.service: name=k3s state=started` - starts k3s if not running, does nothing if already running
 
 ---
 
@@ -149,7 +149,7 @@ all:
           ansible_user: ubuntu
 EOF
 
-# Dry-run (check mode — no changes made)
+# Dry-run (check mode - no changes made)
 ansible-playbook playbooks/deploy_k3s.yml \
   -i /tmp/inventory.yml \
   --check
@@ -189,7 +189,7 @@ The task needs `become: true` (sudo). Check if the playbook or task has `become:
 
 ### Playbook fails but the server is in a weird state
 
-Most Ansible modules are idempotent — you can re-run the playbook and it will
+Most Ansible modules are idempotent - you can re-run the playbook and it will
 pick up where it left off without breaking things that already succeeded.
 
 ### "No module named 'ansible'"

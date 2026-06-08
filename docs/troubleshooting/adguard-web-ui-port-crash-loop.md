@@ -1,4 +1,4 @@
-# AdGuard Home web UI port set to 443 — pod crash loop
+# AdGuard Home web UI port set to 443 - pod crash loop
 
 ## Symptoms
 
@@ -32,7 +32,7 @@ kubectl logs -n tailscale <ts-adguard-home-...> | grep "proxy error"
 The AdGuard Home first-run setup wizard asks for an **Admin Web Interface** port.
 If this is changed from the default `3000` to `443`, AdGuard binds its web UI to
 port 443 instead of 3000. The Kubernetes liveness and readiness probes are hardcoded
-to check `http://<pod-ip>:3000/` — they fail immediately, and the kubelet kills and
+to check `http://<pod-ip>:3000/` - they fail immediately, and the kubelet kills and
 restarts the container in a loop.
 
 The pod logs confirm AdGuard is running but on the wrong port:
@@ -132,5 +132,5 @@ wizard settings.
 
 ## See also
 
-- [AdGuard Home — First-Run Setup](../adguard.md#first-run-setup)
+- [AdGuard Home - First-Run Setup](../adguard.md#first-run-setup)
 - [Tailscale Operator](../tailscale-operator.md)

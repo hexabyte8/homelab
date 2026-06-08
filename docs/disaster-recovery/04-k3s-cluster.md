@@ -13,8 +13,8 @@ Kubernetes manages running multiple containers (applications) across multiple ma
 restarting them if they crash, balancing load, and much more.
 
 k3s runs on 3 nodes:
-- **k3s-server**: the "brain" — makes all decisions, stores cluster state
-- **k3s-agent-1** and **k3s-agent-2**: the "workers" — actually run the containers
+- **k3s-server**: the "brain" - makes all decisions, stores cluster state
+- **k3s-agent-1** and **k3s-agent-2**: the "workers" - actually run the containers
 
 Not familiar with Kubernetes or k3s? See the [Kubernetes/k3s technology guide](./technologies/kubernetes-k3s.md).
 
@@ -37,7 +37,7 @@ For detailed explanation, see [Flannel over Tailscale](../flannel-over-tailscale
 
 ---
 
-## 4.1 Option A — Via GitHub Actions (Recommended)
+## 4.1 Option A - Via GitHub Actions (Recommended)
 
 ### Step 1: Deploy the k3s Server
 
@@ -86,7 +86,7 @@ Run **Actions → Ansible - Add k3s Worker Node (Tailscale)** twice:
 
 ---
 
-## 4.2 Option B — Manual Ansible
+## 4.2 Option B - Manual Ansible
 
 Use this if GitHub Actions is unavailable.
 
@@ -226,9 +226,9 @@ persistent data). It requires some packages to be installed on all nodes before 
 ```
 
 **What this installs on each node:**
-- `open-iscsi` — block storage protocol used by Longhorn
-- `nfs-common` — NFS client for potential NFS mounts
-- `util-linux` — system utilities
+- `open-iscsi` - block storage protocol used by Longhorn
+- `nfs-common` - NFS client for potential NFS mounts
+- `util-linux` - system utilities
 - Loads the `iscsi_tcp` kernel module
 
 Not familiar with Longhorn? See the [Longhorn technology guide](./technologies/longhorn.md).
@@ -297,7 +297,7 @@ kubectl get nodes
 
 Before proceeding to Phase 5:
 
-- [ ] k3s server deployed — visible in `kubectl get nodes` as `Ready`
+- [ ] k3s server deployed - visible in `kubectl get nodes` as `Ready`
 - [ ] k3s-agent-1 joined and shows as `Ready` in `kubectl get nodes`
 - [ ] k3s-agent-2 joined and shows as `Ready` in `kubectl get nodes`
 - [ ] All nodes show Tailscale IPs (`100.x.x.x`) as their INTERNAL-IP

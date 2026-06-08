@@ -1,4 +1,4 @@
-# Cloudflare — Technology Guide
+# Cloudflare - Technology Guide
 
 > This guide explains what Cloudflare is, how DNS works, and how Cloudflare manages
 > public DNS records for this homelab's domain.
@@ -37,8 +37,8 @@ traefik.example.com    →    203.0.113.42       →    Web server at 203.0.113.
 **reverse proxy/CDN (Content Delivery Network)**.
 
 In this homelab, Cloudflare is used for:
-1. **Authoritative DNS** — Cloudflare holds the DNS records for the public domain
-2. **Proxied records (optional)** — when a record is "proxied" (orange cloud), traffic
+1. **Authoritative DNS** - Cloudflare holds the DNS records for the public domain
+2. **Proxied records (optional)** - when a record is "proxied" (orange cloud), traffic
    goes through Cloudflare's network, which provides DDoS protection and hides the real IP
 
 **Why Cloudflare for a homelab?**
@@ -114,8 +114,8 @@ by the OpenTofu provider.
 ### API Token vs API Key
 
 Cloudflare offers two types of credentials:
-- **API Token (recommended):** Scoped to specific permissions and zones — safer
-- **Global API Key (legacy):** Full account access — avoid using this
+- **API Token (recommended):** Scoped to specific permissions and zones - safer
+- **Global API Key (legacy):** Full account access - avoid using this
 
 This homelab uses an API Token with these permissions:
 - Zone: `DNS` → Edit
@@ -162,7 +162,7 @@ tofu state show cloudflare_record.traefik
    }
    ```
 
-2. Commit and push to `main` — the `opentofu-apply.yml` workflow runs automatically
+2. Commit and push to `main` - the `opentofu-apply.yml` workflow runs automatically
 
 **Reference:** [Cloudflare OpenTofu provider documentation](https://registry.opentofu.org/providers/cloudflare/cloudflare/latest/docs/resources/record)
 
@@ -176,7 +176,7 @@ Access the dashboard at [dash.cloudflare.com](https://dash.cloudflare.com).
 
 | Section | What You'll Find |
 |---------|----------------|
-| Your domain → DNS | All DNS records — can be viewed/edited manually |
+| Your domain → DNS | All DNS records - can be viewed/edited manually |
 | Your domain → Overview | Zone ID and account information |
 | Account settings | Account ID |
 | Profile → API Tokens | Create/manage API tokens for OpenTofu |

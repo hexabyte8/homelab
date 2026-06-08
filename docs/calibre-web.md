@@ -24,17 +24,17 @@ Tailnet → Tailscale Ingress proxy → Calibre-Web (port 8083)
 |-----------|-------|---------|
 | Calibre-Web Automated | `crocodilestick/calibre-web-automated:latest` | Ebook library UI + auto-ingest |
 
-Calibre-Web runs in the `jellyfin` namespace and shares the `jellyfin-media` Longhorn volume. This co-location is required because `jellyfin-media` is `ReadWriteOnce` — only one node can mount it — so Calibre-Web must be scheduled on the same Kubernetes node as Jellyfin. A `podAffinity` rule enforces this.
+Calibre-Web runs in the `jellyfin` namespace and shares the `jellyfin-media` Longhorn volume. This co-location is required because `jellyfin-media` is `ReadWriteOnce` - only one node can mount it - so Calibre-Web must be scheduled on the same Kubernetes node as Jellyfin. A `podAffinity` rule enforces this.
 
 ## Storage
 
 | PVC | Size | Storage class | Mount path | Contents |
 |-----|------|---------------|------------|----------|
 | `calibre-web-config` | 5Gi | `longhorn` | `/config` | CWA database, app config, metadata cache |
-| `jellyfin-media` (shared) | 350Gi | `longhorn-media` | `/calibre-library` (subPath: `books`) | Calibre library — metadata and ebook files |
-| `jellyfin-media` (shared) | — | — | `/cwa-book-ingest` (subPath: `cwa-ingest`) | Drop zone for automatic book ingestion |
+| `jellyfin-media` (shared) | 350Gi | `longhorn-media` | `/calibre-library` (subPath: `books`) | Calibre library - metadata and ebook files |
+| `jellyfin-media` (shared) | - | - | `/cwa-book-ingest` (subPath: `cwa-ingest`) | Drop zone for automatic book ingestion |
 
-The Calibre library lives inside the shared media volume under `books/`, making the ebook files visible to FileBrowser and — if a Jellyfin ebook plugin is in use — to Jellyfin as well. New books placed in `cwa-ingest/` are automatically imported by CWA.
+The Calibre library lives inside the shared media volume under `books/`, making the ebook files visible to FileBrowser and - if a Jellyfin ebook plugin is in use - to Jellyfin as well. New books placed in `cwa-ingest/` are automatically imported by CWA.
 
 ## Environment variables
 
@@ -108,7 +108,7 @@ Check the [CWA releases page](https://github.com/crocodilestick/Calibre-Web-Auto
 
 Ensure `kube-system-cloudflare-https-scheme@kubernetescrd` is the **first** middleware in the chain on the Cloudflare ingress. Swapping the order causes Authentik to receive `X-Forwarded-Proto: http` and generate an invalid OIDC callback URL. See [cloudflare-tunnels.md](cloudflare-tunnels.md) for background.
 
-### Pod pending — unable to schedule
+### Pod pending - unable to schedule
 
 Because `jellyfin-media` is `ReadWriteOnce`, the Calibre-Web pod must be scheduled on the same node as Jellyfin. If the Jellyfin pod is not running, Calibre-Web will remain pending. Check Jellyfin first:
 

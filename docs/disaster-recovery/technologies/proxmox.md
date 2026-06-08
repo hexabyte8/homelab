@@ -1,4 +1,4 @@
-# Proxmox VE — Technology Guide
+# Proxmox VE - Technology Guide
 
 > This guide explains what Proxmox VE is, how it works, and how it is used in
 > this homelab. No prior virtualization experience required.
@@ -7,7 +7,7 @@
 
 ## What is Proxmox VE?
 
-**Proxmox Virtual Environment (VE)** is a free, open-source **hypervisor** — a type
+**Proxmox Virtual Environment (VE)** is a free, open-source **hypervisor** - a type
 of operating system that runs directly on bare metal hardware and allows you to create
 and manage **virtual machines (VMs)** and **containers**.
 
@@ -40,16 +40,16 @@ graph TD
 ### Hypervisor Types
 
 There are two types of hypervisors:
-- **Type 1 (bare-metal):** Runs directly on hardware — Proxmox is this type
-- **Type 2 (hosted):** Runs inside another OS — VMware Workstation, VirtualBox are this type
+- **Type 1 (bare-metal):** Runs directly on hardware - Proxmox is this type
+- **Type 2 (hosted):** Runs inside another OS - VMware Workstation, VirtualBox are this type
 
 Type 1 hypervisors are more efficient because there is no overhead of a "host" OS.
 
 ### Virtual Machines vs Containers
 
 Proxmox supports both:
-- **VMs (QEMU/KVM):** Full hardware emulation — each VM has its own kernel, can run any OS
-- **LXC containers:** Lighter weight, shares the host kernel — faster but less isolated
+- **VMs (QEMU/KVM):** Full hardware emulation - each VM has its own kernel, can run any OS
+- **LXC containers:** Lighter weight, shares the host kernel - faster but less isolated
 
 This homelab uses **VMs only**, not LXC containers. VMs are used because they offer
 complete isolation and can run Ubuntu, which is what k3s expects.
@@ -71,7 +71,7 @@ In this homelab, **VM 9000** is the template:
 2. It is configured with a cloud-init drive (for automatic configuration)
 3. The VM is converted to a template
 
-When OpenTofu needs to create a new VM, it clones VM 9000 — this is much faster
+When OpenTofu needs to create a new VM, it clones VM 9000 - this is much faster
 (seconds) than installing Ubuntu from scratch (minutes).
 
 ### Cloud-Init
@@ -107,7 +107,7 @@ Proxmox creates a **Linux bridge** called `vmbr0`:
 
 ```mermaid
 graph TD
-    nic["Physical NIC (enp3s0)"] --> bridge["vmbr0<br/><i>Linux bridge — like a virtual switch</i>"]
+    nic["Physical NIC (enp3s0)"] --> bridge["vmbr0<br/><i>Linux bridge - like a virtual switch</i>"]
     bridge --> vm1["VM1"]
     bridge --> vm2["VM2"]
     bridge --> vm3["VM3<br/><i>each VM has a virtual NIC on vmbr0</i>"]

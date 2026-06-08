@@ -27,7 +27,7 @@ Flannel auto-detects the `tailscale0` MTU (1280) and subtracts VXLAN overhead to
 
 ### Why proxy pods make it worse
 
-The Tailscale operator proxy pods (`ts-*`) run their own `tailscaled` instance in userspace mode (`--tun=userspace-networking`). These pods are themselves Tailscale network devices — traffic flowing *through* them gets a **third** layer of WireGuard encapsulation:
+The Tailscale operator proxy pods (`ts-*`) run their own `tailscaled` instance in userspace mode (`--tun=userspace-networking`). These pods are themselves Tailscale network devices - traffic flowing *through* them gets a **third** layer of WireGuard encapsulation:
 
 ```
 data → pod WireGuard (−80 bytes) → Flannel VXLAN (−50 bytes) → host WireGuard (−80 bytes) → eth0
@@ -41,7 +41,7 @@ Effective payload MTU through a proxy pod:
 | **flannel-iface: tailscale0** (broken) | ~**1150** bytes | **~81%** |
 | flannel-iface: eth0 (fixed) | ~1370 bytes | ~96% |
 
-The ~270 byte reduction with `tailscale0` forces TCP to use a much smaller MSS, increases packet counts for the same data, and causes IP-level fragmentation — all of which degrade throughput significantly.
+The ~270 byte reduction with `tailscale0` forces TCP to use a much smaller MSS, increases packet counts for the same data, and causes IP-level fragmentation - all of which degrade throughput significantly.
 
 ---
 
@@ -96,7 +96,7 @@ The userspace mode is expected and required for pods. The problem is the pod MTU
 
 ## Fix
 
-Change `flannel-iface` from `tailscale0` to `eth0` on all nodes. The node still registers with its Tailscale IP (via `node-ip`) for stability — only the Flannel VXLAN data plane moves to the faster LAN interface.
+Change `flannel-iface` from `tailscale0` to `eth0` on all nodes. The node still registers with its Tailscale IP (via `node-ip`) for stability - only the Flannel VXLAN data plane moves to the faster LAN interface.
 
 !!! note "Why eth0 is safe here"
     Flannel VXLAN will now use LAN IPs (192.168.1.x) instead of Tailscale IPs. Kubernetes node registration still uses the stable Tailscale IP via `node-ip`, so the control plane is unaffected. As long as LAN IPs are stable (static or DHCP-reserved), flannel connectivity between nodes is reliable.
@@ -112,7 +112,7 @@ sudo sed -i 's/flannel-iface: tailscale0/flannel-iface: eth0/' \
 sudo systemctl restart k3s
 ```
 
-### On agent nodes (no direct SSH — use `kubectl debug`)
+### On agent nodes (no direct SSH - use `kubectl debug`)
 
 ```bash
 for node in k3s-agent-1 k3s-agent-2; do
@@ -208,5 +208,5 @@ This affects legacy clients (e.g., old TLS 1.2-only clients) connecting via Tail
 
 ## See Also
 
-- [Flannel over Tailscale](../flannel-over-tailscale.md) — full design doc for the flannel/Tailscale integration
-- [Tailscale Operator](../tailscale-operator.md) — how proxy pods are provisioned
+- [Flannel over Tailscale](../flannel-over-tailscale.md) - full design doc for the flannel/Tailscale integration
+- [Tailscale Operator](../tailscale-operator.md) - how proxy pods are provisioned

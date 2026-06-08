@@ -1,6 +1,6 @@
 # Ntfy
 
-[Ntfy](https://github.com/binwiederhier/ntfy) is a self-hosted push notification service. It uses a simple HTTP pub/sub model — any service or script can publish a notification to a topic with a single `curl` call, and subscribers (phone apps, browser, other services) receive it instantly.
+[Ntfy](https://github.com/binwiederhier/ntfy) is a self-hosted push notification service. It uses a simple HTTP pub/sub model - any service or script can publish a notification to a topic with a single `curl` call, and subscribers (phone apps, browser, other services) receive it instantly.
 
 ## Access
 
@@ -123,7 +123,7 @@ spec:
 
 ## Topic naming
 
-Topics are created on first publish — no setup required. Choose descriptive names to keep things organised:
+Topics are created on first publish - no setup required. Choose descriptive names to keep things organised:
 
 | Topic | Suggested use |
 |-------|--------------|
@@ -134,7 +134,7 @@ Topics are created on first publish — no setup required. Choose descriptive na
 
 ## Upgrading
 
-Ntfy is pinned to `v2.11.0`. To upgrade, update the image tag in `k3s/manifests/ntfy/deployment.yaml` and commit. Check the [ntfy changelog](https://github.com/binwiederhier/ntfy/releases) for breaking changes — particularly any cache database migrations.
+Ntfy is pinned to `v2.11.0`. To upgrade, update the image tag in `k3s/manifests/ntfy/deployment.yaml` and commit. Check the [ntfy changelog](https://github.com/binwiederhier/ntfy/releases) for breaking changes - particularly any cache database migrations.
 
 ## Troubleshooting
 

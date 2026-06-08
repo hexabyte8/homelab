@@ -1,4 +1,4 @@
-# GitHub Actions — Technology Guide
+# GitHub Actions - Technology Guide
 
 > This guide explains what GitHub Actions is, how the workflows in this homelab
 > work, and how to use them for deployment and automation.
@@ -22,9 +22,9 @@ In this homelab, GitHub Actions workflows automate:
 
 - Secrets are managed centrally (Bitwarden SM → GitHub Actions)
 - No need to install tools locally (OpenTofu, Ansible, kubectl)
-- Reproducible — the same steps run the same way every time
-- Audit trail — every workflow run is logged with inputs and outputs
-- Safe — credentials are never exposed in logs (masked automatically)
+- Reproducible - the same steps run the same way every time
+- Audit trail - every workflow run is logged with inputs and outputs
+- Safe - credentials are never exposed in logs (masked automatically)
 
 **References:**
 
@@ -41,9 +41,9 @@ In this homelab, GitHub Actions workflows automate:
 A **workflow** is a YAML file stored in `.github/workflows/` that defines automated
 processes. Each workflow has:
 
-- **Triggers** — events that cause the workflow to run
-- **Jobs** — groups of steps that run together
-- **Steps** — individual commands or actions
+- **Triggers** - events that cause the workflow to run
+- **Jobs** - groups of steps that run together
+- **Steps** - individual commands or actions
 
 ### Triggers
 
@@ -69,7 +69,7 @@ on:
         required: true
 ```
 
-`workflow_dispatch` is used for all Ansible workflows — they require manual trigger
+`workflow_dispatch` is used for all Ansible workflows - they require manual trigger
 because they need a `target_host` input.
 
 ### Jobs and Steps
@@ -104,7 +104,7 @@ settings. They are injected as environment variables in workflows.
 
 In this homelab, only ONE secret is stored directly in GitHub:
 
-- `BW_ACCESS_TOKEN` — used to pull all other secrets from Bitwarden SM
+- `BW_ACCESS_TOKEN` - used to pull all other secrets from Bitwarden SM
 
 All other secrets live in Bitwarden SM and are fetched at runtime.
 
@@ -133,7 +133,7 @@ When a workflow runs:
 
 ### Job Summaries
 
-Many workflows post a **job summary** — a formatted report shown at the bottom of the
+Many workflows post a **job summary** - a formatted report shown at the bottom of the
 workflow run page. These summaries include:
 
 - What was applied
@@ -185,7 +185,7 @@ If you don't see the **Run workflow** button:
 
 1. Ensure you are on the `main` branch in the UI
 2. Ensure the workflow file has `workflow_dispatch:` in its `on:` section
-3. Wait a few minutes after pushing the workflow file — GitHub needs to index it
+3. Wait a few minutes after pushing the workflow file - GitHub needs to index it
 
 ---
 

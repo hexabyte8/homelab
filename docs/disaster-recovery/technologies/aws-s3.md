@@ -1,4 +1,4 @@
-# AWS S3 — Technology Guide
+# AWS S3 - Technology Guide
 
 > This guide explains what AWS S3 is, how it is configured for game server backups,
 > and how to verify and restore from backups.
@@ -14,7 +14,7 @@ anywhere on the internet.
 
 **What is object storage?**  
 Unlike a file system (which has files in folders in folders), object storage stores
-**objects** — each object has a key (path), data (content), and metadata. You access
+**objects** - each object has a key (path), data (content), and metadata. You access
 objects via an API or URL, not by mounting a file system.
 
 ```mermaid
@@ -34,7 +34,7 @@ graph LR
 
 **Why S3 for backups?**
 - **Durability:** S3 stores data across multiple availability zones (99.999999999% durability)
-- **Versioning:** Keeps multiple versions of each object — accidentally overwrite a backup? Previous versions are still there
+- **Versioning:** Keeps multiple versions of each object - accidentally overwrite a backup? Previous versions are still there
 - **Cost-effective:** Pay only for what you store
 - **Lifecycle rules:** Automatically move old backups to cheaper storage (Glacier) and delete very old ones
 
@@ -55,7 +55,7 @@ The S3 bucket is created and configured by OpenTofu in `opentofu/s3.tf`.
 |---------|-------|---------|
 | Versioning | Enabled | Keep multiple versions of each backup |
 | Encryption | AES-256 (SSE-S3) | All objects encrypted at rest |
-| Public access | Blocked | No public access — private backup bucket |
+| Public access | Blocked | No public access - private backup bucket |
 | Lifecycle: Glacier transition | After 30 days | Move old backups to cheaper storage |
 | Lifecycle: Expiration | After 90 days | Delete very old backups to save cost |
 

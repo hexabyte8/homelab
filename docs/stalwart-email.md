@@ -41,7 +41,7 @@ graph LR
 | Image | `stalwartlabs/stalwart:v0.15` |
 | Storage | 10Gi Longhorn PVC at `/opt/stalwart/data` |
 | Config | ConfigMap rendered by init container into `/opt/stalwart/etc/config.toml` |
-| Secrets | `stalwart-secrets` — `admin-password` and `resend-api-key` (REPLACE_ME in git) |
+| Secrets | `stalwart-secrets` - `admin-password` and `resend-api-key` (REPLACE_ME in git) |
 
 ### Init container
 
@@ -87,7 +87,7 @@ username = "resend"
 secret = "<resend-api-key>"
 ```
 
-This TOML is rendered into `/opt/stalwart/etc/config.toml` by the init container on first boot and written into the database. On subsequent boots Stalwart reads relay settings from the database, not the config file — so changes must be made via the Admin UI or the API (not by editing the ConfigMap).
+This TOML is rendered into `/opt/stalwart/etc/config.toml` by the init container on first boot and written into the database. On subsequent boots Stalwart reads relay settings from the database, not the config file - so changes must be made via the Admin UI or the API (not by editing the ConfigMap).
 
 **Changing relay settings via Admin UI:**
 
@@ -99,7 +99,7 @@ If you need to update the Resend API key or change relay parameters after deploy
 |---|---|
 | Address | `smtp.resend.com` |
 | Port | `465` |
-| TLS | Implicit (SSL/TLS — not STARTTLS) |
+| TLS | Implicit (SSL/TLS - not STARTTLS) |
 | Auth username | `resend` |
 | Auth secret | Resend API key (`re_...`) |
 
@@ -123,7 +123,7 @@ Log into `https://mail.tailnet.ts.net` with admin credentials:
 
 1. **Directory → Accounts → New Account**
 2. Set the email to `<name>@example.com` (e.g. `noreply`, `alerts`, `myapp`)
-3. Set a password — save it, you'll need it for the service config
+3. Set a password - save it, you'll need it for the service config
 
 ### Step 2: Configure the service
 
@@ -133,9 +133,9 @@ Use these SMTP settings in any application:
 |---|---|
 | **SMTP Host** | `stalwart.stalwart.svc.cluster.local` |
 | **SMTP Port** | `587` |
-| **Encryption** | None / STARTTLS (not implicit TLS — port 587 is plaintext inside the cluster) |
+| **Encryption** | None / STARTTLS (not implicit TLS - port 587 is plaintext inside the cluster) |
 | **Auth** | `PLAIN` or `LOGIN` |
-| **Username** | account name only — e.g. `noreply` (NOT `noreply@example.com`) |
+| **Username** | account name only - e.g. `noreply` (NOT `noreply@example.com`) |
 | **Password** | the account password set in Stalwart |
 | **From address** | `noreply@example.com` (or whichever account you created) |
 
@@ -164,7 +164,7 @@ env:
 
 ### Example: Authentik
 
-Authentik SMTP is configured via Helm values in `k3s/manifests/authentik/helmrelease.yaml` (not the UI — the UI settings are read-only when env vars are set):
+Authentik SMTP is configured via Helm values in `k3s/manifests/authentik/helmrelease.yaml` (not the UI - the UI settings are read-only when env vars are set):
 
 ```yaml
 authentik:
@@ -212,7 +212,7 @@ env:
 
 ## Setup from Scratch
 
-This section covers deploying Stalwart for the first time. All files already exist in the repo — this is a reference for rebuilds or understanding what was created.
+This section covers deploying Stalwart for the first time. All files already exist in the repo - this is a reference for rebuilds or understanding what was created.
 
 ### Prerequisites
 
@@ -225,9 +225,9 @@ This section covers deploying Stalwart for the first time. All files already exi
 
 All files live in `k3s/manifests/stalwart/`. The key files:
 
-**`namespace.yaml`** — creates the `stalwart` namespace.
+**`namespace.yaml`** - creates the `stalwart` namespace.
 
-**`secret.yaml`** — placeholder secrets (REPLACE_ME in git; patched live after deploy):
+**`secret.yaml`** - placeholder secrets (REPLACE_ME in git; patched live after deploy):
 
 ```yaml
 apiVersion: v1
@@ -241,9 +241,9 @@ stringData:
   resend-api-key:  "REPLACE_ME_resend_api_key_re_xxxx"
 ```
 
-**`pvc.yaml`** — 10Gi Longhorn PVC mounted at `/opt/stalwart` (RocksDB data lives here).
+**`pvc.yaml`** - 10Gi Longhorn PVC mounted at `/opt/stalwart` (RocksDB data lives here).
 
-**`configmap.yaml`** — Stalwart configuration template. Contains `__PLACEHOLDER__` tokens that the init container substitutes at runtime. Key sections:
+**`configmap.yaml`** - Stalwart configuration template. Contains `__PLACEHOLDER__` tokens that the init container substitutes at runtime. Key sections:
 
 ```toml
 # Listeners
@@ -301,16 +301,16 @@ username = "resend"
 secret = "__RESEND_API_KEY__"
 ```
 
-**`deployment.yaml`** — critical details:
+**`deployment.yaml`** - critical details:
 
-- `strategy: type: Recreate` — **required** to avoid RocksDB LOCK conflicts during pod replacement
+- `strategy: type: Recreate` - **required** to avoid RocksDB LOCK conflicts during pod replacement
 - Init container (`alpine:3.19`) installs `openssl`, hashes the admin password with `openssl passwd -6`, substitutes tokens in the ConfigMap template, and writes the result to an `emptyDir` volume
 - Main container mounts: PVC at `/opt/stalwart` (data), emptyDir at `/opt/stalwart/etc` (config)
-- Probes use `tcpSocket` on port 8080 (not HTTP — Stalwart's `/healthz` only exists in newer versions)
+- Probes use `tcpSocket` on port 8080 (not HTTP - Stalwart's `/healthz` only exists in newer versions)
 
-**`service.yaml`** — ClusterIP exposing ports 8080 (HTTP/admin), 587 (SMTP), 993 (IMAP).
+**`service.yaml`** - ClusterIP exposing ports 8080 (HTTP/admin), 587 (SMTP), 993 (IMAP).
 
-**`ingress-tailscale.yaml`** — Tailscale ingress at `mail.tailnet.ts.net` (private access):
+**`ingress-tailscale.yaml`** - Tailscale ingress at `mail.tailnet.ts.net` (private access):
 
 ```yaml
 spec:
@@ -330,7 +330,7 @@ spec:
         - mail
 ```
 
-**`ingress-cloudflare.yaml`** — Traefik ingress at `mail.example.com` with Authentik ForwardAuth:
+**`ingress-cloudflare.yaml`** - Traefik ingress at `mail.example.com` with Authentik ForwardAuth:
 
 ```yaml
 metadata:
@@ -353,7 +353,7 @@ spec:
 
 The `stalwart-secrets` Secret carries the annotation `kustomize.toolkit.fluxcd.io/reconcile: disabled`, which prevents Flux from overwriting patched values during reconciliation.
 
-### 3. OpenTofu — Cloudflare tunnel route
+### 3. OpenTofu - Cloudflare tunnel route
 
 In `opentofu/cloudflare-tunnel.tf`, add the hostname route before the catch-all 404 entry:
 
@@ -377,7 +377,7 @@ resource "cloudflare_dns_record" "mail" {
 }
 ```
 
-### 4. OpenTofu — Cloudflare Email Routing
+### 4. OpenTofu - Cloudflare Email Routing
 
 `opentofu/cloudflare-email.tf` enables inbound email forwarding:
 
@@ -402,9 +402,9 @@ resource "cloudflare_email_routing_catch_all" "forward_to_admin" {
 ```
 
 !!! note "Cloudflare v5 provider"
-    `enabled` on `cloudflare_email_routing_settings` is read-only in provider v5 — do not set it.
+    `enabled` on `cloudflare_email_routing_settings` is read-only in provider v5 - do not set it.
 
-### 5. OpenTofu — Resend DNS records
+### 5. OpenTofu - Resend DNS records
 
 In `opentofu/cloudflare.tf`, add the DNS records Resend requires for DKIM/SPF/DMARC:
 
@@ -483,8 +483,8 @@ Check `var.admin_email` inbox for a Cloudflare verification email. Click the lin
 
 Log into `https://mail.tailnet.ts.net` → **Directory → Accounts → New Account**:
 
-- `noreply@example.com` — default sender for Authentik and other services
-- `alerts@example.com` — optional, for monitoring/alerting tools
+- `noreply@example.com` - default sender for Authentik and other services
+- `alerts@example.com` - optional, for monitoring/alerting tools
 
 ### 10. Patch Authentik SMTP credentials
 
@@ -571,8 +571,8 @@ Key events to look for:
 | `queue.queue-message-authenticated` | Message accepted into queue |
 | `delivery.connect` | Connecting to relay/destination |
 | `delivery.delivered` | Message accepted by relay (code 250) |
-| `delivery.connect-error` | Failed to reach relay — check routing config |
-| `delivery.domain-delivery-start` + `domain = "gmail.com"` | **Going direct to MX, not relay** — routing misconfigured |
+| `delivery.connect-error` | Failed to reach relay - check routing config |
+| `delivery.domain-delivery-start` + `domain = "gmail.com"` | **Going direct to MX, not relay** - routing misconfigured |
 
 ### Email goes direct to Gmail instead of Resend
 
@@ -602,11 +602,11 @@ kubectl rollout restart deployment/stalwart -n stalwart
 
 ### SMTP auth fails (535 Authentication credentials invalid)
 
-**Check 1 — Username format**: Use the account short name (`noreply`), NOT the full email (`noreply@example.com`).
+**Check 1 - Username format**: Use the account short name (`noreply`), NOT the full email (`noreply@example.com`).
 
-**Check 2 — Account exists**: Log into the Admin UI → Directory → Accounts. If the PVC was recreated, accounts must be re-created.
+**Check 2 - Account exists**: Log into the Admin UI → Directory → Accounts. If the PVC was recreated, accounts must be re-created.
 
-**Check 3 — Password hash**: Stalwart stores passwords as SHA-512-crypt hashes (`$6$...`). If an account was created via API with a plaintext password it will always fail. Re-set via the Admin UI or:
+**Check 3 - Password hash**: Stalwart stores passwords as SHA-512-crypt hashes (`$6$...`). If an account was created via API with a plaintext password it will always fail. Re-set via the Admin UI or:
 
 ```bash
 kubectl port-forward -n stalwart svc/stalwart 18080:8080 &
@@ -623,7 +623,7 @@ curl -s -u 'admin:<password>' -X PATCH \
 
 ### SMTP auth fails (No suitable authentication method found)
 
-**Cause**: Stalwart is only advertising `XOAUTH2`/`OAUTHBEARER` on port 587 — this happens when the `session.auth.mechanisms` IfBlock is missing or incorrect in the DB.
+**Cause**: Stalwart is only advertising `XOAUTH2`/`OAUTHBEARER` on port 587 - this happens when the `session.auth.mechanisms` IfBlock is missing or incorrect in the DB.
 
 **Fix**: Verify the ConfigMap has the IfBlock and that it was loaded:
 
@@ -653,7 +653,7 @@ kubectl rollout restart deployment/stalwart -n stalwart
 
 ### Stalwart won't start (RocksDB LOCK error)
 
-**Cause**: A previous pod is still holding the RocksDB lock. This happens if the deployment strategy is `RollingUpdate` — the new pod starts before the old one stops.
+**Cause**: A previous pod is still holding the RocksDB lock. This happens if the deployment strategy is `RollingUpdate` - the new pod starts before the old one stops.
 
 **Fix**: The deployment uses `strategy: type: Recreate`. If this was accidentally changed:
 
@@ -715,8 +715,8 @@ Cloudflare Email Routing (catch-all → `admin@example.com`) is managed by `open
 
 ## Key Technical Notes
 
-- **`stalwartlabs/stalwart:v0.15`** — image repository changed from `stalwartlabs/mail-server` in v0.11
-- **Data path `/opt/stalwart/`** — changed from `/opt/stalwart-mail/` in v0.11; PVC must mount here
-- **`Recreate` strategy** — required because RocksDB holds an exclusive file lock; RollingUpdate deadlocks
-- **DB vs config file** — DB takes precedence for existing keys; delete DB keys via API to force config file re-read
-- **`queue.strategy.route`** — the IfBlock that controls outbound routing; without it, Stalwart attempts direct MX delivery (which fails because port 25 is blocked)
+- **`stalwartlabs/stalwart:v0.15`** - image repository changed from `stalwartlabs/mail-server` in v0.11
+- **Data path `/opt/stalwart/`** - changed from `/opt/stalwart-mail/` in v0.11; PVC must mount here
+- **`Recreate` strategy** - required because RocksDB holds an exclusive file lock; RollingUpdate deadlocks
+- **DB vs config file** - DB takes precedence for existing keys; delete DB keys via API to force config file re-read
+- **`queue.strategy.route`** - the IfBlock that controls outbound routing; without it, Stalwart attempts direct MX delivery (which fails because port 25 is blocked)

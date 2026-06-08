@@ -1,6 +1,6 @@
 # Authentik SSO
 
-This document covers the Authentik deployment in the homelab k3s cluster — what it provides, how it's set up, and how to protect services with ForwardAuth.
+This document covers the Authentik deployment in the homelab k3s cluster - what it provides, how it's set up, and how to protect services with ForwardAuth.
 
 ---
 
@@ -8,10 +8,10 @@ This document covers the Authentik deployment in the homelab k3s cluster — wha
 
 [Authentik](https://goauthentik.io/) is the identity provider (IdP) for the homelab cluster. It provides:
 
-- **SSO** — single sign-on across all protected services
-- **OIDC / OAuth2** — for apps that support standards-based authentication
-- **LDAP** — for apps that only speak LDAP (via built-in LDAP outpost)
-- **ForwardAuth** — proxy-level authentication via Traefik, so services without any auth support can be gated behind a login page
+- **SSO** - single sign-on across all protected services
+- **OIDC / OAuth2** - for apps that support standards-based authentication
+- **LDAP** - for apps that only speak LDAP (via built-in LDAP outpost)
+- **ForwardAuth** - proxy-level authentication via Traefik, so services without any auth support can be gated behind a login page
 
 Authentik is accessible at **<https://authentik.tailnet.ts.net>**.
 
@@ -25,7 +25,7 @@ Authentik is accessible at **<https://authentik.tailnet.ts.net>**.
 | **Redis** | Authentik's built-in Redis (bundled in the Helm chart) |
 | **TLS** | cert-manager with ClusterIssuer `letsencrypt-production` |
 | **Ingress** | Tailscale Funnel at `authentik.tailnet.ts.net` |
-| **Credentials secret** | `authentik-credentials` (must be patched after deploy — see below) |
+| **Credentials secret** | `authentik-credentials` (must be patched after deploy - see below) |
 | **ForwardAuth middleware** | `authentik-forward-auth` in namespace `authentik` |
 
 Flux manages the deployment via a `HelmRelease` in `k3s/flux/apps/authentik.yaml`. Once the HelmRelease reconciles, a few manual post-deploy steps are required before Authentik is usable.
@@ -53,7 +53,7 @@ The provider authenticates with `AUTHENTIK_API_TOKEN` (Bitwarden Secrets Manager
 inject it. Pushing to `main` runs `tofu apply` automatically.
 
 The previous YAML-blueprint approach (`k3s/manifests/authentik/blueprints-configmap.yaml`) has been
-removed — all blueprint state should be ported to OpenTofu instead. UI changes that aren't reflected
+removed - all blueprint state should be ported to OpenTofu instead. UI changes that aren't reflected
 in TF will be reverted on the next apply.
 
 > **Adding a new ForwardAuth-protected app:** add an `authentik_provider_proxy` + `authentik_application`,
@@ -148,7 +148,7 @@ Username attribute: cn
 
 The bind user (`jellyfin-ldap-bind`) is a service-account user created by Terraform. Its password
 must be **set once via the Authentik admin UI** (Directory → Users → jellyfin-ldap-bind →
-Set password) — Terraform does not manage the password, only the user record. Save the password
+Set password) - Terraform does not manage the password, only the user record. Save the password
 in Bitwarden as `JELLYFIN_LDAP_BIND_PASSWORD`.
 
 > **Note:** The user filter limits Jellyfin logins to members of the `family&friends` group. If
@@ -168,7 +168,7 @@ kubectl -n authentik patch secret authentik-credentials \
   --type='json' -p='[{"op":"replace","path":"/data/secret-key","value":"'"$(openssl rand -base64 60 | tr -d '\n' | base64)"'"}]'
 ```
 
-> **Why `kubectl patch`?** Flux uses Server-Side Apply (SSA), so `kubectl apply` will conflict. Always use `kubectl patch` for secrets managed this way. See [gitops-flux.md](gitops-flux.md#patched-secrets) — *Patched Secrets*.
+> **Why `kubectl patch`?** Flux uses Server-Side Apply (SSA), so `kubectl apply` will conflict. Always use `kubectl patch` for secrets managed this way. See [gitops-flux.md](gitops-flux.md#patched-secrets) - *Patched Secrets*.
 
 ### 2. Wait for the CNPG cluster
 
@@ -273,7 +273,7 @@ With IngressRoute, the middleware namespace is specified explicitly so there is 
 
 ## ForwardAuth with Services That Have Built-in Auth
 
-Some services (e.g. Uptime Kuma, Grafana, Gitea) ship with their own login page. When you add Authentik ForwardAuth in front of them, users hit **two logins in sequence** — Authentik first, then the service's own login. This is confusing and unnecessary.
+Some services (e.g. Uptime Kuma, Grafana, Gitea) ship with their own login page. When you add Authentik ForwardAuth in front of them, users hit **two logins in sequence** - Authentik first, then the service's own login. This is confusing and unnecessary.
 
 ### The fix: disable the service's built-in auth
 
@@ -300,7 +300,7 @@ Common env vars for other services:
 
 Check each service's documentation for the exact variable name.
 
-> **Why env var and not the UI setting?** Many services allow disabling auth via a UI toggle that is then persisted in the service's data volume. That works fine day-to-day, but after a disaster recovery restore with a fresh PVC the volume is empty — the UI setting is gone and the service's login page reappears. The env var approach is baked into the Deployment manifest (committed to git) and survives any PVC loss.
+> **Why env var and not the UI setting?** Many services allow disabling auth via a UI toggle that is then persisted in the service's data volume. That works fine day-to-day, but after a disaster recovery restore with a fresh PVC the volume is empty - the UI setting is gone and the service's login page reappears. The env var approach is baked into the Deployment manifest (committed to git) and survives any PVC loss.
 
 **Alternative: UI setting**
 
@@ -308,7 +308,7 @@ Some services let you disable auth from within their admin panel (e.g. Grafana �
 
 ### Tailscale backdoor caveat
 
-If the service is **also** exposed via a Tailscale Ingress (as an admin escape hatch), note that Tailscale traffic bypasses Traefik entirely — Authentik ForwardAuth does **not** apply on that path. A tailnet member can reach the service directly without an Authentik session.
+If the service is **also** exposed via a Tailscale Ingress (as an admin escape hatch), note that Tailscale traffic bypasses Traefik entirely - Authentik ForwardAuth does **not** apply on that path. A tailnet member can reach the service directly without an Authentik session.
 
 This is intentional: it provides a trusted admin backdoor if Authentik is down. But it means that if the service's built-in auth is disabled, the Tailscale URL gives unauthenticated access to any tailnet member. Keep this in mind when deciding whether to disable built-in auth.
 
@@ -316,11 +316,11 @@ This is intentional: it provides a trusted admin backdoor if Authentik is down. 
 
 ## OIDC / OAuth2 vs ForwardAuth
 
-When a service natively supports OAuth2/OIDC (e.g. Grafana, Gitea, Nextcloud), **prefer OIDC over ForwardAuth**. OIDC gives the service a proper user identity — it can map Authentik groups to roles, show the user's display name, and log meaningful audit events. ForwardAuth only proves "someone is authenticated" but the service sees an anonymous session.
+When a service natively supports OAuth2/OIDC (e.g. Grafana, Gitea, Nextcloud), **prefer OIDC over ForwardAuth**. OIDC gives the service a proper user identity - it can map Authentik groups to roles, show the user's display name, and log meaningful audit events. ForwardAuth only proves "someone is authenticated" but the service sees an anonymous session.
 
 | | ForwardAuth | OIDC |
 |---|---|---|
-| Service support required | None — works with any app | App must support OAuth2/OIDC |
+| Service support required | None - works with any app | App must support OAuth2/OIDC |
 | User identity in app | Anonymous | Full (name, email, groups) |
 | Role/group mapping | Not possible | Supported via claims |
 | Setup complexity | Low | Medium |
@@ -335,7 +335,7 @@ For OIDC setup steps, see [Setting Up a New Application in Authentik → For OID
 
 These steps are required any time you want to protect a new service with ForwardAuth (via Traefik) or OIDC. The process is: create a **Provider** → create an **Application** → assign to the **Outpost**.
 
-### Step 1 — Create a Proxy Provider
+### Step 1 - Create a Proxy Provider
 
 1. Go to **Applications → Providers → Create**.
 2. Select **Proxy Provider**.
@@ -343,12 +343,12 @@ These steps are required any time you want to protect a new service with Forward
    - **Name**: `myapp-proxy` (use the service name for clarity)
    - **Authorization flow**: `default-provider-authorization-implicit-consent`
    - **Mode**: `Forward auth (single application)`
-   - **External Host**: `https://myapp.example.com` — must exactly match the public URL users will visit, including scheme (`https://`)
+   - **External Host**: `https://myapp.example.com` - must exactly match the public URL users will visit, including scheme (`https://`)
 4. Click **Finish**.
 
 > **External Host must be exact.** If users visit `https://myapp.example.com` but the provider has `http://myapp.example.com`, Authentik will reject the auth check and return 401s.
 
-### Step 2 — Create an Application
+### Step 2 - Create an Application
 
 1. Go to **Applications → Applications → Create**.
 2. Fill in:
@@ -359,9 +359,9 @@ These steps are required any time you want to protect a new service with Forward
 3. Under **Policy / Group / User bindings** (optional): bind a group to restrict access to specific users. Leave empty to allow all authenticated users.
 4. Click **Create**.
 
-### Step 3 — Assign to the Embedded Outpost
+### Step 3 - Assign to the Embedded Outpost
 
-This is the step most guides gloss over. The embedded outpost is what actually performs the ForwardAuth check — the application must be explicitly assigned to it.
+This is the step most guides gloss over. The embedded outpost is what actually performs the ForwardAuth check - the application must be explicitly assigned to it.
 
 1. Go to **Applications → Outposts**.
 2. Find the outpost named **`authentik Embedded Outpost`** (Type: `Proxy`).
@@ -382,11 +382,11 @@ If the app supports OAuth2/OIDC natively (e.g. Gitea, Grafana), create an **OAut
    - **Name**: descriptive name (e.g. `myservice-oidc`)
    - **Authorization flow**: `default-provider-authorization-implicit-consent`
    - **Client type**: `Confidential`
-   - **Redirect URIs**: the callback URL of your application (check the app's docs — usually `https://myapp.example.com/auth/callback` or similar)
+   - **Redirect URIs**: the callback URL of your application (check the app's docs - usually `https://myapp.example.com/auth/callback` or similar)
    - **Signing Key**: `authentik Self-signed Certificate`
-3. Note the **Client ID** and **Client Secret** — you'll need these in the app's config.
+3. Note the **Client ID** and **Client Secret** - you'll need these in the app's config.
 4. Go to **Applications → Applications → Create** and link this provider.
-5. OIDC providers do **not** require outpost assignment — the Authentik server handles token exchange directly.
+5. OIDC providers do **not** require outpost assignment - the Authentik server handles token exchange directly.
 
 **OIDC discovery URL** (use this in the app's "auto-discover" field if supported):
 
@@ -394,7 +394,7 @@ If the app supports OAuth2/OIDC natively (e.g. Gitea, Grafana), create an **OAut
 https://authentik.tailnet.ts.net/application/o/<slug>/.well-known/openid-configuration
 ```
 
-Replace `<slug>` with the application slug you set in step 4 (e.g. `myservice`). The discovery document lists all token endpoints, supported scopes, and the JWKS URI — most OIDC clients can configure themselves from it automatically.
+Replace `<slug>` with the application slug you set in step 4 (e.g. `myservice`). The discovery document lists all token endpoints, supported scopes, and the JWKS URI - most OIDC clients can configure themselves from it automatically.
 
 ---
 
@@ -408,14 +408,14 @@ takes them back to Authentik where they set a new password.
 
 ```
 User → clicks "Forgot Password" → Recovery Flow:
-  Step 1: Email Stage        — sends one-time token to user's email (expires in 30 min)
-  Step 2: (user clicks link) — token verified, flow continues
-  Step 3: Prompt Stage       — user enters new password + confirmation
-  Step 4: User Write Stage   — new password saved to Authentik
+  Step 1: Email Stage        - sends one-time token to user's email (expires in 30 min)
+  Step 2: (user clicks link) - token verified, flow continues
+  Step 3: Prompt Stage       - user enters new password + confirmation
+  Step 4: User Write Stage   - new password saved to Authentik
 ```
 
 The flow is managed declaratively via **OpenTofu** in `opentofu/authentik-recovery.tf`.
-It creates and wires all stages on every `tofu apply` — no manual Authentik UI configuration
+It creates and wires all stages on every `tofu apply` - no manual Authentik UI configuration
 is needed for the recovery flow.
 
 ### Flow Components
@@ -438,7 +438,7 @@ The email stage uses the global SMTP settings from the Authentik HelmRelease val
 2. Click **Forgot Password** below the login form
 3. Enter your username or email address
 4. Check your inbox for the recovery email (check spam if not received within 2 minutes)
-5. Click the link in the email — it expires in **30 minutes**
+5. Click the link in the email - it expires in **30 minutes**
 6. Enter and confirm your new password
 
 **As an admin (forcing a password reset):**
@@ -452,11 +452,11 @@ The email stage uses the global SMTP settings from the Authentik HelmRelease val
 
 Two non-obvious requirements **both** must be satisfied for the admin "Send recovery email" button and the "Forgot Password" login link to work:
 
-1. **Identification Stage must be first** — The recovery flow requires a `default-recovery-identification` IdentificationStage at order=-10 as its first step. Without it, clicking "Forgot Password" without first entering a username results in `"request denied, unknown error"` because the Email Stage has no pending user context.
+1. **Identification Stage must be first** - The recovery flow requires a `default-recovery-identification` IdentificationStage at order=-10 as its first step. Without it, clicking "Forgot Password" without first entering a username results in `"request denied, unknown error"` because the Email Stage has no pending user context.
 
-2. **`Brand.flow_recovery` must be set** — The admin API (`POST /api/v3/core/users/{id}/recovery_email/`) reads the recovery flow from the *Brand* object, not from the flow designation. If `brand.flow_recovery` is `None`, the API returns `400 {"non_field_errors": "No recovery flow set."}` regardless of whether the flow exists.
+2. **`Brand.flow_recovery` must be set** - The admin API (`POST /api/v3/core/users/{id}/recovery_email/`) reads the recovery flow from the *Brand* object, not from the flow designation. If `brand.flow_recovery` is `None`, the API returns `400 {"non_field_errors": "No recovery flow set."}` regardless of whether the flow exists.
 
-3. **Flow `authentication` must be `none`** — If set to `require_unauthenticated`, the FlowPlanner rejects the request when an authenticated admin triggers it, returning `400 {"non_field_errors": "Recovery flow not applicable to user"}`. Setting it to `none` allows both unauthenticated (user self-service) and authenticated (admin-initiated) planning.
+3. **Flow `authentication` must be `none`** - If set to `require_unauthenticated`, the FlowPlanner rejects the request when an authenticated admin triggers it, returning `400 {"non_field_errors": "Recovery flow not applicable to user"}`. Setting it to `none` allows both unauthenticated (user self-service) and authenticated (admin-initiated) planning.
 
 All three are handled by the OpenTofu config in `opentofu/authentik-recovery.tf`. If you see any of these errors, re-run `tofu apply` or fix manually as below.
 
@@ -470,7 +470,7 @@ All three are handled by the OpenTofu config in `opentofu/authentik-recovery.tf`
 | Admin "Send recovery email" → `400 Recovery flow not applicable to user` | Flow `authentication = require_unauthenticated` | Set flow authentication to `none` (see fix below) |
 | Recovery email not received | SMTP misconfigured or Stalwart down | Check Stalwart pod and Resend dashboard |
 | "No user found" error | User typed wrong username/email | Try alternate (username vs email); ensure `pretend_user_exists=true` is set |
-| Link expired | >30 minutes elapsed | Request a new reset — token expires in 30 minutes |
+| Link expired | >30 minutes elapsed | Request a new reset - token expires in 30 minutes |
 | Password not saved | User Write Stage not bound | Check FlowStageBindings in Authentik UI or re-run `tofu apply` |
 
 **Fix Brand.flow_recovery manually:**
@@ -509,7 +509,7 @@ kubectl exec -n authentik deployment/authentik-server -- \
 
 ## LDAP
 
-Authentik ships with a built-in LDAP outpost, useful for services that do not support OIDC (e.g. Jellyfin). The outpost auto-deploys as a Kubernetes Service when created in the UI — no manifest is needed.
+Authentik ships with a built-in LDAP outpost, useful for services that do not support OIDC (e.g. Jellyfin). The outpost auto-deploys as a Kubernetes Service when created in the UI - no manifest is needed.
 
 ### DN structure
 
@@ -522,7 +522,7 @@ All Authentik LDAP entries live under the provider's Base DN (`DC=ldap,DC=goauth
 | Group | `cn=<group>,ou=groups,DC=ldap,DC=goauthentik,DC=io` |
 
 > **Note:** Both regular users and service accounts land in `ou=users`, not `ou=serviceaccounts`.
-> Using the root DN (`DC=ldap,DC=goauthentik,DC=io`) as a search base returns an Operations Error — always use `ou=users,...` or `ou=groups,...`.
+> Using the root DN (`DC=ldap,DC=goauthentik,DC=io`) as a search base returns an Operations Error - always use `ou=users,...` or `ou=groups,...`.
 
 ---
 
@@ -537,7 +537,7 @@ All Authentik LDAP entries live under the provider's Base DN (`DC=ldap,DC=goauth
 | Name | descriptive, e.g. `Jellyfin LDAP` |
 | Bind flow | `default-authentication-flow` |
 | Base DN | `DC=ldap,DC=goauthentik,DC=io` |
-| Search mode | `direct` (queries Authentik API per search — no stale cache) |
+| Search mode | `direct` (queries Authentik API per search - no stale cache) |
 | Bind mode | `direct` |
 
 #### 2. Create an Application
@@ -569,7 +569,7 @@ After creation, set a password via **Set Password** and note it down. Add the bi
 
 #### 4. Grant the bind user the `search_full_directory` permission
 
-Without this permission, when the bind user performs an LDAP search the outpost returns **only the bind user themselves**. This is gated by the Go outpost code — `flags.CanSearch` is set from the `has_search_permission` field on `/api/v3/outposts/ldap/{pk}/check_access/`, which is `True` only if the user has `authentik_providers_ldap.search_full_directory` (model-level or object-level on the LDAP provider).
+Without this permission, when the bind user performs an LDAP search the outpost returns **only the bind user themselves**. This is gated by the Go outpost code - `flags.CanSearch` is set from the `has_search_permission` field on `/api/v3/outposts/ldap/{pk}/check_access/`, which is `True` only if the user has `authentik_providers_ldap.search_full_directory` (model-level or object-level on the LDAP provider).
 
 **Admin → Directory → Roles → Create**
 
@@ -581,7 +581,7 @@ Open the role → **Assign permissions to objects** → pick the LDAP provider �
 
 Then **Admin → Directory → Users → \<bind user\> → Roles → assign `ldap-searcher`**.
 
-> Older guidance suggested adding the bind user to a group with `is_superuser=True`. That works (superusers bypass the perm check), but it's overkill — the bind user inherits all admin rights. The explicit `search_full_directory` role-perm is the principle-of-least-privilege option and is what the OpenTofu config in this repo applies.
+> Older guidance suggested adding the bind user to a group with `is_superuser=True`. That works (superusers bypass the perm check), but it's overkill - the bind user inherits all admin rights. The explicit `search_full_directory` role-perm is the principle-of-least-privilege option and is what the OpenTofu config in this repo applies.
 
 #### 5. Create the LDAP Outpost
 
@@ -635,7 +635,7 @@ These are the exact settings that work with Authentik's LDAP outpost:
 >
 > Type the value by hand rather than pasting to avoid invisible whitespace.
 
-> **Jellyfin restart required:** The LDAP plugin settings note states "Making changes to this configuration requires a restart of Jellyfin." Changes do not take effect until the pod is restarted — the test buttons will use the old config if you skip the restart.
+> **Jellyfin restart required:** The LDAP plugin settings note states "Making changes to this configuration requires a restart of Jellyfin." Changes do not take effect until the pod is restarted - the test buttons will use the old config if you skip the restart.
 
 ---
 
@@ -687,5 +687,5 @@ The logs show every bind and search request with the exact `baseDN`, `filter`, a
 
 **See also:**
 
-- [gitops-flux.md](gitops-flux.md) — patched secrets pattern, Flux reconciliation
-- [new-service.md](new-service.md) — end-to-end guide for adding a new service with TLS and ForwardAuth
+- [gitops-flux.md](gitops-flux.md) - patched secrets pattern, Flux reconciliation
+- [new-service.md](new-service.md) - end-to-end guide for adding a new service with TLS and ForwardAuth

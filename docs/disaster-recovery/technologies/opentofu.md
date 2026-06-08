@@ -1,4 +1,4 @@
-# OpenTofu — Technology Guide
+# OpenTofu - Technology Guide
 
 > This guide explains what OpenTofu is, how it works, and how it is used in
 > this homelab. No prior infrastructure-as-code experience required.
@@ -48,7 +48,7 @@ graph LR
 
 ### Providers
 
-OpenTofu uses **providers** — plugins that know how to talk to specific APIs.
+OpenTofu uses **providers** - plugins that know how to talk to specific APIs.
 
 This homelab uses these providers:
 
@@ -102,18 +102,18 @@ graph LR
     state -->|"maps to"| infra["Real infrastructure<br/>Actual VM in Proxmox (VMID 102)"]
 ```
 
-**In this homelab:** The state is stored in an **AWS S3 bucket** (`chronobyte-homelab-tf-state`) — the state backend.
+**In this homelab:** The state is stored in an **AWS S3 bucket** (`chronobyte-homelab-tf-state`) - the state backend.
 State locking is provided by a **DynamoDB table** (`homelab-tf-state-lock`).
-This means the state persists even if the physical server is destroyed — which is
+This means the state persists even if the physical server is destroyed - which is
 exactly what makes disaster recovery possible!
 
 ### Plan and Apply
 
 Terraform works in two steps:
 
-1. **`tofu plan`** — compares current state with desired code, shows what will change
+1. **`tofu plan`** - compares current state with desired code, shows what will change
    (no modifications made yet)
-2. **`tofu apply`** — executes the changes shown in the plan
+2. **`tofu apply`** - executes the changes shown in the plan
 
 Always run `tofu plan` before `tofu apply` to review changes.
 
@@ -122,14 +122,14 @@ Always run `tofu plan` before `tofu apply` to review changes.
 Terraform uses **variables** to avoid hardcoding sensitive values in the code:
 
 ```hcl
-# variables.tf — declares that a variable exists
+# variables.tf - declares that a variable exists
 variable "default_vm_password" {
   description = "Console password for VMs"
   type        = string
   sensitive   = true
 }
 
-# k3s.tf — uses the variable
+# k3s.tf - uses the variable
 resource "proxmox_vm_qemu" "k3s-server" {
   cipassword = var.default_vm_password
   ...
@@ -188,7 +188,7 @@ backend "s3" {
 
 This means:
 - The state file is stored in `s3://chronobyte-homelab-tf-state/homelab/terraform.tfstate`
-- State locking is provided by the DynamoDB table `homelab-tf-state-lock` — only one run at a time
+- State locking is provided by the DynamoDB table `homelab-tf-state-lock` - only one run at a time
 - State is never lost when hardware fails
 - Authentication uses the same `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` as the backup bucket
 
@@ -273,7 +273,7 @@ The Proxmox API token is wrong or expired. Verify:
 ### Error: Provider produced inconsistent result after apply
 
 A resource was created but the API returned different data than expected. Usually safe to
-run `tofu apply` again — it will reconcile the state.
+run `tofu apply` again - it will reconcile the state.
 
 ### State is locked
 

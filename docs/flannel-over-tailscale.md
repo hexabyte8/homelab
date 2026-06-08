@@ -2,15 +2,15 @@
 
 ## Overview
 
-By default k3s uses Flannel VXLAN with each node's LAN IP as the VTEP (tunnel endpoint). If DHCP reassigns a node's IP, the other nodes' forwarding database (fdb) tables go stale and cross-node pod traffic silently drops — causing DNS timeouts, Flux reconciliation failures, and general cluster instability.
+By default k3s uses Flannel VXLAN with each node's LAN IP as the VTEP (tunnel endpoint). If DHCP reassigns a node's IP, the other nodes' forwarding database (fdb) tables go stale and cross-node pod traffic silently drops - causing DNS timeouts, Flux reconciliation failures, and general cluster instability.
 
 The primary fix is to set `node-ip` to the node's Tailscale IP. Tailscale IPs (`100.x.x.x`) are assigned by the Tailscale control plane and **never change**, regardless of what DHCP does to the LAN interfaces. This ensures the Kubernetes control plane and node registration always use stable IPs.
 
-For the Flannel VXLAN **data plane**, this cluster uses `flannel-iface: eth0` (the LAN interface) rather than `tailscale0`. This is an intentional performance trade-off — see [Flannel iface trade-off](#flannel-iface-trade-off) below.
+For the Flannel VXLAN **data plane**, this cluster uses `flannel-iface: eth0` (the LAN interface) rather than `tailscale0`. This is an intentional performance trade-off - see [Flannel iface trade-off](#flannel-iface-trade-off) below.
 
 ```
-Node registration:  100.x.x.x  (Tailscale IP — stable, via node-ip flag)
-Flannel data plane: <lan-cidr> (LAN IP — fast, via flannel-iface: eth0)
+Node registration:  100.x.x.x  (Tailscale IP - stable, via node-ip flag)
+Flannel data plane: <lan-cidr> (LAN IP - fast, via flannel-iface: eth0)
 ```
 
 ---
@@ -56,7 +56,7 @@ flannel-iface: eth0
 | Flag                  | Effect                                                                                       |
 | --------------------- | -------------------------------------------------------------------------------------------- |
 | `flannel-iface: eth0` | Flannel binds its VXLAN VTEP to the LAN interface for the data plane                         |
-| `node-ip`             | The IP the node advertises to the API server and Flannel — set to Tailscale IP for stability |
+| `node-ip`             | The IP the node advertises to the API server and Flannel - set to Tailscale IP for stability |
 | `node-external-ip`    | The externally-routable IP for the node (agents only)                                        |
 | `tls-san`             | Adds the Tailscale IP to the API server's TLS certificate (server only)                      |
 
@@ -70,7 +70,7 @@ bridge fdb show dev flannel.1
 aa:bb:cc:dd:ee:01 dst <k3s-agent-1-lan-ip> self permanent
 ```
 
-The Kubernetes node registration (control plane routing, `kubectl`, etc.) still uses Tailscale IPs because `node-ip` is set to `100.x.x.x`. If the LAN IP changes, only the Flannel data plane is affected — the cluster control plane remains healthy.
+The Kubernetes node registration (control plane routing, `kubectl`, etc.) still uses Tailscale IPs because `node-ip` is set to `100.x.x.x`. If the LAN IP changes, only the Flannel data plane is affected - the cluster control plane remains healthy.
 
 ---
 
@@ -84,7 +84,7 @@ An earlier version of this cluster used `flannel-iface: tailscale0`, which route
 tailscale0 MTU 1280 − 50 (VXLAN) = pod MTU 1230
 ```
 
-The Tailscale operator proxy pods run their own `tailscaled` inside them — a second layer of WireGuard on top of the already-encapsulated pod network. This **triple-encapsulates** every proxied packet:
+The Tailscale operator proxy pods run their own `tailscaled` inside them - a second layer of WireGuard on top of the already-encapsulated pod network. This **triple-encapsulates** every proxied packet:
 
 ```
 data → pod WireGuard → Flannel VXLAN → host WireGuard → eth0
@@ -102,7 +102,7 @@ See [Tailscale Proxy Performance Degradation](troubleshooting/tailscale-proxy-mt
 | Pod MTU                      | 1230                        | **1450**                        |
 | Inter-node traffic encrypted | ✅ WireGuard                | ❌ Plain VXLAN on LAN           |
 | Tailscale proxy throughput   | Degraded (triple-tunnel)    | **Normal**                      |
-| Breaks if LAN IP changes     | No                          | Yes — restart k3s-agent         |
+| Breaks if LAN IP changes     | No                          | Yes - restart k3s-agent         |
 
 **Best practice:** Ensure LAN IPs are static or DHCP-reserved so Flannel's fdb table stays valid. See [Provisioning New Nodes](#provisioning-new-nodes).
 
@@ -119,7 +119,7 @@ kubectl get nodes -o json | jq -r '.items[] |
   "  flannel=" + .metadata.annotations["flannel.alpha.coreos.com/public-ip"]'
 ```
 
-Expected output — all IPs should be `100.x.x.x`:
+Expected output - all IPs should be `100.x.x.x`:
 
 ```
 k3s-agent-1  internal=<k3s-agent-1-ts-ip>  flannel=<k3s-agent-1-ts-ip>
@@ -155,9 +155,9 @@ The Ansible playbooks handle this automatically. Before installing k3s, each pla
 
 Relevant playbooks:
 
-- `ansible/playbooks/deploy_k3s.yml` — server node
-- `ansible/playbooks/deploy_k3s_worker_tailscale.yml` — worker joining via Tailscale network
-- `ansible/playbooks/deploy_k3s_worker_local.yml` — worker joining via LAN (still uses Tailscale for Flannel)
+- `ansible/playbooks/deploy_k3s.yml` - server node
+- `ansible/playbooks/deploy_k3s_worker_tailscale.yml` - worker joining via Tailscale network
+- `ansible/playbooks/deploy_k3s_worker_local.yml` - worker joining via LAN (still uses Tailscale for Flannel)
 
 ---
 
@@ -278,7 +278,7 @@ kubectl debug node/k3s-agent-1 -it --image=alpine -- chroot /host bridge fdb sho
 ### Verifying flannel data plane
 
 ```bash
-# Check the fdb — entries should show LAN IPs (<lan-cidr>)
+# Check the fdb - entries should show LAN IPs (<lan-cidr>)
 kubectl debug node/k3s-server -it --image=alpine -- chroot /host bridge fdb show dev flannel.1
 
 # Check the flannel MTU is 1450

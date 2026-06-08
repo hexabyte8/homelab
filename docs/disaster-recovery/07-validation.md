@@ -24,8 +24,8 @@ k3s-agent-2   Ready    <none>                 Xm    v1.x.x    <k3s-agent-2-ts-ip
 ```
 
 ✅ **Pass:** All 3 nodes `Ready`, all `INTERNAL-IP` values start with `100.`  
-❌ **Fail — LAN IPs shown:** Re-run the k3s Ansible playbook (the `flannel-iface` config was not applied)  
-❌ **Fail — node not Ready:** Check node logs: `sudo kubectl describe node <name>`
+❌ **Fail - LAN IPs shown:** Re-run the k3s Ansible playbook (the `flannel-iface` config was not applied)  
+❌ **Fail - node not Ready:** Check node logs: `sudo kubectl describe node <name>`
 
 ---
 
@@ -66,7 +66,7 @@ flux reconcile kustomization <name> -n flux-system
 ## 7.4 Cloudflare DNS Records and Tunnel
 
 Log in to [dash.cloudflare.com](https://dash.cloudflare.com) and confirm the zone for
-`example.com` is active. All DNS records are managed by OpenTofu — running `tofu apply`
+`example.com` is active. All DNS records are managed by OpenTofu - running `tofu apply`
 recreates them. Verify these are present:
 
 | Record | Type | Value |
@@ -81,7 +81,7 @@ recreates them. Verify these are present:
 **Verify the Cloudflare Tunnel is connected:**
 ```bash
 kubectl logs -n cloudflared deployment/cloudflared --since=5m | grep -E "connect|registered|error"
-# Should show: "Connection registered" — no errors
+# Should show: "Connection registered" - no errors
 ```
 
 **Verify Email Routing is enabled** (inbound mail forwarding):
@@ -92,7 +92,7 @@ kubectl logs -n cloudflared deployment/cloudflared --since=5m | grep -E "connect
    - If Unverified: click the address and resend the verification email
 
 ✅ **Pass:** Tunnel connected, DNS records present, Email Routing enabled and verified
-❌ **Fail — tunnel not connected:** Check `cloudflared-tunnel-credentials` secret was patched (Phase 6.2)
+❌ **Fail - tunnel not connected:** Check `cloudflared-tunnel-credentials` secret was patched (Phase 6.2)
 
 ---
 
@@ -147,7 +147,7 @@ Address 1: 10.43.0.1 kubernetes.default.svc.cluster.local
 ```
 
 ✅ **Pass:** DNS resolves successfully  
-❌ **Fail — command hangs:** Flannel VXLAN is broken
+❌ **Fail - command hangs:** Flannel VXLAN is broken
 
 **If DNS hangs, investigate Flannel:**
 ```bash
@@ -173,7 +173,7 @@ sudo kubectl -n tailscale get pods
 
 # Check that the operator is connected to the tailnet
 sudo kubectl -n tailscale logs -l app=operator --tail=20
-# Should show: "logged in" or "reconciling" — not authentication errors
+# Should show: "logged in" or "reconciling" - not authentication errors
 
 # Verify a Tailscale ingress has an address assigned (e.g. Authentik)
 sudo kubectl -n authentik get ingress authentik -o jsonpath='{.status.loadBalancer}'
@@ -213,8 +213,8 @@ aws s3 ls s3://<S3_BACKUP_BUCKET_NAME>/ --recursive --human-readable
 ```
 
 ✅ **Pass:** Bucket is accessible and lists backup objects  
-❌ **Fail — access denied:** Check AWS credentials are correct  
-❌ **Fail — bucket not found:** Run `tofu apply` to recreate the bucket
+❌ **Fail - access denied:** Check AWS credentials are correct  
+❌ **Fail - bucket not found:** Run `tofu apply` to recreate the bucket
 
 ---
 
@@ -231,8 +231,8 @@ kubectl get certificates --all-namespaces | grep -v "True\|Ready"
 ```
 
 ✅ **Pass:** ClusterIssuer Ready, no failed certificates  
-❌ **Fail — ACME registration failing:** Check cert-manager logs (`kubectl logs -n cert-manager deployment/cert-manager`)  
-❌ **Fail — certificate not issued:** Cloudflare Tunnel must be working first (Section 7.4) so HTTP-01 challenges can reach the cluster
+❌ **Fail - ACME registration failing:** Check cert-manager logs (`kubectl logs -n cert-manager deployment/cert-manager`)  
+❌ **Fail - certificate not issued:** Cloudflare Tunnel must be working first (Section 7.4) so HTTP-01 challenges can reach the cluster
 
 ---
 
@@ -252,17 +252,17 @@ kubectl logs -n authentik deployment/authentik-server --since=2m | grep -i error
 
 1. Open `https://authentik.tailnet.ts.net`
 2. Log in as `akadmin` with the bootstrap password (from Phase 6.3)
-3. Navigate to **Applications → Applications** — verify your configured apps are listed
-4. Navigate to **Applications → Outposts** — verify the Embedded Outpost shows as healthy
+3. Navigate to **Applications → Applications** - verify your configured apps are listed
+4. Navigate to **Applications → Outposts** - verify the Embedded Outpost shows as healthy
 
 !!! warning "If applications are missing"
     Authentik application/provider config is stored in its PostgreSQL database. If the CNPG
     cluster PVC survived, the config is intact. If the PVC was wiped, you need to manually
-    recreate providers and applications — see `docs/authentik.md` for the procedure.
+    recreate providers and applications - see `docs/authentik.md` for the procedure.
 
 ✅ **Pass:** Both pods Running, UI accessible, apps and outpost present  
-❌ **Fail — pods CrashLoopBackOff:** Usually a bad `secret-key` — verify `authentik-credentials` was patched (Phase 6.3)  
-❌ **Fail — database connection refused:** CNPG cluster may need time to come up; wait 5 minutes and retry
+❌ **Fail - pods CrashLoopBackOff:** Usually a bad `secret-key` - verify `authentik-credentials` was patched (Phase 6.3)  
+❌ **Fail - database connection refused:** CNPG cluster may need time to come up; wait 5 minutes and retry
 
 ---
 
@@ -282,7 +282,7 @@ kubectl logs -n stalwart deployment/stalwart --since=2m | grep -iE "error|panic|
 
 1. Open `https://mail.tailnet.ts.net`
 2. Log in as `admin` with the password from Phase 6.4
-3. Navigate to **Directory → Accounts** — verify `noreply@example.com` exists
+3. Navigate to **Directory → Accounts** - verify `noreply@example.com` exists
 
 **Send a test email through Authentik:**
 ```bash
@@ -294,9 +294,9 @@ kubectl exec -n authentik deployment/authentik-worker -- ak test_email admin@exa
 Check `admin@example.com` inbox (or Resend dashboard at resend.com) to confirm delivery.
 
 ✅ **Pass:** Pod running, admin UI accessible, test email delivered  
-❌ **Fail — pod not starting:** Check `stalwart-secrets` was patched (Phase 6.4); check logs for config parse errors  
-❌ **Fail — auth rejected (535):** SMTP username must be `noreply` (short form), not `noreply@example.com`  
-❌ **Fail — email not delivered:** Check Resend dashboard for bounces; verify `resend-api-key` is correct
+❌ **Fail - pod not starting:** Check `stalwart-secrets` was patched (Phase 6.4); check logs for config parse errors  
+❌ **Fail - auth rejected (535):** SMTP username must be `noreply` (short form), not `noreply@example.com`  
+❌ **Fail - email not delivered:** Check Resend dashboard for bounces; verify `resend-api-key` is correct
 
 ---
 

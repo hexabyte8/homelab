@@ -21,7 +21,7 @@ flowchart LR
 ```
 
 The runner is only allowed to reach the mcp-kubernetes proxy pod on
-`tcp:443`. It has no other grants of its own — see `opentofu/tailscale.tf`.
+`tcp:443`. It has no other grants of its own - see `opentofu/tailscale.tf`.
 
 ---
 
@@ -47,24 +47,24 @@ The workflow reuses the same Bitwarden items as `ansible-k3s.yml`:
 
 These steps cannot be expressed in code and must be done manually:
 
-1. **Tailscale admin UI** — open the OAuth client in use (the same one used by
+1. **Tailscale admin UI** - open the OAuth client in use (the same one used by
    `ansible-k3s.yml` etc.) and add `tag:copilot` to its allowed tags. Without
    this, `tailscale/github-action@v2` will fail with a `tag not permitted`
    error.
 
-2. **GitHub `copilot` Actions environment** — Copilot-triggered runs of
+2. **GitHub `copilot` Actions environment** - Copilot-triggered runs of
    `copilot-setup-steps.yml` only see secrets from the repository's `copilot`
    environment. Create the environment (Settings → Environments → New
    environment → `copilot`) and add:
 
-   - `BW_ACCESS_TOKEN` — same Bitwarden machine account access token used by
+   - `BW_ACCESS_TOKEN` - same Bitwarden machine account access token used by
      the other workflows.
 
    Regular (`workflow_dispatch` / PR) runs of the same workflow continue to
    use repository-level secrets, so keep `BW_ACCESS_TOKEN` configured there
    too.
 
-3. **Copilot MCP configuration** — in the repository settings
+3. **Copilot MCP configuration** - in the repository settings
    (Settings → Copilot → Coding agent → MCP configuration) paste:
 
    ```json
@@ -79,9 +79,9 @@ These steps cannot be expressed in code and must be done manually:
    }
    ```
 
-   No auth header is required — being on the tailnet is the credential.
+   No auth header is required - being on the tailnet is the credential.
 
-4. **Copilot firewall (only if the first run fails)** — the Copilot cloud
+4. **Copilot firewall (only if the first run fails)** - the Copilot cloud
    agent ships with an egress firewall. If the `Setup Tailscale` step fails
    with a network error, relax the firewall (Settings → Copilot → Coding
    agent → Firewall) to allow:

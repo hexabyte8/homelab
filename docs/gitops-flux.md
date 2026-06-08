@@ -1,6 +1,6 @@
 # GitOps with Flux CD
 
-This cluster is GitOps-managed by **Flux CD** — full stop. All Kubernetes workloads
+This cluster is GitOps-managed by **Flux CD** - full stop. All Kubernetes workloads
 and Helm releases are reconciled from this repository. There is no other GitOps
 controller; ArgoCD was removed when the migration to Flux was completed.
 
@@ -33,7 +33,7 @@ k3s/flux/
     └── <other workloads>.yaml
 ```
 
-`k3s/flux/clusters/k3s/apps.yaml` is the **root Kustomization** — Flux's equivalent of
+`k3s/flux/clusters/k3s/apps.yaml` is the **root Kustomization** - Flux's equivalent of
 an "App-of-Apps". It reconciles everything under `k3s/flux/apps/`, which in turn renders
 every per-service `Kustomization` and `HelmRelease` listed in `kustomization.yaml`.
 
@@ -172,7 +172,7 @@ Authentik protection, see [new-service.md](new-service.md).
 
 To temporarily disable a service without deleting its manifests, remove its entry from
 `k3s/flux/apps/kustomization.yaml` and commit. Flux will prune the live resources on
-the next reconciliation. There is no separate `apps-disabled/` directory — the
+the next reconciliation. There is no separate `apps-disabled/` directory - the
 `kustomization.yaml` resource list is the single source of truth for what is active.
 
 To re-enable, add the entry back and commit.
@@ -243,5 +243,5 @@ kubectl patch secret <name> -n <namespace> --type=merge \
 
 **See also:**
 
-- [new-service.md](new-service.md) — full end-to-end guide for adding a service (ingress, Authentik, Cloudflare Tunnel, Dashy tile)
-- [disaster-recovery/05-flux-bootstrap.md](disaster-recovery/05-flux-bootstrap.md) — bootstrap in a disaster-recovery context
+- [new-service.md](new-service.md) - full end-to-end guide for adding a service (ingress, Authentik, Cloudflare Tunnel, Dashy tile)
+- [disaster-recovery/05-flux-bootstrap.md](disaster-recovery/05-flux-bootstrap.md) - bootstrap in a disaster-recovery context

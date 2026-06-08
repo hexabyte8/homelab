@@ -27,12 +27,12 @@ The VM uses `cpu { type = "host" }` so that virtualisation extensions (VT-x / AM
 
 ## Access
 
-The VM is on the tailnet automatically — cloud-init installs Tailscale and runs `tailscale up --advertise-tags=tag:server --ssh` on first boot, so no additional setup is needed to reach it.
+The VM is on the tailnet automatically - cloud-init installs Tailscale and runs `tailscale up --advertise-tags=tag:server --ssh` on first boot, so no additional setup is needed to reach it.
 
 ### From any tailnet device
 
 ```bash
-# Preferred — Tailscale SSH, no key management needed
+# Preferred - Tailscale SSH, no key management needed
 tailscale ssh ubuntu@containerlab
 
 # Or using MagicDNS + standard OpenSSH
@@ -48,9 +48,9 @@ The VM is provisioned automatically by OpenTofu (`opentofu/containerlab.tf`) whe
 1. Go to **Actions → [Ansible - Deploy ContainerLab](https://github.com/hexabyte8/homelab/actions/workflows/ansible-containerlab.yml)**.
 2. Click **Run workflow**.
 3. Leave `target_host` as `containerlab` (the default).
-4. Confirm — the workflow authenticates via Bitwarden → Tailscale OAuth → SSH → `ansible/playbooks/deploy_containerlab.yml`.
+4. Confirm - the workflow authenticates via Bitwarden → Tailscale OAuth → SSH → `ansible/playbooks/deploy_containerlab.yml`.
 
-The workflow is idempotent — re-running it will pick up Docker / ContainerLab upgrades without rebuilding state.
+The workflow is idempotent - re-running it will pick up Docker / ContainerLab upgrades without rebuilding state.
 
 ### What the playbook installs
 
@@ -126,7 +126,7 @@ netlab down         # tears down
 ContainerLab and netlab are both picked up when the Ansible workflow is re-run:
 
 - ContainerLab: the setup script installs the latest `.deb` release each run.
-- netlab: `ansible.builtin.pip` with `state: present` does not upgrade in place — pass `state: latest` on a one-off run if you want to force it, or run `pip3 install --upgrade networklab` manually on the VM.
+- netlab: `ansible.builtin.pip` with `state: present` does not upgrade in place - pass `state: latest` on a one-off run if you want to force it, or run `pip3 install --upgrade networklab` manually on the VM.
 
 Docker images used by lab topologies are pulled on demand by `containerlab deploy` and cached locally; clean up with `docker image prune` periodically.
 
@@ -153,7 +153,7 @@ Confirm KVM is available inside the VM:
 ls /dev/kvm && egrep -c '(vmx|svm)' /proc/cpuinfo
 ```
 
-Both should succeed with non-zero output. If not, the Proxmox VM is not using `cpu type = host` — check `opentofu/containerlab.tf`.
+Both should succeed with non-zero output. If not, the Proxmox VM is not using `cpu type = host` - check `opentofu/containerlab.tf`.
 
 ### Reaching a lab node from another tailnet device
 
@@ -163,4 +163,4 @@ ContainerLab exposes node management ports on the VM's primary interface. Once y
 ssh admin@containerlab.tailnet.ts.net -p 50001
 ```
 
-No Tailscale Ingress or operator changes are required — the VM itself is the tailnet endpoint.
+No Tailscale Ingress or operator changes are required - the VM itself is the tailnet endpoint.
