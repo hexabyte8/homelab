@@ -47,7 +47,7 @@ jobs:
             | cut -d/ -f2 \
             | sort -u \
             | grep -E "^(cloudflare|tailscale|aws|proxmox|authentik)$" \
-            | jq -R -s 'split("\n") | map(select(length > 0))')
+            | jq -cR -s 'split("\n") | map(select(length > 0))')
 
           if [ -z "$STACKS" ] || [ "$STACKS" = "[]" ]; then
             echo "No stack directories changed."
