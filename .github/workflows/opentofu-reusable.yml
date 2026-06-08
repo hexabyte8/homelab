@@ -52,9 +52,11 @@ jobs:
             2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
             9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
 
-      # Tailscale is only needed for the proxmox stack (API + SSH over MagicDNS).
+      # Tailscale is needed for proxmox (API + SSH over MagicDNS) and authentik
+      # (Authentik runs on the K3s cluster on Proxmox; its Cloudflare tunnel
+      # backend is unreachable when the node is down).
       - name: Setup Tailscale
-        if: inputs.stack == 'proxmox'
+        if: inputs.stack == 'proxmox' || inputs.stack == 'authentik'
         uses: tailscale/github-action@v4
         with:
           oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
@@ -63,7 +65,7 @@ jobs:
           version: 1.68.1
 
       - name: Enable MagicDNS
-        if: inputs.stack == 'proxmox'
+        if: inputs.stack == 'proxmox' || inputs.stack == 'authentik'
         run: sudo tailscale set --accept-dns=true | cat
 
       - name: Wait for Proxmox DNS
