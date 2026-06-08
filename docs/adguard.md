@@ -1,6 +1,6 @@
 # AdGuard Home
 
-This document covers the AdGuard Home deployment in this homelab — what it does, how it is provisioned, and how to configure tailnet devices to use it as their DNS resolver.
+This document covers the AdGuard Home deployment in this homelab - what it does, how it is provisioned, and how to configure tailnet devices to use it as their DNS resolver.
 
 ---
 
@@ -8,16 +8,16 @@ This document covers the AdGuard Home deployment in this homelab — what it doe
 
 [AdGuard Home](https://adguard.com/en/adguard-home/overview.html) is a network-wide DNS ad and tracker blocker that runs as a self-hosted resolver.  It provides:
 
-- **DNS-level ad blocking** — blocks ads, trackers, and malware domains before they even load
-- **Query log** — full visibility into every DNS query made by any tailnet device
-- **Custom filtering rules** — per-device allow/deny lists and rewrite rules
-- **Upstream DNS over HTTPS** — forwards unblocked queries over encrypted DoH
+- **DNS-level ad blocking** - blocks ads, trackers, and malware domains before they even load
+- **Query log** - full visibility into every DNS query made by any tailnet device
+- **Custom filtering rules** - per-device allow/deny lists and rewrite rules
+- **Upstream DNS over HTTPS** - forwards unblocked queries over encrypted DoH
 
 AdGuard Home is exposed to both the tailnet and the local LAN:
 
-- **Web UI** → `https://adguard.tailnet.ts.net` — Tailscale Ingress, `prod` ProxyClass (no Funnel, tailnet only)
-- **DNS (port 53, tailnet)** → `adguard-dns.tailnet.ts.net` / `<adguard-ts-ip>` — Tailscale LoadBalancer Service
-- **DNS (port 53, LAN)** → `<adguard-lan-ip>` — MetalLB LoadBalancer Service
+- **Web UI** → `https://adguard.tailnet.ts.net` - Tailscale Ingress, `prod` ProxyClass (no Funnel, tailnet only)
+- **DNS (port 53, tailnet)** → `adguard-dns.tailnet.ts.net` / `<adguard-ts-ip>` - Tailscale LoadBalancer Service
+- **DNS (port 53, LAN)** → `<adguard-lan-ip>` - MetalLB LoadBalancer Service
 
 No port is exposed to the public internet. The web UI is tailnet-only; DNS is reachable from both tailnet and LAN devices.
 
@@ -32,23 +32,23 @@ No port is exposed to the public internet. The web UI is tailnet-only; DNS is re
 | **Web UI** | Tailscale Ingress (`prod` ProxyClass) → `https://adguard.tailnet.ts.net` |
 | **DNS (tailnet)** | Tailscale LoadBalancer Service → `adguard-dns.tailnet.ts.net:53` / `<adguard-ts-ip>` (UDP + TCP) |
 | **DNS (LAN)** | MetalLB LoadBalancer Service → `<adguard-lan-ip>:53` (UDP + TCP) |
-| **Config storage** | Longhorn PVC `adguard-conf` (1 Gi) — mounted at `/opt/adguardhome/conf` |
-| **Data storage** | Longhorn PVC `adguard-work` (5 Gi) — mounted at `/opt/adguardhome/work` |
-| **Provisioning** | Flux CD — managed via `k3s/manifests/adguard/` and `k3s/flux/apps/adguard.yaml` |
+| **Config storage** | Longhorn PVC `adguard-conf` (1 Gi) - mounted at `/opt/adguardhome/conf` |
+| **Data storage** | Longhorn PVC `adguard-work` (5 Gi) - mounted at `/opt/adguardhome/work` |
+| **Provisioning** | Flux CD - managed via `k3s/manifests/adguard/` and `k3s/flux/apps/adguard.yaml` |
 
 ### Why tailnet-only for the web UI?
 
-The Tailscale Ingress uses the `prod` ProxyClass (not `funnel`) so the web UI is only reachable from devices on the `your-tailnet` tailnet. The DNS LoadBalancer services use two separate services — one with `loadBalancerClass: tailscale` (Tailscale operator, tailnet-only) and one without a class (MetalLB, LAN) — so port 53 is available to both tailnet and LAN devices but never forwarded to the public internet.
+The Tailscale Ingress uses the `prod` ProxyClass (not `funnel`) so the web UI is only reachable from devices on the `your-tailnet` tailnet. The DNS LoadBalancer services use two separate services - one with `loadBalancerClass: tailscale` (Tailscale operator, tailnet-only) and one without a class (MetalLB, LAN) - so port 53 is available to both tailnet and LAN devices but never forwarded to the public internet.
 
 ### File layout
 
 ```
 k3s/manifests/adguard/
 ├── deployment.yaml      # AdGuard Home Deployment
-├── service.yaml         # ClusterIP — web UI (port 3000) for internal routing
-├── service-dns.yaml     # LoadBalancer (Tailscale) — DNS (port 53 TCP + UDP, tailnet)
-├── service-dns-lan.yaml # LoadBalancer (MetalLB) — DNS (port 53 TCP + UDP, LAN)
-├── ingress.yaml         # Tailscale Ingress — web UI (HTTPS, tailnet-only)
+├── service.yaml         # ClusterIP - web UI (port 3000) for internal routing
+├── service-dns.yaml     # LoadBalancer (Tailscale) - DNS (port 53 TCP + UDP, tailnet)
+├── service-dns-lan.yaml # LoadBalancer (MetalLB) - DNS (port 53 TCP + UDP, LAN)
+├── ingress.yaml         # Tailscale Ingress - web UI (HTTPS, tailnet-only)
 └── pvc.yaml             # Longhorn PVCs for conf + work directories
 
 k3s/flux/apps/adguard.yaml   # Flux Kustomization
@@ -58,7 +58,7 @@ k3s/flux/apps/adguard.yaml   # Flux Kustomization
 
 ## Deploying AdGuard Home
 
-AdGuard Home is managed by Flux CD via a Kustomization pointing at `k3s/manifests/adguard/`. No manual deploy steps are required after the manifests are committed — Flux reconciles within ~10 minutes (or immediately with `flux reconcile kustomization adguard -n flux-system`).
+AdGuard Home is managed by Flux CD via a Kustomization pointing at `k3s/manifests/adguard/`. No manual deploy steps are required after the manifests are committed - Flux reconciles within ~10 minutes (or immediately with `flux reconcile kustomization adguard -n flux-system`).
 
 ### Triggering a deploy
 
@@ -85,7 +85,7 @@ kubectl get svc -n adguard
 
 On first deploy, AdGuard Home detects no config in the PVC and starts its **first-run setup wizard** on port 3000.  The wizard is accessible over the tailnet only (via the Tailscale Ingress).
 
-### Step 1 — Open the setup wizard
+### Step 1 - Open the setup wizard
 
 Navigate to **<https://adguard.tailnet.ts.net>** from any device on the tailnet.
 
@@ -95,28 +95,28 @@ Navigate to **<https://adguard.tailnet.ts.net>** from any device on the tailnet.
     kubectl logs -n adguard -l app=adguard-home
     ```
 
-### Step 2 — Admin web interface port
+### Step 2 - Admin web interface port
 
 When asked for the **Admin Web Interface** listen port, leave it at the default **3000**.
 
 !!! warning "Do not change the web UI port to 443"
     The Kubernetes liveness and readiness probes check port 3000. Setting the web UI to
     port 443 causes the probes to fail, putting the pod into a crash loop. The Tailscale
-    Ingress handles HTTPS termination externally — AdGuard only needs plain HTTP on 3000
+    Ingress handles HTTPS termination externally - AdGuard only needs plain HTTP on 3000
     internally. See the [troubleshooting guide](troubleshooting/adguard-web-ui-port-crash-loop.md)
     if you have already set it to 443.
 
-### Step 3 — Admin credentials
+### Step 3 - Admin credentials
 
 Set a strong admin username and password.  Store the password in your password manager.
 
-### Step 4 — DNS listening interface
+### Step 4 - DNS listening interface
 
 When asked *"DNS server listen interface"*, choose **All interfaces** (or `0.0.0.0`), and leave the port at **53**.
 
 > The pod's network is isolated inside the cluster. External DNS traffic reaches AdGuard only via the two LoadBalancer Services, so selecting *All interfaces* does **not** expose port 53 beyond what those services advertise.
 
-### Step 5 — Confirm and finish
+### Step 5 - Confirm and finish
 
 Complete the wizard.  AdGuard Home saves its config to the Longhorn PVC and restarts into normal operation.
 
@@ -134,11 +134,11 @@ tailscale status | grep adguard-dns
 # e.g. <adguard-ts-ip>  adguard-dns  linux  -
 ```
 
-#### Method A — Per-device DNS (testing / selective)
+#### Method A - Per-device DNS (testing / selective)
 
 Set the DNS server on a single device to the IP shown above.
 
-#### Method B — Tailscale DNS override (all tailnet devices)
+#### Method B - Tailscale DNS override (all tailnet devices)
 
 In the Tailscale admin console:
 
@@ -168,7 +168,7 @@ dig @<adguard-lan-ip> google.com
 The image version is pinned in `k3s/manifests/adguard/deployment.yaml`.  To upgrade:
 
 1. Update the `image` tag in `deployment.yaml`
-2. Commit and push — Flux rolls out the new version automatically
+2. Commit and push - Flux rolls out the new version automatically
 
 ```bash
 # deployment.yaml
@@ -203,7 +203,7 @@ flux reconcile kustomization adguard -n flux-system
 
 ## Troubleshooting
 
-### Pod in crash loop — web UI port misconfigured
+### Pod in crash loop - web UI port misconfigured
 
 If AdGuard was set up with the web UI on port 443 via the setup wizard, the pod enters a
 crash loop because Kubernetes probes expect port 3000. See the dedicated guide:
@@ -271,6 +271,6 @@ The PVCs are backed by Longhorn.  If the config resets to the wizard, the PVC ma
 
 **See also:**
 
-- [tailscale-operator.md](tailscale-operator.md) — Tailscale Ingress and LoadBalancer patterns
-- [gitops-flux.md](gitops-flux.md) — Flux CD reconciliation, adding new services
-- [manifests-and-helm.md](manifests-and-helm.md) — full manifest reference
+- [tailscale-operator.md](tailscale-operator.md) - Tailscale Ingress and LoadBalancer patterns
+- [gitops-flux.md](gitops-flux.md) - Flux CD reconciliation, adding new services
+- [manifests-and-helm.md](manifests-and-helm.md) - full manifest reference

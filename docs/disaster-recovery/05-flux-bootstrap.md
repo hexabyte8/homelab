@@ -1,4 +1,4 @@
-# Phase 5 — Flux Bootstrap
+# Phase 5 - Flux Bootstrap
 
 > **Time estimate:** ~10 minutes
 >
@@ -8,13 +8,13 @@
 
 ## What is Flux?
 
-Flux CD is a **GitOps controller** — it continuously watches this GitHub repository and automatically applies any Kubernetes manifests or Helm charts it finds to the cluster. When you push code changes to `main`, Flux detects them within ~1 minute and reconciles the cluster to match.
+Flux CD is a **GitOps controller** - it continuously watches this GitHub repository and automatically applies any Kubernetes manifests or Helm charts it finds to the cluster. When you push code changes to `main`, Flux detects them within ~1 minute and reconciles the cluster to match.
 
 Flux runs as a set of 4 controllers in the `flux-system` namespace:
-- **source-controller** — periodically polls the GitHub repo for updates
-- **kustomize-controller** — renders and applies Kustomization objects
-- **helm-controller** — manages Helm chart releases
-- **notification-controller** — sends alerts (Slack, Webhook, etc.)
+- **source-controller** - periodically polls the GitHub repo for updates
+- **kustomize-controller** - renders and applies Kustomization objects
+- **helm-controller** - manages Helm chart releases
+- **notification-controller** - sends alerts (Slack, Webhook, etc.)
 
 **Bootstrapping** Flux is a one-time setup that installs these controllers and provisions an SSH deploy key for read-only access to the repo.
 
@@ -125,7 +125,7 @@ cert-manager  cert-manager-config   True    update succeeded
 ...
 ```
 
-**Expected output for app workloads (these will show `False` or `Stalled` — this is normal):**
+**Expected output for app workloads (these will show `False` or `Stalled` - this is normal):**
 
 Workloads that depend on secrets (Authentik, Cloudflared, Tailscale operator, Stalwart) will show:
 ```
@@ -136,7 +136,7 @@ tailscale   tailscale   False   (waiting for secret: oauth credentials)
 ...
 ```
 
-This is **expected and normal** — Phase 6 will patch the real secrets from Bitwarden, allowing workloads to start.
+This is **expected and normal** - Phase 6 will patch the real secrets from Bitwarden, allowing workloads to start.
 
 ---
 
@@ -146,7 +146,7 @@ This is **expected and normal** — Phase 6 will patch the real secrets from Bit
 |-------|----------|
 | Bootstrap hangs at "installing components" | Ensure `kubectl` can reach the cluster: `kubectl cluster-info` |
 | `Kustomization` shows `False` with error | Check: `flux describe kustomization <name> -n <namespace>` and `flux logs --kind=Kustomization --all-namespaces` |
-| Workload pods stuck in `Pending` | This is expected — secrets not yet patched. Proceed to Phase 6. |
+| Workload pods stuck in `Pending` | This is expected - secrets not yet patched. Proceed to Phase 6. |
 | Deploy key not created on GitHub | Verify your PAT has `repo` scope and is exported as `GITHUB_TOKEN` before bootstrap |
 
 **View live Flux logs:**
@@ -164,14 +164,14 @@ Before proceeding to Phase 6:
 - [ ] All `flux-system` pods show `Running` status
 - [ ] `flux get kustomizations -A` shows system items as `Ready=True`
 - [ ] `flux get helmreleases -A` shows system items as `Ready=True`
-- [ ] App workloads (Authentik, Cloudflared, etc.) show `False`/`Stalled` (expected — secrets not yet patched)
+- [ ] App workloads (Authentik, Cloudflared, etc.) show `False`/`Stalled` (expected - secrets not yet patched)
 - [ ] Deploy key is visible on the GitHub repo (Settings → Deploy keys)
 
 ---
 
 ## Notes
 
-- The token in `GITHUB_TOKEN` can be revoked immediately after bootstrap completes — Flux uses the deploy key from that point onward.
+- The token in `GITHUB_TOKEN` can be revoked immediately after bootstrap completes - Flux uses the deploy key from that point onward.
 - Flux reconciles every 10 minutes by default. To force immediate reconciliation: `flux reconcile source git flux-system`
 - For detailed Flux operations, GitOps architecture, and advanced troubleshooting, see [`docs/gitops-flux.md`](../gitops-flux.md).
 

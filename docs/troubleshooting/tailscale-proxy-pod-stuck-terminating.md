@@ -1,4 +1,4 @@
-# Tailscale proxy pod stuck Terminating — service unreachable
+# Tailscale proxy pod stuck Terminating - service unreachable
 
 ## Symptoms
 
@@ -47,7 +47,7 @@ name resolves correctly, but there is no live proxy to forward traffic.
 ## Identifying the affected pod
 
 ```bash
-# List all Tailscale proxy pods — look for Completed / 0/1 Ready
+# List all Tailscale proxy pods - look for Completed / 0/1 Ready
 kubectl get pods -n tailscale
 
 # Confirm the pod has a stale deletionTimestamp
@@ -113,4 +113,4 @@ curl -I https://authentik.tailnet.ts.net
 ## See also
 
 - [Tailscale Operator docs](https://tailscale.com/kb/1236/kubernetes-operator)
-- [Tailscale Operator — `tailscale-operator.md`](../tailscale-operator.md)
+- [Tailscale Operator - `tailscale-operator.md`](../tailscale-operator.md)

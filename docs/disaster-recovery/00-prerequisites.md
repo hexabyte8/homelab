@@ -34,7 +34,7 @@ following items exists.
 | Secret | Where Used | Notes |
 |--------|-----------|-------|
 | `CLOUDFLARE_API_TOKEN` | OpenTofu Cloudflare provider | Needs `Zone:Edit` and `DNS:Edit` permissions |
-| `CLOUDFLARE_ZONE_ID` | OpenTofu — identifies the DNS zone | Found in the Cloudflare dashboard under your domain |
+| `CLOUDFLARE_ZONE_ID` | OpenTofu - identifies the DNS zone | Found in the Cloudflare dashboard under your domain |
 | `CLOUDFLARE_ZONE_NAME` | OpenTofu variable | Your public domain name (e.g. `example.com`) |
 | `CLOUDFLARE_ACCOUNT_ID` | OpenTofu Cloudflare provider | Found in the Cloudflare dashboard sidebar |
 
@@ -53,7 +53,7 @@ following items exists.
 | `TAILSCALE_API_KEY` | OpenTofu Tailscale provider | Create at [login.tailscale.com/admin/settings/keys](https://login.tailscale.com/admin/settings/keys) |
 | `TAILSCALE_OAUTH_CLIENT_ID` | GitHub Actions CI connectivity | OAuth client with `tag:ci` scope |
 | `TAILSCALE_OAUTH_CLIENT_SECRET` | GitHub Actions CI connectivity | Corresponding OAuth secret |
-| Tailscale Operator OAuth Client ID | Kubernetes Tailscale operator | Used in Phase 6 — manages k8s service exposure |
+| Tailscale Operator OAuth Client ID | Kubernetes Tailscale operator | Used in Phase 6 - manages k8s service exposure |
 | Tailscale Operator OAuth Client Secret | Kubernetes Tailscale operator | Used in Phase 6 |
 
 ### SSH / Git

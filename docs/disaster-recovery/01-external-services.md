@@ -17,7 +17,7 @@ inaccessible, the recovery process will need adjustments.
 
 ## 1.1 AWS S3 State Backend
 
-The S3 bucket `chronobyte-homelab-tf-state` stores the **infrastructure state** — it remembers
+The S3 bucket `chronobyte-homelab-tf-state` stores the **infrastructure state** - it remembers
 what resources (VMs, DNS records, S3 buckets) OpenTofu has already created and what their
 current settings are. State locking is provided by the DynamoDB table `homelab-tf-state-lock`.
 
@@ -66,7 +66,7 @@ sync and GitHub Actions cannot run.
 
 - Log in to [github.com](https://github.com) with your account
 - Check [status.github.com](https://www.githubstatus.com/) for outages
-- If the repository was deleted, you cannot proceed — contact GitHub support
+- If the repository was deleted, you cannot proceed - contact GitHub support
 
 **Reference:** [GitHub documentation](https://docs.github.com)
 
@@ -75,18 +75,18 @@ sync and GitHub Actions cannot run.
 ## 1.3 Cloudflare
 
 Cloudflare manages public DNS records for the homelab domain. These will be recreated
-by OpenTofu in Phase 3 — no manual action is needed here, just confirm access.
+by OpenTofu in Phase 3 - no manual action is needed here, just confirm access.
 
 **What to check:**
 
 1. Log in to [dash.cloudflare.com](https://dash.cloudflare.com)
 2. Confirm your domain zone is listed and shows **Active** status
-3. Note the **Zone ID** and **Account ID** from the sidebar — these go in Bitwarden
+3. Note the **Zone ID** and **Account ID** from the sidebar - these go in Bitwarden
 4. If existing DNS records are shown, they will be managed (and possibly updated) by OpenTofu
 
 **If the domain zone is missing:**
 
-- Cloudflare zones are independent of your hardware — this would be very unusual
+- Cloudflare zones are independent of your hardware - this would be very unusual
 - If somehow deleted, you would need to re-add the domain to Cloudflare and update nameservers
   at your domain registrar
 
@@ -103,7 +103,7 @@ The tailnet (`tailnet.ts.net`) and its configuration persist independently of th
 
 1. Log in to [login.tailscale.com/admin](https://login.tailscale.com/admin)
 2. Confirm the tailnet `tailnet.ts.net` is listed
-3. Under **Machines**, old (destroyed) VM entries will show as offline — you can delete them
+3. Under **Machines**, old (destroyed) VM entries will show as offline - you can delete them
    after the new VMs are created
 4. Navigate to **Settings → OAuth clients** and confirm the CI OAuth client (`tag:ci`) exists
 
@@ -142,7 +142,7 @@ confirms AWS access is still working.
    ```
 
 **If the bucket is missing:** OpenTofu will recreate it in Phase 3. Existing backup objects
-are stored inside the bucket — if the bucket was deleted, those backups may be gone unless
+are stored inside the bucket - if the bucket was deleted, those backups may be gone unless
 AWS versioning saved them.
 
 **Reference:** [AWS S3 documentation](https://docs.aws.amazon.com/s3/)

@@ -11,7 +11,7 @@
 
 ## What is Proxmox VE?
 
-Proxmox Virtual Environment (VE) is the **hypervisor** — the operating system that runs
+Proxmox Virtual Environment (VE) is the **hypervisor** - the operating system that runs
 directly on the physical hardware and allows you to create and manage virtual machines (VMs).
 
 Think of it like this:
@@ -79,7 +79,7 @@ Accept the self-signed certificate warning. Log in with:
 - **Realm:** `Linux PAM standard authentication`
 
 > **Note:** The Proxmox web interface uses HTTPS but with a self-signed certificate.
-> Your browser will show a security warning — this is expected. Click "Advanced" → 
+> Your browser will show a security warning - this is expected. Click "Advanced" → 
 > "Proceed to <proxmox-lan-ip>" to continue.
 
 **Reference:** [Proxmox Installation Guide](https://pve.proxmox.com/wiki/Installation)
@@ -139,7 +139,7 @@ All VMs use gateway `<lan-gateway>` and DNS `8.8.8.8`.
 
 **Why Tailscale on the Proxmox host?**  
 Terraform connects to Proxmox via its API at `chronobyte.tailnet.ts.net:8006`.
-Tailscale MagicDNS resolves that hostname — so Tailscale must be running on the host
+Tailscale MagicDNS resolves that hostname - so Tailscale must be running on the host
 before Terraform can reach it.
 
 Not familiar with Tailscale? See the [Tailscale technology guide](./technologies/tailscale.md).
@@ -157,7 +157,7 @@ curl -fsSL https://tailscale.com/install.sh | sh
 tailscale up --ssh --advertise-tags=tag:server
 ```
 
-A URL will appear — open it in a browser and authenticate with your Tailscale account.
+A URL will appear - open it in a browser and authenticate with your Tailscale account.
 
 **Verify Tailscale is connected:**
 
@@ -195,14 +195,14 @@ same name so the Bitwarden credentials still work.
      (everything after the `!`, e.g. if ID is `terraform@pam!mytoken`, use `mytoken`)
    - **Privilege Separation:** **uncheck** this (the token needs full permissions)
 4. Click **Add**
-5. Proxmox will show the secret UUID **once** — copy it
+5. Proxmox will show the secret UUID **once** - copy it
 6. Compare with `PM_API_TOKEN_SECRET` in Bitwarden:
    - If they match: great, nothing to update
    - If they don't match: **update Bitwarden** with the new secret value
 
 > **What is privilege separation?**  
 > When enabled, an API token has fewer permissions than the user who created it.
-> Disabling it means the token has the same permissions as `root@pam` — which Terraform
+> Disabling it means the token has the same permissions as `root@pam` - which Terraform
 > needs to create and manage VMs.
 
 **Reference:** [Proxmox API Token documentation](https://pve.proxmox.com/wiki/User_Management#pveum_tokens)
@@ -269,7 +269,7 @@ qm create 9000 \
 # Step 3: Import the downloaded cloud image as the VM's primary disk
 qm set 9000 --scsi0 local-lvm:0,import-from=/tmp/noble-server-cloudimg-amd64.img
 
-# Step 4: Add a cloud-init drive (IDE1) — this is where cloud-init config is injected
+# Step 4: Add a cloud-init drive (IDE1) - this is where cloud-init config is injected
 qm set 9000 --ide1 local-lvm:cloudinit
 
 # Step 5: Set the boot order to boot from the disk

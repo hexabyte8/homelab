@@ -1,4 +1,4 @@
-# Flux CD & GitOps — Technology Guide
+# Flux CD & GitOps - Technology Guide
 
 > This guide explains what Flux CD is, how it reconciles your cluster state from Git,
 > and the patterns used in this homelab for disaster recovery.
@@ -58,7 +58,7 @@ Located in `k3s/flux/apps/`:
 
 ```
 k3s/flux/apps/
-├── kustomization.yaml             # "root of roots" — lists all active services
+├── kustomization.yaml             # "root of roots" - lists all active services
 ├── namespaces.yaml                # Namespace definitions
 ├── cert-manager.yaml              # HelmRelease (Helm chart operator)
 ├── cert-manager-config.yaml       # Kustomization (post-chart config)
@@ -73,7 +73,7 @@ k3s/flux/apps/
 ```
 
 Each service is **one or more Flux resources** (Kustomization or HelmRelease) that define what to deploy and where.
-The `kustomization.yaml` file is the **single source of truth** for what is active — removing an entry disables that service.
+The `kustomization.yaml` file is the **single source of truth** for what is active - removing an entry disables that service.
 
 ```mermaid
 graph TD
@@ -179,7 +179,7 @@ All patched secrets carry this annotation:
 kustomize.toolkit.fluxcd.io/reconcile: disabled
 ```
 
-**This tells kustomize-controller:** "Skip this object during reconciliation — never overwrite
+**This tells kustomize-controller:** "Skip this object during reconciliation - never overwrite
 it from Git." Otherwise, Flux would revert any out-of-band patch back to `REPLACE_ME` on the
 next reconciliation.
 
@@ -202,7 +202,7 @@ kubectl patch secret <name> -n <namespace> --type=merge \
   -p '{"stringData":{"key":"new-value"}}'
 ```
 
-**Never use `kubectl apply`** — it will conflict with Flux's Server-Side Apply field-manager.
+**Never use `kubectl apply`** - it will conflict with Flux's Server-Side Apply field-manager.
 
 ---
 
@@ -215,10 +215,10 @@ meaning:
 2. **If the entire cluster is lost:** A fresh k3s cluster can be bootstrapped from this repo alone
 3. **If secrets are lost:** Use the `k3s-patch-secrets.yml` workflow to re-populate (see [Phase 6](../06-secrets-restore.md))
 
-**You do not need backups of Flux state itself** — it all lives in Git. The only things you need to preserve are:
-- **Persisted application data** (databases, files) — backed up via PVCs and Longhorn snapshots
-- **Secrets** — stored in Bitwarden Secrets Manager (not in Git)
-- **This Git repository** — the single source of truth
+**You do not need backups of Flux state itself** - it all lives in Git. The only things you need to preserve are:
+- **Persisted application data** (databases, files) - backed up via PVCs and Longhorn snapshots
+- **Secrets** - stored in Bitwarden Secrets Manager (not in Git)
+- **This Git repository** - the single source of truth
 
 ---
 
@@ -352,9 +352,9 @@ Drift correction is enabled by default (`prune: true`, `wait: false`). If change
 
 ## Further Reading
 
-- **[gitops-flux.md](../../gitops-flux.md)** — The canonical Flux operations guide (bootstrap, adding services, patching secrets)
-- **[new-service.md](../../new-service.md)** — Full walkthrough for adding a new service (manifests, Authentik, ingress)
-- **[05-flux-bootstrap.md](../05-flux-bootstrap.md)** — Bootstrap procedure in a disaster-recovery context
-- **[06-secrets-restore.md](../06-secrets-restore.md)** — How to restore patched secrets from Bitwarden
-- **[Flux official documentation](https://fluxcd.io/docs/)** — Authoritative reference
-- **[Flux troubleshooting guide](https://fluxcd.io/docs/troubleshooting/)** — Comprehensive troubleshooting
+- **[gitops-flux.md](../../gitops-flux.md)** - The canonical Flux operations guide (bootstrap, adding services, patching secrets)
+- **[new-service.md](../../new-service.md)** - Full walkthrough for adding a new service (manifests, Authentik, ingress)
+- **[05-flux-bootstrap.md](../05-flux-bootstrap.md)** - Bootstrap procedure in a disaster-recovery context
+- **[06-secrets-restore.md](../06-secrets-restore.md)** - How to restore patched secrets from Bitwarden
+- **[Flux official documentation](https://fluxcd.io/docs/)** - Authoritative reference
+- **[Flux troubleshooting guide](https://fluxcd.io/docs/troubleshooting/)** - Comprehensive troubleshooting

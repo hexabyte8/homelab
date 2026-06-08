@@ -1,6 +1,6 @@
 # Homelab Topology
 
-This page provides a complete visual overview of the homelab infrastructure — from physical hardware to running services and how everything connects.
+This page provides a complete visual overview of the homelab infrastructure - from physical hardware to running services and how everything connects.
 
 ---
 

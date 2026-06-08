@@ -3,12 +3,12 @@
 Two issues that frequently appear together when deploying non-root containers with
 persistent storage:
 
-1. **PVC permission denied** — the container user can't write to a mounted volume
-2. **Liveness/readiness probes failing** — the app binds to `127.0.0.1` instead of `0.0.0.0`
+1. **PVC permission denied** - the container user can't write to a mounted volume
+2. **Liveness/readiness probes failing** - the app binds to `127.0.0.1` instead of `0.0.0.0`
 
 ## Symptoms
 
-### Issue 1 — PermissionError on PVC
+### Issue 1 - PermissionError on PVC
 
 The pod enters a crash loop immediately after startup:
 
@@ -25,7 +25,7 @@ kubectl logs -n <namespace> <pod-name>
 # PermissionError: [Errno 13] Permission denied: '<mount-path>/somefile'
 ```
 
-Pod events confirm the container is starting successfully — it's the application
+Pod events confirm the container is starting successfully - it's the application
 itself that's failing:
 
 ```bash
@@ -34,7 +34,7 @@ kubectl describe pod -n <namespace> <pod-name>
 # Warning  BackOff    ...  Back-off restarting failed container myapp
 ```
 
-### Issue 2 — Probe failures after a `BEHIND_PROXY` / trusted-proxy flag
+### Issue 2 - Probe failures after a `BEHIND_PROXY` / trusted-proxy flag
 
 After fixing the PVC issue the pod still crash-loops. Events show probe failures:
 
@@ -45,7 +45,7 @@ kubectl describe pod -n <namespace> <pod-name>
 # Normal   Killing    ...  Container myapp failed liveness probe, will be restarted
 ```
 
-The app logs show it started successfully and is listening — but only on localhost:
+The app logs show it started successfully and is listening - but only on localhost:
 
 ```bash
 kubectl logs -n <namespace> <pod-name>
@@ -54,7 +54,7 @@ kubectl logs -n <namespace> <pod-name>
 
 ## Root cause
 
-### Issue 1 — Volume ownership
+### Issue 1 - Volume ownership
 
 Longhorn (and most Kubernetes storage provisioners) create new volumes owned by
 `root:root` with mode `755`. A non-root container user has no write permission
@@ -70,7 +70,7 @@ kubectl run --rm -it uid-check --image=<image> --restart=Never --command -- id
 Without a `securityContext.fsGroup` on the pod, the mounted volume remains
 root-owned and the non-root process gets `EACCES (Permission denied)`.
 
-### Issue 2 — Localhost-only bind when behind-proxy mode is active
+### Issue 2 - Localhost-only bind when behind-proxy mode is active
 
 Some applications (e.g. Flask with `BEHIND_PROXY=true`, or any framework that
 enables a trusted-proxy / forwarded-headers mode) default to binding on
@@ -85,7 +85,7 @@ pod enters `CrashLoopBackOff`.
 
 ## Fix
 
-### Issue 1 — Add `fsGroup` to the pod security context
+### Issue 1 - Add `fsGroup` to the pod security context
 
 Kubernetes sets the GID ownership of every mounted volume to `fsGroup` at pod
 start-up, and sets the setgid bit so new files inherit the group. Set `fsGroup`
@@ -132,7 +132,7 @@ kubectl exec -n <namespace> <pod-name> -- ls -la <mount-path>
 # drwxrwsr-x 2 root 999 4096 ...   ← group 999, setgid bit set
 ```
 
-### Issue 2 — Override the bind address via environment variable
+### Issue 2 - Override the bind address via environment variable
 
 Add an environment variable that forces the application to listen on all
 interfaces. The exact variable name depends on the application; common patterns:
@@ -222,5 +222,5 @@ When adding any service that runs as a non-root user:
 
 - [New Service Guide](../new-service.md)
 - [Longhorn storage](https://longhorn.io/docs/latest/volumes-and-nodes/volume-owner-and-group/)
-- [Kubernetes — Configure a Security Context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod)
-- [Kubernetes — Configure Liveness, Readiness and Startup Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+- [Kubernetes - Configure a Security Context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod)
+- [Kubernetes - Configure Liveness, Readiness and Startup Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)

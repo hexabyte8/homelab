@@ -10,7 +10,7 @@ Every service follows the same GitOps flow:
 
 1. Write Kubernetes manifests under `k3s/manifests/<myapp>/`
 2. Create a Flux `Kustomization` (or `HelmRelease`) in `k3s/flux/apps/<myapp>.yaml` and add it to `k3s/flux/apps/kustomization.yaml`
-3. Commit and push — Flux reconciles within the interval (default 10 min) or immediately if you run `flux reconcile kustomization apps -n flux-system`
+3. Commit and push - Flux reconciles within the interval (default 10 min) or immediately if you run `flux reconcile kustomization apps -n flux-system`
 
 Optionally:
 
@@ -32,7 +32,7 @@ Before writing any YAML, answer these four questions:
 | **Database**       | None · CNPG PostgreSQL (see existing `authentik-db` cluster as reference)                                                                     |
 
 !!! note "Authentik ForwardAuth requires Traefik"
-The `authentik-forward-auth` middleware only applies to Traefik-routed traffic. If you choose Tailscale Ingress, Authentik ForwardAuth is **not available** — Tailscale proxies bypass Traefik entirely. For public services requiring SSO, use Cloudflare Tunnel.
+The `authentik-forward-auth` middleware only applies to Traefik-routed traffic. If you choose Tailscale Ingress, Authentik ForwardAuth is **not available** - Tailscale proxies bypass Traefik entirely. For public services requiring SSO, use Cloudflare Tunnel.
 
 ---
 
@@ -59,7 +59,7 @@ metadata:
 
 !!! tip
 The Flux Kustomization can create namespaces automatically, but including a `namespace.yaml`
-is good practice — it lets you add namespace-level labels and ensures the namespace is tracked
+is good practice - it lets you add namespace-level labels and ensures the namespace is tracked
 in git. Alternatively, add the namespace to `k3s/flux/apps/namespaces.yaml`.
 
 ### `deployment.yaml`
@@ -151,7 +151,7 @@ Longhorn is the default storage class. `ReadWriteOnce` is sufficient for single-
 
 **Use when:** The service is for personal/internal use and only needs to be accessible to Tailscale network members.
 
-The Tailscale operator watches for Ingresses with `ingressClassName: tailscale` and automatically provisions a proxy pod that joins the `your-tailnet` tailnet. TLS is handled automatically — no cert-manager needed.
+The Tailscale operator watches for Ingresses with `ingressClassName: tailscale` and automatically provisions a proxy pod that joins the `your-tailnet` tailnet. TLS is handled automatically - no cert-manager needed.
 
 **`ingress.yaml`**:
 
@@ -194,7 +194,7 @@ To make a Tailscale-hosted service reachable on the public internet without Clou
         tailscale.com/funnel: "true"
     ```
 
-    Funnel exposes the service at `https://myapp.tailnet.ts.net` publicly. No DNS record or cert-manager configuration is needed — Tailscale handles TLS. Note that Authentik ForwardAuth is still not available via this path.
+    Funnel exposes the service at `https://myapp.tailnet.ts.net` publicly. No DNS record or cert-manager configuration is needed - Tailscale handles TLS. Note that Authentik ForwardAuth is still not available via this path.
 
 See [tailscale-operator.md](tailscale-operator.md) for proxy classes and further configuration.
 
@@ -278,7 +278,7 @@ metadata:
 ```
 
 !!! note "Two middlewares required for Cloudflare Tunnel"
-When traffic arrives via Cloudflare Tunnel, `cloudflared` connects to Traefik over plain `http://`, causing Traefik to set `X-Forwarded-Proto: http`. Authentik uses this header to build the OIDC callback URL — if it says `http`, Authentik rejects the callback as invalid.
+When traffic arrives via Cloudflare Tunnel, `cloudflared` connects to Traefik over plain `http://`, causing Traefik to set `X-Forwarded-Proto: http`. Authentik uses this header to build the OIDC callback URL - if it says `http`, Authentik rejects the callback as invalid.
 
     The `kube-system-cloudflare-https-scheme@kubernetescrd` middleware (defined in `k3s/manifests/traefik/cloudflare-https-middleware.yaml`) rewrites `X-Forwarded-Proto` to `https` **before** ForwardAuth runs. Always chain it first.
 
@@ -344,7 +344,7 @@ resources:
   - myapp.yaml
 ```
 
-For a Helm-based service, create a `HelmRelease` instead — see [gitops-flux.md](gitops-flux.md#helm-chart) for the full template and HelmRepository setup.
+For a Helm-based service, create a `HelmRelease` instead - see [gitops-flux.md](gitops-flux.md#helm-chart) for the full template and HelmRepository setup.
 
 ---
 
@@ -373,7 +373,7 @@ resource "cloudflare_dns_record" "myapp" {
 
 The `content` uses a resource reference so the tunnel UUID never needs to be hard-coded.
 
-Pushing to `main` automatically triggers the **OpenTofu Apply** GitHub Actions workflow — no manual `tofu apply` is needed.
+Pushing to `main` automatically triggers the **OpenTofu Apply** GitHub Actions workflow - no manual `tofu apply` is needed.
 
 !!! note "Skip this step for Tailscale"
 Tailscale Ingress and Funnel manage their own DNS automatically. No OpenTofu changes are needed.
@@ -401,7 +401,7 @@ flux reconcile kustomization apps -n flux-system
 To temporarily disable a service without deleting its manifests, remove its entry from `k3s/flux/apps/kustomization.yaml`:
 
 ```bash
-# Edit k3s/flux/apps/kustomization.yaml — remove the line:
+# Edit k3s/flux/apps/kustomization.yaml - remove the line:
 #   - myapp.yaml
 git commit -am "chore: park myapp"
 git push
@@ -426,7 +426,7 @@ Add a tile for the new service in `k3s/manifests/dashy/configmap.yaml` so it app
      target: newtab
    ```
 
-3. Bump the `kubectl.kubernetes.io/restartedAt` annotation in `k3s/manifests/dashy/deployment.yaml` to the current timestamp — this ensures Flux rolls the Dashy pod to pick up the new config.
+3. Bump the `kubectl.kubernetes.io/restartedAt` annotation in `k3s/manifests/dashy/deployment.yaml` to the current timestamp - this ensures Flux rolls the Dashy pod to pick up the new config.
 
 Include both files in the same commit as the rest of your service manifests.
 
@@ -559,6 +559,6 @@ ports:
 
 ## See Also
 
-- [gitops-flux.md](gitops-flux.md) — Flux bootstrap, patched secrets, adding services recipe
-- [tailscale-operator.md](tailscale-operator.md) — Proxy classes, Funnel, MagicDNS hostname format
-- [authentik.md](authentik.md) — ForwardAuth deep-dive, OIDC provider setup, LDAP outpost
+- [gitops-flux.md](gitops-flux.md) - Flux bootstrap, patched secrets, adding services recipe
+- [tailscale-operator.md](tailscale-operator.md) - Proxy classes, Funnel, MagicDNS hostname format
+- [authentik.md](authentik.md) - ForwardAuth deep-dive, OIDC provider setup, LDAP outpost

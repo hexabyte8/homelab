@@ -82,7 +82,7 @@ metadata:
 2. Create a new OAuth client with:
    - **Scopes**: `devices:write`, `dns:read`, `dns:write`
    - **Tags**: `tag:k8s-operator`
-3. Copy the `client_id` and `client_secret` — the secret is shown **once only**.
+3. Copy the `client_id` and `client_secret` - the secret is shown **once only**.
 
 ### Applying credentials to the cluster
 
@@ -105,7 +105,7 @@ After patching, restart the operator so it picks up the new credentials:
 kubectl rollout restart deployment -n tailscale -l app=operator
 ```
 
-Verify the operator joined the tailnet by checking the Tailscale admin console — you should see a device named `k3s-tailscale-operator`.
+Verify the operator joined the tailnet by checking the Tailscale admin console - you should see a device named `k3s-tailscale-operator`.
 
 ---
 
@@ -218,7 +218,7 @@ The `EXTERNAL-IP` field in `kubectl get svc` will show a Tailscale IP once the p
 
 ---
 
-### Method 3: Tailscale Ingress (HTTP/HTTPS — recommended for web services)
+### Method 3: Tailscale Ingress (HTTP/HTTPS - recommended for web services)
 
 Create a standard Kubernetes `Ingress` with `ingressClassName: tailscale`. The operator provisions an HTTPS-terminating proxy. The service becomes reachable at `https://<hostname>.tailnet.ts.net` with a valid TLS certificate provisioned automatically by Tailscale.
 
@@ -247,13 +247,13 @@ spec:
         - my-app     # becomes my-app.tailnet.ts.net
 ```
 
-> **Important — HTTP redirect gotcha:** The Tailscale proxy sends traffic to your backend over plain HTTP (to the port listed in `backend.service.port`). If your backend automatically redirects `http://` → `https://` you will get a redirect loop. Fix this by either:
+> **Important - HTTP redirect gotcha:** The Tailscale proxy sends traffic to your backend over plain HTTP (to the port listed in `backend.service.port`). If your backend automatically redirects `http://` → `https://` you will get a redirect loop. Fix this by either:
 > - Disabling the internal HTTP→HTTPS redirect in your app (preferred), **or**
 > - Pointing the Ingress `port` at the app's HTTPS port and accepting a self-signed cert.
 
 ### Method 4: Tailscale Funnel (public internet exposure)
 
-Tailscale Funnel exposes a service to the **public internet** — anyone can reach it, not just tailnet members. Traffic still routes through Tailscale's infrastructure, so there is no need to open firewall ports or configure port-forwarding on your router.
+Tailscale Funnel exposes a service to the **public internet** - anyone can reach it, not just tailnet members. Traffic still routes through Tailscale's infrastructure, so there is no need to open firewall ports or configure port-forwarding on your router.
 
 > **Important:** Funnel is only available for HTTPS (port 443). The URL seen by the public is `https://<hostname>.tailnet.ts.net`.
 
@@ -349,7 +349,7 @@ curl https://my-public-app.tailnet.ts.net
 
 This walks through exposing a hypothetical app `my-dashboard` running on port `3000`.
 
-### Step 1 — Manifest files
+### Step 1 - Manifest files
 
 `k3s/manifests/my-dashboard/deployment.yaml`:
 ```yaml
@@ -417,7 +417,7 @@ spec:
         - my-dashboard
 ```
 
-### Step 2 — Register with Flux
+### Step 2 - Register with Flux
 
 `k3s/flux/apps/my-dashboard.yaml`:
 ```yaml
@@ -436,7 +436,7 @@ spec:
   targetNamespace: my-dashboard
 ```
 
-### Step 3 — Push and verify
+### Step 3 - Push and verify
 
 ```bash
 git add k3s/manifests/my-dashboard/ k3s/flux/apps/my-dashboard.yaml
@@ -477,8 +477,8 @@ kubectl logs -n tailscale operator-<hash> --tail=100
 ```
 
 Common issues:
-- `oauth2: cannot fetch token: 401 Unauthorized` / `API token invalid`: OAuth credentials have expired or are wrong. Generate a new OAuth client at <https://login.tailscale.com/admin/settings/oauth> (scopes: `devices:write`, `dns:read`, `dns:write`; tag: `tag:k8s-operator`), apply with `kubectl patch`, then restart the operator — see [Applying credentials to the cluster](#applying-credentials-to-the-cluster). **Note:** existing proxy pods keep running with stale-but-valid auth; only new proxy provisioning fails.
-- `failed to authenticate`: OAuth credentials are wrong or not yet applied — re-run the `kubectl patch` command.
+- `oauth2: cannot fetch token: 401 Unauthorized` / `API token invalid`: OAuth credentials have expired or are wrong. Generate a new OAuth client at <https://login.tailscale.com/admin/settings/oauth> (scopes: `devices:write`, `dns:read`, `dns:write`; tag: `tag:k8s-operator`), apply with `kubectl patch`, then restart the operator - see [Applying credentials to the cluster](#applying-credentials-to-the-cluster). **Note:** existing proxy pods keep running with stale-but-valid auth; only new proxy provisioning fails.
+- `failed to authenticate`: OAuth credentials are wrong or not yet applied - re-run the `kubectl patch` command.
 - `tag not permitted`: the OAuth client's tag list in Tailscale admin does not include `tag:k8s-operator`.
 
 ### Proxy pod logs
@@ -491,12 +491,12 @@ kubectl logs -n tailscale ts-my-app-<hash>-0 --tail=100
 ```
 
 Look for:
-- `login complete` — proxy joined the tailnet successfully.
-- `Error: tag:k8s not permitted` — the ACL tag ownership is not set up correctly (see [Prerequisites](#prerequisites-tailscale-acl-tags)).
+- `login complete` - proxy joined the tailnet successfully.
+- `Error: tag:k8s not permitted` - the ACL tag ownership is not set up correctly (see [Prerequisites](#prerequisites-tailscale-acl-tags)).
 
 ### Proxy pod in `Error` / `NeedsLogin` state
 
-If a proxy pod logs `invalid state: tailscaled daemon started with a config file, but tailscale is not logged in`, its auth key is stale. This happens when the corresponding device was deleted from the Tailscale admin console. Fix it by deleting the auth secret — the operator will provision a fresh key and the pod will restart cleanly:
+If a proxy pod logs `invalid state: tailscaled daemon started with a config file, but tailscale is not logged in`, its auth key is stale. This happens when the corresponding device was deleted from the Tailscale admin console. Fix it by deleting the auth secret - the operator will provision a fresh key and the pod will restart cleanly:
 
 ```bash
 kubectl delete secret -n tailscale ts-<resource>-<hash>-0
@@ -564,5 +564,5 @@ If the operator pod is not running, check its logs and ensure the `operator-oaut
 | Helm chart version | `1.94.2` |
 
 **See also:**
-- [gitops-flux.md](gitops-flux.md) — how Flux manages these manifests
-- [manifests-and-helm.md](manifests-and-helm.md) — full manifest/Helm reference
+- [gitops-flux.md](gitops-flux.md) - how Flux manages these manifests
+- [manifests-and-helm.md](manifests-and-helm.md) - full manifest/Helm reference

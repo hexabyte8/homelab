@@ -118,7 +118,7 @@ kubectl logs -n cloudflared deployment/cloudflared --since=2m | grep -E "connect
 **Test a public endpoint** (from outside the tailnet):
 ```bash
 curl -I https://status.example.com
-# Should return HTTP 200 or a redirect — not a connection refused or tunnel error
+# Should return HTTP 200 or a redirect - not a connection refused or tunnel error
 ```
 
 ---
@@ -126,9 +126,9 @@ curl -I https://status.example.com
 ## 6.3 Authentik Credentials
 
 Authentik is the SSO/identity provider. It needs three secrets:
-- `secret-key` — cryptographic signing key for sessions/tokens (must be stable across restarts)
-- `bootstrap-password` — initial `akadmin` user password
-- `smtp-password` — password for the `noreply` Stalwart account (for sending emails)
+- `secret-key` - cryptographic signing key for sessions/tokens (must be stable across restarts)
+- `bootstrap-password` - initial `akadmin` user password
+- `smtp-password` - password for the `noreply` Stalwart account (for sending emails)
 
 **Retrieve from Bitwarden:** "Authentik Credentials"
 
@@ -145,7 +145,7 @@ kubectl patch secret authentik-credentials -n authentik --type=merge \
 !!! warning "secret-key must stay consistent"
     If the `secret-key` changes, all existing Authentik sessions are invalidated and
     users must log in again. OAuth tokens issued to applications may also be invalidated.
-    Always restore the same key from Bitwarden — do not generate a new one unless you
+    Always restore the same key from Bitwarden - do not generate a new one unless you
     understand the consequences.
 
 **Restart Authentik to pick up the new secrets:**
@@ -212,14 +212,14 @@ are already there. If the PVC was wiped:
 
 1. Log into `https://mail.tailnet.ts.net` with `admin` / the password you just patched
 2. **Directory → Accounts → New Account**: create `noreply@example.com`
-3. Set the password — this must match what is in `smtp-password` in the `authentik-credentials` secret
+3. Set the password - this must match what is in `smtp-password` in the `authentik-credentials` secret
 
 **Verify Cloudflare Email Routing is still active:**
 
 After `tofu apply` runs, Cloudflare Email Routing should already be enabled. If you see
 inbound mail not being forwarded to Gmail, check:
 1. [Cloudflare dashboard → Email → Email Routing](https://dash.cloudflare.com) → verify it shows **Enabled**
-2. The destination address (`admin@example.com`) shows as **Verified** — if not, re-trigger verification from the dashboard
+2. The destination address (`admin@example.com`) shows as **Verified** - if not, re-trigger verification from the dashboard
 
 **Test outbound email:**
 ```bash
@@ -274,7 +274,7 @@ Before proceeding to Phase 7:
 - [ ] cloudflared pod running and connected (`Connected to Cloudflare` in logs)
 - [ ] `authentik-credentials` patched with `secret-key`, `bootstrap-password`, `smtp-password`
 - [ ] Authentik accessible at `https://authentik.tailnet.ts.net`
-- [ ] OpenTofu Applied — Authentik flows, providers, and LDAP outpost provisioned
+- [ ] OpenTofu Applied - Authentik flows, providers, and LDAP outpost provisioned
 - [ ] Recovery flow `default-recovery-flow` exists in Authentik
 - [ ] `stalwart-secrets` patched with admin password and Resend API key
 - [ ] Stalwart `noreply@example.com` account exists (or recreated)

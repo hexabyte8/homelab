@@ -12,7 +12,7 @@
 OpenTofu is an open-source **Infrastructure as Code** tool (a community fork of Terraform). Instead of manually creating VMs
 through a web interface, you describe what you want in code (`.tf` files) and
 OpenTofu creates it automatically. When you need to rebuild, you just run OpenTofu
-again — it recreates everything exactly the same way.
+again - it recreates everything exactly the same way.
 
 Not familiar with OpenTofu? See the [OpenTofu technology guide](./technologies/opentofu.md).
 
@@ -35,7 +35,7 @@ Not familiar with OpenTofu? See the [OpenTofu technology guide](./technologies/o
 
 ---
 
-## 3.1 Option A — Via GitHub Actions (Recommended)
+## 3.1 Option A - Via GitHub Actions (Recommended)
 
 This is the normal path. The `opentofu-apply.yml` workflow handles all secrets
 automatically via Bitwarden and connects to Proxmox via Tailscale.
@@ -63,7 +63,7 @@ The workflow will:
 
 ---
 
-## 3.2 Option B — Local OpenTofu Run
+## 3.2 Option B - Local OpenTofu Run
 
 Use this if GitHub Actions is unavailable, broken, or you prefer manual control.
 

@@ -23,14 +23,14 @@ fail2ban runs as a **DaemonSet** in the `fail2ban` namespace, placing one pod on
 
 ### Why a DaemonSet?
 
-Each node independently reads its own host logs and manages its own `nftables` rules. A DaemonSet ensures every node is protected — a single Deployment pod would only protect the node it lands on.
+Each node independently reads its own host logs and manages its own `nftables` rules. A DaemonSet ensures every node is protected - a single Deployment pod would only protect the node it lands on.
 
 ### Networking and privileges
 
 The pod runs with:
-- `hostNetwork: true` — reads network state from the host network namespace
-- `hostPID: true` — allows access to host process information
-- `privileged: true` — required to manipulate host `nftables` rules
+- `hostNetwork: true` - reads network state from the host network namespace
+- `hostPID: true` - allows access to host process information
+- `privileged: true` - required to manipulate host `nftables` rules
 
 Tolerations allow the pod to schedule on control-plane nodes (which carry a `node-role.kubernetes.io/control-plane` taint by default).
 
@@ -52,7 +52,7 @@ All fail2ban configuration lives in a **ConfigMap** (`fail2ban-config`) in git a
 | `/run/xtables.lock` | Host `/run/xtables.lock` | Read-write |
 | `/var/lib/fail2ban` | Host `/var/lib/fail2ban` | Read-write (ban database) |
 
-The `subPath` mounts are required because Kubernetes ConfigMap keys cannot contain `/` — the filename is used as the key and placed at the correct path inside the container.
+The `subPath` mounts are required because Kubernetes ConfigMap keys cannot contain `/` - the filename is used as the key and placed at the correct path inside the container.
 
 ---
 
@@ -62,7 +62,7 @@ The `subPath` mounts are required because Kubernetes ConfigMap keys cannot conta
 
 | Setting | Value | Notes |
 |---|---|---|
-| `ignoreip` | `127.0.0.1/8 ::1 100.64.0.0/10` | Loopback + Tailscale CGNAT — tailnet peers are never banned |
+| `ignoreip` | `127.0.0.1/8 ::1 100.64.0.0/10` | Loopback + Tailscale CGNAT - tailnet peers are never banned |
 | `banaction` | `nftables-multiport` | Uses nftables instead of iptables |
 | `findtime` | `10m` | Window for counting failures |
 | `bantime` | `1h` | Default ban duration |
@@ -93,7 +93,7 @@ Monitors the k3s API server for repeated unauthorised or malformed requests. k3s
 ## Updating configuration
 
 1. Edit `k3s/manifests/fail2ban/configmap.yaml` in git.
-2. Push to `main` — Flux syncs the ConfigMap within ~10 minutes.
+2. Push to `main` - Flux syncs the ConfigMap within ~10 minutes.
 3. **Restart the DaemonSet pods** to pick up the new config:
 
    ```bash
@@ -112,7 +112,7 @@ DaemonSet pods do not restart automatically when a mounted ConfigMap changes.
 
 ## Managing bans (GitHub Actions)
 
-> **Do not** manage bans via SSH or `kubectl exec` directly. Use the GitHub Actions workflow — it handles all 3 nodes consistently.
+> **Do not** manage bans via SSH or `kubectl exec` directly. Use the GitHub Actions workflow - it handles all 3 nodes consistently.
 
 ### Running the workflow
 
@@ -121,9 +121,9 @@ DaemonSet pods do not restart automatically when a mounted ConfigMap changes.
 
 | Input | Description | Default |
 |---|---|---|
-| `action` | `list_bans`, `ban`, or `unban` | — |
+| `action` | `list_bans`, `ban`, or `unban` | - |
 | `jail` | Jail name to target | `sshd` |
-| `ip` | IP address (required for `ban` / `unban`) | — |
+| `ip` | IP address (required for `ban` / `unban`) | - |
 
 ### What happens under the hood
 
@@ -164,7 +164,7 @@ kubectl exec -n fail2ban <pod-name> -- fail2ban-client status k3s-apiserver
 ConfigMap "fail2ban-config" is invalid: data[filter.d/k3s-apiserver.conf]: Invalid value
 ```
 
-**Cause:** Kubernetes ConfigMap keys must match `[-._a-zA-Z0-9]+` — slashes are not permitted.
+**Cause:** Kubernetes ConfigMap keys must match `[-._a-zA-Z0-9]+` - slashes are not permitted.
 
 **Fix:** Use just the filename as the ConfigMap key (e.g. `k3s-apiserver.conf`) and mount it with a `subPath` volumeMount to place it at the correct path inside the container:
 

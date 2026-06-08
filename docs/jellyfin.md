@@ -1,6 +1,6 @@
 # Jellyfin Media Suite
 
-The `jellyfin` namespace hosts a collection of media-related services that work together: Jellyfin streams media, FileBrowser manages files, Transmission downloads torrents over a VPN, and MeTube pulls YouTube videos. Calibre-Web (ebook library) also runs in this namespace — see [calibre-web.md](calibre-web.md).
+The `jellyfin` namespace hosts a collection of media-related services that work together: Jellyfin streams media, FileBrowser manages files, Transmission downloads torrents over a VPN, and MeTube pulls YouTube videos. Calibre-Web (ebook library) also runs in this namespace - see [calibre-web.md](calibre-web.md).
 
 ## Services overview
 
@@ -9,16 +9,16 @@ The `jellyfin` namespace hosts a collection of media-related services that work 
 | Jellyfin | `jellyfin/jellyfin:10.10.7` | Media server and streaming | `<jellyfin-lan-ip>` |
 | FileBrowser | `filebrowser/filebrowser:v2.31.2` | Web file manager | `<filebrowser-lan-ip>` |
 | Transmission | `haugene/transmission-openvpn:5.3` | BitTorrent client (VPN-tunnelled) | `<transmission-lan-ip>` |
-| MeTube | `ghcr.io/alexta69/metube:2026.03.21` | yt-dlp web UI (YouTube downloader) | — |
+| MeTube | `ghcr.io/alexta69/metube:2026.03.21` | yt-dlp web UI (YouTube downloader) | - |
 
 ## Access
 
 | Service | Private (tailnet) | Public (Cloudflare) |
 |---------|-------------------|---------------------|
 | Jellyfin | `https://jellyfin.tailnet.ts.net` | `https://jellyfin.example.com` |
-| FileBrowser | `https://jellyfin-files.tailnet.ts.net` | — |
-| Transmission | `https://jellyfin-transmission.tailnet.ts.net` | — |
-| MeTube | `https://jellyfin-ytdl.tailnet.ts.net` | — |
+| FileBrowser | `https://jellyfin-files.tailnet.ts.net` | - |
+| Transmission | `https://jellyfin-transmission.tailnet.ts.net` | - |
+| MeTube | `https://jellyfin-ytdl.tailnet.ts.net` | - |
 
 ## Architecture
 
@@ -42,7 +42,7 @@ Jellyfin, FileBrowser, and Transmission are also exposed as `LoadBalancer` servi
 
 ### Node affinity
 
-All pods in the namespace that access the `jellyfin-media` PVC are pinned to the same Kubernetes node using `podAffinity`. The `jellyfin-media` volume uses `accessMode: ReadWriteOnce` — only one node can mount it at a time — so FileBrowser, Transmission, MeTube, and Calibre-Web must always be co-located with the Jellyfin pod.
+All pods in the namespace that access the `jellyfin-media` PVC are pinned to the same Kubernetes node using `podAffinity`. The `jellyfin-media` volume uses `accessMode: ReadWriteOnce` - only one node can mount it at a time - so FileBrowser, Transmission, MeTube, and Calibre-Web must always be co-located with the Jellyfin pod.
 
 ## Media flow
 
@@ -76,12 +76,12 @@ flowchart LR
 
 | Service | Mount path | Sub-path | Contents |
 |---------|------------|----------|----------|
-| Jellyfin | `/media` | — | Full media library |
-| FileBrowser | `/srv` | — | Full media library |
-| Transmission | `/media` | — | Full media library (downloads to `/media/downloads`) |
-| MeTube | `/media` | — | Full media library (downloads to `/media/youtube`) |
+| Jellyfin | `/media` | - | Full media library |
+| FileBrowser | `/srv` | - | Full media library |
+| Transmission | `/media` | - | Full media library (downloads to `/media/downloads`) |
+| MeTube | `/media` | - | Full media library (downloads to `/media/youtube`) |
 
-## Jellyfin — Cloudflare public access
+## Jellyfin - Cloudflare public access
 
 The Cloudflare Tunnel ingress for Jellyfin uses the `cloudflare-https-scheme` middleware:
 
@@ -90,15 +90,15 @@ traefik.ingress.kubernetes.io/router.middlewares: >-
   kube-system-cloudflare-https-scheme@kubernetescrd
 ```
 
-This middleware rewrites `X-Forwarded-Proto` from `http` to `https` before Jellyfin processes it. Without it, Jellyfin generates `http://` callback URLs in its OIDC/SSO plugin flow, breaking authentication. There is no Authentik ForwardAuth layer on the Jellyfin public endpoint — access control is handled by Jellyfin's own authentication.
+This middleware rewrites `X-Forwarded-Proto` from `http` to `https` before Jellyfin processes it. Without it, Jellyfin generates `http://` callback URLs in its OIDC/SSO plugin flow, breaking authentication. There is no Authentik ForwardAuth layer on the Jellyfin public endpoint - access control is handled by Jellyfin's own authentication.
 
-## Transmission — VPN and secrets
+## Transmission - VPN and secrets
 
 Transmission runs inside the [`haugene/transmission-openvpn`](https://github.com/haugene/docker-transmission-openvpn) image, which wraps Transmission in an OpenVPN tunnel. All torrent traffic leaves through the VPN.
 
 ### VPN provider
 
-The VPN uses a **custom AirVPN** `.ovpn` configuration file (`OPENVPN_PROVIDER=custom`). The `.ovpn` file embeds the certificate and auth — `OPENVPN_USERNAME` and `OPENVPN_PASSWORD` are set to `NONE` because AirVPN embeds credentials in the config file.
+The VPN uses a **custom AirVPN** `.ovpn` configuration file (`OPENVPN_PROVIDER=custom`). The `.ovpn` file embeds the certificate and auth - `OPENVPN_USERNAME` and `OPENVPN_PASSWORD` are set to `NONE` because AirVPN embeds credentials in the config file.
 
 AirVPN config files can be regenerated at [https://airvpn.org/generator/](https://airvpn.org/generator/).
 
@@ -136,10 +136,10 @@ kubectl create secret generic transmission-openvpn-credentials \
 
 The Transmission pod uses two init containers:
 
-1. **`init-tun`** — Creates `/dev/net/tun` on the node if it doesn't exist. Required for the OpenVPN `tun` interface.
-2. **`copy-vpn-config`** — Copies `vpn.ovpn` from the read-only secret mount to a writable `emptyDir`. The `haugene` image modifies the config file in-place at startup, so the mount must be writable.
+1. **`init-tun`** - Creates `/dev/net/tun` on the node if it doesn't exist. Required for the OpenVPN `tun` interface.
+2. **`copy-vpn-config`** - Copies `vpn.ovpn` from the read-only secret mount to a writable `emptyDir`. The `haugene` image modifies the config file in-place at startup, so the mount must be writable.
 
-## MeTube — environment variables
+## MeTube - environment variables
 
 | Variable | Value | Description |
 |----------|-------|-------------|
@@ -167,7 +167,7 @@ Pinned to a date-based tag (`2026.03.21`). Update to the latest tag from [ghcr.i
 
 ## Troubleshooting
 
-### Transmission pod not starting — `tun: open /dev/net/tun: no such file or directory`
+### Transmission pod not starting - `tun: open /dev/net/tun: no such file or directory`
 
 The `init-tun` init container should create the tun device. Check its logs:
 
@@ -177,7 +177,7 @@ kubectl logs -n jellyfin -l app=transmission -c init-tun
 
 If the node kernel module `tun` is not loaded, run `modprobe tun` on the node.
 
-### Transmission — all traffic not going through VPN
+### Transmission - all traffic not going through VPN
 
 Check that the OpenVPN tunnel is up inside the container:
 
@@ -194,7 +194,7 @@ The MetalLB IP (`<jellyfin-lan-ip>`) must be within the MetalLB address pool. Co
 kubectl get svc jellyfin -n jellyfin
 ```
 
-### Pod stuck pending — PVC already bound to another node
+### Pod stuck pending - PVC already bound to another node
 
 If the Jellyfin pod is rescheduled to a different node, all other pods in the namespace will also need to reschedule because of the `podAffinity` rule and the RWO constraint on `jellyfin-media`. Delete the stuck pods and let Kubernetes reschedule them together:
 

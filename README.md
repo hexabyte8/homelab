@@ -2,9 +2,9 @@
 
 A GitOps-driven homelab built around a small **k3s Kubernetes cluster on Proxmox**, with everything from VM provisioning to DNS records defined as code. This repository is published as a reference for others and as a public, auditable record of how the lab is operated.
 
-**DISCLAIMER** - This is a personal homelab, not a product or template. The architecture, conventions, and configuration choices are specific to my needs and preferences. If you're looking for a copy-paste solution, this isn't it — but if you want to learn how to wire up these technologies in a real-world context, this repo is meant to be readable evidence that it can be done.
+**DISCLAIMER** - This is a personal homelab, not a product or template. The architecture, conventions, and configuration choices are specific to my needs and preferences. If you're looking for a copy-paste solution, this isn't it, but if you want to learn how to wire up these technologies in a real-world context, this repo is meant to be readable evidence that it can be done.
 
-**AI DISCLAIMER** - This repo was bootstrapped with the help of generative AI, but every line of code and prose has been reviewed and edited by me. If you see something that looks like it was written by a bot, it probably was — but I take responsibility for all of it.
+**AI DISCLAIMER** - This repo was bootstrapped with the help of generative AI, but every line of code and prose has been reviewed and edited by me. If you see something that looks like it was written by a bot, it probably was but I take responsibility for all of it.
 
 ---
 
@@ -15,7 +15,7 @@ A single, opinionated, end-to-end implementation of the patterns some tutorials 
 - **One repo → entire stack.** Cloud DNS, virtual machines, the cluster, every workload, and the CI/CD that drives them all live here.
 - **GitOps reconciliation.** Push to `main`; Flux CD applies the cluster changes, GitHub Actions applies the cloud/VM changes. No `kubectl apply` involved in normal operations.
 - **Zero secrets in git.** Every credential is a `REPLACE_ME` placeholder backed by Bitwarden Secrets Manager and patched into the cluster (or into Terraform variables) at deploy time.
-- **Two-tier networking.** Private services live on Tailscale (`*.domain.ts.net`); public services come out of a Cloudflare Tunnel (`*.domain.net`) — no ports forwarded.
+- **Two-tier networking.** Private services live on Tailscale (`*.domain.ts.net`); public services come out of a Cloudflare Tunnel (`*.domain.net`) - no ports forwarded.
 - **Auth everywhere it matters.** Public services chain through Authentik via Traefik ForwardAuth.
 
 If you're trying to learn how to wire up Flux + Tailscale + Cloudflare Tunnel + Authentik + cert-manager into something that actually works together, this repo is meant to be readable evidence that it can be done.
@@ -90,14 +90,14 @@ flowchart LR
 .
 ├── k3s/
 │   ├── flux/
-│   │   ├── clusters/k3s/        # Flux bootstrap — GitRepository + root Kustomizations
+│   │   ├── clusters/k3s/        # Flux bootstrap - GitRepository + root Kustomizations
 │   │   └── apps/                # One Kustomization (or HelmRelease) per service
 │   └── manifests/               # Plain Kubernetes manifests, one directory per service
 ├── opentofu/                    # IaC: Cloudflare, Proxmox VMs, Tailscale, Authentik, S3
 ├── ansible/                     # VM-level provisioning (not in-cluster services)
 │   ├── playbooks/
 │   └── templates/
-├── docs/                        # Documentation source (Zensical) — published to docs.chronobyte.net via GitHub Pages
+├── docs/                        # Documentation source (Zensical) - published to docs.chronobyte.net via GitHub Pages
 ├── mkdocs.yml
 └── .github/workflows/           # opentofu-{plan,apply}, ansible-*, k3s-patch-secrets, …
 ```
@@ -117,7 +117,7 @@ flowchart LR
   Tofu -.may create VM.-> k3s
 ```
 
-For a routine app change (image bump, ingress edit, new manifest), pushing to `main` is enough — Flux notices within a minute and applies it. OpenTofu and Ansible only run for the things they own.
+For a routine app change (image bump, ingress edit, new manifest), pushing to `main` is enough - Flux notices within a minute and applies it. OpenTofu and Ansible only run for the things they own.
 
 ---
 
@@ -135,4 +135,4 @@ If something here looks like a leaked secret, please [open an issue](https://git
 
 ## License & disclaimer
 
-Provided as-is, without warranty. Configuration values, hostnames, and conventions are specific to this lab — copy with adaptation, not as-is. PRs that improve clarity for other readers are welcome.
+Provided as-is, without warranty. Configuration values, hostnames, and conventions are specific to this lab - copy with adaptation, not as-is. PRs that improve clarity for other readers are welcome.

@@ -1,7 +1,7 @@
 # Manifests & Helm
 
 This page covers the cluster node reference and manual `kubectl` / `helm` escape hatches.
-For the canonical GitOps workflow — how services are deployed, updated, and reconciled — see
+For the canonical GitOps workflow - how services are deployed, updated, and reconciled - see
 **[gitops-flux.md](gitops-flux.md)** and **[new-service.md](new-service.md)**.
 
 ---
@@ -16,7 +16,7 @@ For the canonical GitOps workflow — how services are deployed, updated, and re
 
 **k3s version:** v1.34.5+k3s1
 
-**Flannel networking:** Flannel uses Tailscale IPs as the overlay backend — see **[flannel-over-tailscale.md](flannel-over-tailscale.md)** for details.
+**Flannel networking:** Flannel uses Tailscale IPs as the overlay backend - see **[flannel-over-tailscale.md](flannel-over-tailscale.md)** for details.
 
 ### Installed components
 
@@ -35,10 +35,10 @@ For the canonical GitOps workflow — how services are deployed, updated, and re
 ## Manual Deployment (Escape Hatches)
 
 Normal deployments go through Flux GitOps (commit → push → reconcile). The following
-manual methods are available for bootstrapping, one-off operations, or debugging — not
+manual methods are available for bootstrapping, one-off operations, or debugging - not
 for day-to-day service management.
 
-### `kubectl apply` — one-off manifest
+### `kubectl apply` - one-off manifest
 
 ```bash
 # Apply a single manifest file directly (bypasses Flux)
@@ -53,7 +53,7 @@ kubectl apply -f k3s/manifests/myapp/
     already owns will cause field-manager conflicts. For secrets in particular, always use
     `kubectl patch --type=merge`. See [gitops-flux.md](gitops-flux.md#patched-secrets).
 
-### GitHub Actions — k3s Manifests workflow
+### GitHub Actions - k3s Manifests workflow
 
 Use the **k3s - Deploy Manifests** workflow dispatch for operations outside normal GitOps
 (e.g., applying a manifest on a feature branch or force-deleting resources):
@@ -110,7 +110,7 @@ metadata:
     tailscale.com/hostname: "my-service"
     tailscale.com/proxy-class: "prod"
 
-# Tailscale Ingress (HTTP — recommended for web services)
+# Tailscale Ingress (HTTP - recommended for web services)
 spec:
   ingressClassName: tailscale
   tls:

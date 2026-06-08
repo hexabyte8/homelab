@@ -1,4 +1,4 @@
-# Tailscale — Technology Guide
+# Tailscale - Technology Guide
 
 > This guide explains what Tailscale is, how it works, and how it is used throughout
 > this homelab for private networking, SSH access, and service exposure.
@@ -57,7 +57,7 @@ without memorizing IP addresses.
 ### Tailscale SSH
 
 When a device is enrolled with `--ssh`, Tailscale's SSH feature allows passwordless
-SSH access to that machine using your Tailscale identity — no SSH keys required.
+SSH access to that machine using your Tailscale identity - no SSH keys required.
 
 All VMs in this homelab have Tailscale SSH enabled. This is why Ansible workflows
 can SSH to them without managing SSH key files.
@@ -99,7 +99,7 @@ via the cloud-init script:
 tailscale up --auth-key=<key> --advertise-tags=tag:server --ssh
 ```
 
-The auth key is created by OpenTofu in `opentofu/tailscale.tf` — it is reusable,
+The auth key is created by OpenTofu in `opentofu/tailscale.tf` - it is reusable,
 pre-authorized (no approval needed), and expires after 90 days.
 
 ### 2. GitHub Actions Connectivity
@@ -153,14 +153,14 @@ When Flux applies this ingress, the Tailscale operator:
 ### 4. Public Internet Exposure (Tailscale Funnel)
 
 **Tailscale Funnel** allows selected Kubernetes services to be reached by anyone on the
-internet — not just tailnet members — at `https://<hostname>.tailnet.ts.net`.
+internet - not just tailnet members - at `https://<hostname>.tailnet.ts.net`.
 
 It is enabled per-resource by adding `tailscale.com/funnel: "true"` to an Ingress or
 Service and referencing the `funnel` ProxyClass. The Tailscale ACL in
 `opentofu/tailscale.tf` already grants the `funnel` capability to `tag:k8s` proxy
 devices so no manual ACL changes are needed when adding a new Funnel-exposed service.
 
-See [Tailscale Operator — Method 4](../../tailscale-operator.md#method-4-tailscale-funnel-public-internet-exposure)
+See [Tailscale Operator - Method 4](../../tailscale-operator.md#method-4-tailscale-funnel-public-internet-exposure)
 for full usage instructions and examples.
 
 ### 5. Flannel Overlay Network
@@ -251,7 +251,7 @@ kubectl -n tailscale get pods -l tailscale.com/parent-resource-type=Service
 
 **Three ways to expose a Kubernetes service via Tailscale:**
 
-1. **Annotated Service** — for simple TCP/UDP exposure:
+1. **Annotated Service** - for simple TCP/UDP exposure:
    ```yaml
    apiVersion: v1
    kind: Service
@@ -262,20 +262,20 @@ kubectl -n tailscale get pods -l tailscale.com/parent-resource-type=Service
      type: ClusterIP
    ```
 
-2. **LoadBalancer Service** — for IP-based access:
+2. **LoadBalancer Service** - for IP-based access:
    ```yaml
    spec:
      type: LoadBalancer
      loadBalancerClass: tailscale
    ```
 
-3. **Tailscale Ingress** — for HTTP/HTTPS services (recommended):
+3. **Tailscale Ingress** - for HTTP/HTTPS services (recommended):
    ```yaml
    spec:
      ingressClassName: tailscale
    ```
 
-4. **Tailscale Funnel** — to expose a service on the **public internet** (not just the tailnet). Requires `tailscale.com/funnel: "true"` annotation and the `funnel` ProxyClass:
+4. **Tailscale Funnel** - to expose a service on the **public internet** (not just the tailnet). Requires `tailscale.com/funnel: "true"` annotation and the `funnel` ProxyClass:
    ```yaml
    metadata:
      annotations:
@@ -331,6 +331,6 @@ If it shows `REPLACE_ME`, complete [Phase 6: Secrets Restore](../06-secrets-rest
 ```bash
 # In the workflow, check the tailscale/github-action step logs
 # Common issues:
-# 1. OAuth credentials expired — regenerate in Tailscale admin console
-# 2. `tag:ci` tag not in ACL — check tailscale.tf and run tofu apply
+# 1. OAuth credentials expired - regenerate in Tailscale admin console
+# 2. `tag:ci` tag not in ACL - check tailscale.tf and run tofu apply
 ```

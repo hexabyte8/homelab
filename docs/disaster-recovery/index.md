@@ -1,4 +1,4 @@
-# Disaster Recovery — Overview
+# Disaster Recovery - Overview
 
 > **Scope:** Complete homelab rebuild from zero. Use this guide when the physical Proxmox server
 > (`chronobyte`) is destroyed, unbootable, or otherwise unrecoverable.
@@ -19,7 +19,7 @@ graph TD
     k3s["Kubernetes (k3s)<br/><i>orchestrates containers</i>"]
     vms["Virtual Machines<br/><i>4 VMs created by OpenTofu</i>"]
     proxmox["Proxmox VE<br/><i>hypervisor running on bare metal</i>"]
-    server["Physical Server — chronobyte"]
+    server["Physical Server - chronobyte"]
 
     apps --> k3s
     k3s --> vms
@@ -27,11 +27,11 @@ graph TD
     proxmox --> server
 
     subgraph cloud["Supporting services (external / cloud)"]
-        ts["Tailscale — secure private networking"]
-        cf["Cloudflare — public DNS records"]
-        s3["AWS S3 — backups and infrastructure state"]
-        gh["GitHub — all code and Kubernetes manifests"]
-        bw["Bitwarden — stores all secrets/credentials"]
+        ts["Tailscale - secure private networking"]
+        cf["Cloudflare - public DNS records"]
+        s3["AWS S3 - backups and infrastructure state"]
+        gh["GitHub - all code and Kubernetes manifests"]
+        bw["Bitwarden - stores all secrets/credentials"]
     end
 ```
 
@@ -79,17 +79,17 @@ Not sure what a technology does or how it works? These pages explain each one fr
 
 | Technology | What it does |
 |-----------|-------------|
-| [Proxmox VE](./technologies/proxmox.md) | Hypervisor — runs virtual machines on bare metal |
-| [OpenTofu](./technologies/opentofu.md) | Infrastructure as Code — creates VMs, DNS records, S3 buckets automatically |
-| [Kubernetes / k3s](./technologies/kubernetes-k3s.md) | Container orchestration — runs and manages containers across multiple nodes |
-| [Flux CD & GitOps](./technologies/flux-gitops.md) | Continuous delivery — keeps cluster state in sync with GitHub |
-| [Tailscale](./technologies/tailscale.md) | Private networking — secure VPN mesh between all machines |
-| [Cloudflare](./technologies/cloudflare.md) | Public DNS, Tunnel, and Email Routing — maps domain names and forwards inbound mail |
-| [Longhorn](./technologies/longhorn.md) | Distributed storage — persistent volumes for Kubernetes workloads |
-| [Ansible](./technologies/ansible.md) | Configuration management — automates node setup and application deployment |
-| [AWS S3](./technologies/aws-s3.md) | Object storage — game server backup destination |
-| [Bitwarden](./technologies/bitwarden.md) | Secrets management — stores all credentials securely |
-| [GitHub Actions](./technologies/github-actions.md) | CI/CD — automates deployment workflows |
+| [Proxmox VE](./technologies/proxmox.md) | Hypervisor - runs virtual machines on bare metal |
+| [OpenTofu](./technologies/opentofu.md) | Infrastructure as Code - creates VMs, DNS records, S3 buckets automatically |
+| [Kubernetes / k3s](./technologies/kubernetes-k3s.md) | Container orchestration - runs and manages containers across multiple nodes |
+| [Flux CD & GitOps](./technologies/flux-gitops.md) | Continuous delivery - keeps cluster state in sync with GitHub |
+| [Tailscale](./technologies/tailscale.md) | Private networking - secure VPN mesh between all machines |
+| [Cloudflare](./technologies/cloudflare.md) | Public DNS, Tunnel, and Email Routing - maps domain names and forwards inbound mail |
+| [Longhorn](./technologies/longhorn.md) | Distributed storage - persistent volumes for Kubernetes workloads |
+| [Ansible](./technologies/ansible.md) | Configuration management - automates node setup and application deployment |
+| [AWS S3](./technologies/aws-s3.md) | Object storage - game server backup destination |
+| [Bitwarden](./technologies/bitwarden.md) | Secrets management - stores all credentials securely |
+| [GitHub Actions](./technologies/github-actions.md) | CI/CD - automates deployment workflows |
 
 ---
 
@@ -97,7 +97,7 @@ Not sure what a technology does or how it works? These pages explain each one fr
 
 | Service | Namespace | Access | Purpose |
 |---------|-----------|--------|---------|
-| Flux CD | `flux-system` | — (cluster internal) | GitOps controller |
+| Flux CD | `flux-system` | - (cluster internal) | GitOps controller |
 | Authentik | `authentik` | `https://authentik.tailnet.ts.net` | SSO / Identity Provider |
 | Stalwart | `stalwart` | `https://mail.tailnet.ts.net` | Email server + webmail |
 | AdGuard Home | `adguard` | `https://adguard.tailnet.ts.net` | DNS-based ad blocking |
@@ -105,12 +105,12 @@ Not sure what a technology does or how it works? These pages explain each one fr
 | Uptime Kuma | `uptime-kuma` | `https://status.example.com` (public) | Uptime monitoring |
 | MkDocs/Zensical | GitHub Pages | `https://docs.chronobyte.net` | This documentation |
 | Longhorn | `longhorn-system` | `https://longhorn.tailnet.ts.net` | Storage UI |
-| cert-manager | `cert-manager` | — (cluster internal) | Automatic TLS certificates |
-| cloudflared | `cloudflared` | — (cluster internal) | Cloudflare Tunnel daemon |
-| Traefik | `kube-system` | — (cluster internal) | Ingress reverse proxy |
-| MetalLB | `metallb-system` | — (cluster internal) | LoadBalancer IP assignment |
-| Tailscale Operator | `tailscale` | — (cluster internal) | Tailscale Ingress provisioner |
-| CNPG | `cnpg-system` | — (cluster internal) | PostgreSQL operator |
+| cert-manager | `cert-manager` | - (cluster internal) | Automatic TLS certificates |
+| cloudflared | `cloudflared` | - (cluster internal) | Cloudflare Tunnel daemon |
+| Traefik | `kube-system` | - (cluster internal) | Ingress reverse proxy |
+| MetalLB | `metallb-system` | - (cluster internal) | LoadBalancer IP assignment |
+| Tailscale Operator | `tailscale` | - (cluster internal) | Tailscale Ingress provisioner |
+| CNPG | `cnpg-system` | - (cluster internal) | PostgreSQL operator |
 
 ---
 
@@ -132,8 +132,8 @@ graph TD
 
 ## Before You Start
 
-1. **Read the Prerequisites page first** — without the Bitwarden secrets, recovery is impossible.
-2. **Do not skip steps** — each phase depends on the previous one completing successfully.
-3. **Use GitHub Actions where possible** — the recommended path uses pre-built workflows
+1. **Read the Prerequisites page first** - without the Bitwarden secrets, recovery is impossible.
+2. **Do not skip steps** - each phase depends on the previous one completing successfully.
+3. **Use GitHub Actions where possible** - the recommended path uses pre-built workflows
    that handle secrets automatically.
 4. **Check the Technology Reference pages** if you are unfamiliar with a tool before using it.

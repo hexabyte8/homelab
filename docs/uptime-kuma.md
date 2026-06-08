@@ -9,7 +9,7 @@
 | Admin (tailnet) | `https://uptime-kuma.tailnet.ts.net` | Tailnet members |
 | Public status page | `https://uptime.example.com` | Anyone (Authentik SSO required) |
 
-The **Tailscale Funnel** ingress serves as the admin interface — full access to add/edit monitors, manage notifications, etc. The **Cloudflare Tunnel** ingress exposes a read-only-style public status page protected by Authentik ForwardAuth.
+The **Tailscale Funnel** ingress serves as the admin interface - full access to add/edit monitors, manage notifications, etc. The **Cloudflare Tunnel** ingress exposes a read-only-style public status page protected by Authentik ForwardAuth.
 
 ## Architecture
 
@@ -33,13 +33,13 @@ Internet → Cloudflare Edge → cloudflared → Traefik
 **Tailscale (admin):**
 - `ingressClassName: tailscale`
 - Annotations: `tailscale.com/proxy-class: funnel`, `tailscale.com/funnel: "true"`
-- TLS handled by Tailscale — no cert-manager needed
+- TLS handled by Tailscale - no cert-manager needed
 
 **Cloudflare Tunnel (public):**
 - `ingressClassName: traefik`
 - Host: `uptime.example.com`
 - Middleware chain: `kube-system-cloudflare-https-scheme@kubernetescrd,authentik-authentik-forward-auth@kubernetescrd`
-- TLS terminated at Cloudflare edge — no `tls:` block or cert-manager annotation required on this ingress
+- TLS terminated at Cloudflare edge - no `tls:` block or cert-manager annotation required on this ingress
 
 ## Storage
 
@@ -69,7 +69,7 @@ The Cloudflare Tunnel ingress has the Authentik ForwardAuth middleware chain app
 kube-system-cloudflare-https-scheme@kubernetescrd,authentik-authentik-forward-auth@kubernetescrd
 ```
 
-`cloudflared` connects to Traefik over plain HTTP, which causes Traefik to set `X-Forwarded-Proto: http`. Authentik uses this header to build the OIDC callback URL — if it says `http`, the auth flow fails with a 400 error. The `cloudflare-https-scheme` middleware rewrites the header to `https` before ForwardAuth runs.
+`cloudflared` connects to Traefik over plain HTTP, which causes Traefik to set `X-Forwarded-Proto: http`. Authentik uses this header to build the OIDC callback URL - if it says `http`, the auth flow fails with a 400 error. The `cloudflare-https-scheme` middleware rewrites the header to `https` before ForwardAuth runs.
 
 See [cloudflare-tunnels.md](cloudflare-tunnels.md) for full background and [authentik.md](authentik.md) for the Authentik UI setup steps.
 
@@ -77,15 +77,15 @@ See [cloudflare-tunnels.md](cloudflare-tunnels.md) for full background and [auth
 
 Three steps are required in the Authentik web UI to protect Uptime Kuma:
 
-1. **Create a Proxy Provider** — Applications → Providers → Create → Proxy Provider
+1. **Create a Proxy Provider** - Applications → Providers → Create → Proxy Provider
    - Mode: `Forward auth (single application)`
    - External Host: `https://uptime.example.com`
 
-2. **Create an Application** — Applications → Applications → Create
+2. **Create an Application** - Applications → Applications → Create
    - Link to the provider above
    - Launch URL: `https://uptime.example.com`
 
-3. **Assign to the Embedded Outpost** — Applications → Outposts → Edit `authentik Embedded Outpost`
+3. **Assign to the Embedded Outpost** - Applications → Outposts → Edit `authentik Embedded Outpost`
    - Move the Uptime Kuma application to the Selected list and save
 
 ## Adding a new monitor
@@ -93,12 +93,12 @@ Three steps are required in the Authentik web UI to protect Uptime Kuma:
 1. Log in via the Tailscale URL: `https://uptime-kuma.tailnet.ts.net`
 2. Click **Add New Monitor**
 3. Choose monitor type:
-   - **HTTP(s)** — polls a URL; verifies status code and optionally response body
-   - **TCP Port** — checks a TCP port is open
-   - **Ping** — ICMP ping
-   - **DNS** — verifies DNS resolution
+   - **HTTP(s)** - polls a URL; verifies status code and optionally response body
+   - **TCP Port** - checks a TCP port is open
+   - **Ping** - ICMP ping
+   - **DNS** - verifies DNS resolution
 4. Set the **Heartbeat Interval** (default 60s) and **Retries** before marking down
-5. Optionally assign a **Notification channel** (e.g. ntfy — see below)
+5. Optionally assign a **Notification channel** (e.g. ntfy - see below)
 6. Click **Save**
 
 ### Ntfy integration
@@ -106,7 +106,7 @@ Three steps are required in the Authentik web UI to protect Uptime Kuma:
 Uptime Kuma can publish alerts to the [ntfy](ntfy.md) instance. Configure a notification channel in Settings → Notifications:
 
 - Type: **ntfy**
-- Server URL: `http://ntfy.ntfy.svc.cluster.local` (ClusterIP — stays in-cluster)
+- Server URL: `http://ntfy.ntfy.svc.cluster.local` (ClusterIP - stays in-cluster)
 - Topic: e.g. `homelab-alerts`
 
 Using the ClusterIP URL ensures alert delivery even if Tailscale is temporarily unavailable.
@@ -125,7 +125,7 @@ For major version upgrades, update the tag in `k3s/manifests/uptime-kuma/deploym
 
 ### Public URL redirects to Authentik login loop (400 error)
 
-Verify the middleware order in the Cloudflare ingress annotation — `cloudflare-https-scheme` must come first:
+Verify the middleware order in the Cloudflare ingress annotation - `cloudflare-https-scheme` must come first:
 
 ```bash
 kubectl get ingress uptime-kuma-cloudflare -n uptime-kuma -o yaml | grep middlewares
@@ -152,4 +152,4 @@ kubectl describe pod -l app=uptime-kuma -n uptime-kuma
 kubectl logs deployment/uptime-kuma -n uptime-kuma
 ```
 
-Check that the `uptime-kuma-data` PVC is bound — a `Pending` PVC will block the pod indefinitely.
+Check that the `uptime-kuma-data` PVC is bound - a `Pending` PVC will block the pod indefinitely.
