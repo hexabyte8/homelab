@@ -1,6 +1,6 @@
-# Kubernetes
+# Kubernetes General troubleshooting and debugging tools
 
-This is just documentation with some useful tools and notes about Kubernetes.
+This is just documentation with some useful tools and notes about Kubernetes debugging.
 
 ## Debugging pods and containers
 

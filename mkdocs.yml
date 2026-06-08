@@ -122,3 +122,4 @@ nav:
     - Tailscale Proxy Pod Stuck Terminating: troubleshooting/tailscale-proxy-pod-stuck-terminating.md
     - AdGuard Web UI Port Crash Loop: troubleshooting/adguard-web-ui-port-crash-loop.md
     - Non-root Container PVC Permissions: troubleshooting/non-root-container-pvc-permissions.md
+    - Kubernetes General Troubleshooting: troubleshooting/kubernetes.md
