@@ -75,3 +75,9 @@ kubectl top pods
 ```bash
 kubectl top pod <pod-name> -c <container-name>
 ```
+
+- To get the resource usage of all containers in a pod
+
+```bash
+kubectl top pod <pod-name> -A
+```
