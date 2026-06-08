@@ -86,6 +86,17 @@ jobs:
         with:
           tofu_wrapper: false
 
+      - name: Setup tflint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: tflint init
+        run: tflint --init
+        working-directory: ./opentofu/${{ inputs.stack }}
+
+      - name: tflint
+        run: tflint --no-color
+        working-directory: ./opentofu/${{ inputs.stack }}
+
       - name: OpenTofu Init
         run: tofu init -no-color
         working-directory: ./opentofu/${{ inputs.stack }}
