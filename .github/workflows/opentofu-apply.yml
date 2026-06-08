@@ -54,6 +54,10 @@ jobs:
       matrix:
         stack: ${{ fromJson(needs.detect.outputs.stacks) }}
       fail-fast: false
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
     uses: ./.github/workflows/opentofu-reusable.yml
     with:
       stack: ${{ matrix.stack }}
