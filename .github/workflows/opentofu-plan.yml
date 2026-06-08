@@ -9,6 +9,9 @@ on:
       - 'opentofu/**'
       - '.github/workflows/opentofu-*.yml'
 
+permissions:
+  contents: read
+
 jobs:
   detect:
     runs-on: ubuntu-latest
