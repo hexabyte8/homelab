@@ -1,7 +1,6 @@
 # Cloudflare Tunnel — ingress routing and DNS records.
 #
 # The tunnel was created via the Cloudflare dashboard. Import it into state with:
-# (The <tunnel_id> can be retrieved from the Cloudflare dashboard or from
 #   tofu import cloudflare_zero_trust_tunnel_cloudflared.homelab \
 #     <account_id>/<tunnel_id>
 #

@@ -1,50 +1,33 @@
-name: OpenTofu Destroy
+name: OpenTofu Stack (Reusable)
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       stack:
-        description: 'Stack to destroy (cloudflare, tailscale, aws, proxmox, authentik)'
-        required: true
-        type: choice
-        options:
-          - cloudflare
-          - tailscale
-          - aws
-          - proxmox
-          - authentik
-      target_resource:
-        description: 'Specific resource to destroy (e.g., proxmox_vm_qemu.k3s-server), leave empty to destroy all'
-        required: false
+        description: 'Stack to operate on (cloudflare, tailscale, aws, proxmox, authentik)'
         type: string
-      confirmation:
-        description: 'Type "destroy" to confirm destruction'
         required: true
+      action:
+        description: 'Action to run (plan or apply)'
         type: string
+        required: true
+    secrets:
+      BW_ACCESS_TOKEN:
+        required: true
 
 jobs:
-  destroy:
+  opentofu:
     runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
+    environment: ${{ inputs.action == 'apply' && 'production' || '' }}
     permissions:
       contents: read
+      pull-requests: write
       id-token: write
 
     env:
       AWS_DEFAULT_REGION: us-east-1
 
     steps:
-      - name: Validate Confirmation
-        run: |
-          if [ "${{ github.event.inputs.confirmation }}" != "destroy" ]; then
-            echo "::error::Confirmation failed. You must type 'destroy' to proceed."
-            exit 1
-          fi
-          echo "Confirmation validated. Proceeding with destruction of stack: ${{ inputs.stack }}"
-
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -69,6 +52,7 @@ jobs:
             2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
             9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
 
+      # Tailscale is only needed for the proxmox stack (API + SSH over MagicDNS).
       - name: Setup Tailscale
         if: inputs.stack == 'proxmox'
         uses: tailscale/github-action@v4
@@ -107,15 +91,62 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
 
-      - name: OpenTofu Destroy
+      - name: OpenTofu Plan
+        if: inputs.action == 'plan'
+        id: plan
         run: |
-          if [ -z "${{ inputs.target_resource }}" ]; then
-            echo "Destroying all resources in stack: ${{ inputs.stack }}"
-            tofu destroy -auto-approve -no-color
-          else
-            echo "Destroying specific resource: ${{ inputs.target_resource }}"
-            tofu destroy -target="${{ inputs.target_resource }}" -auto-approve -no-color
-          fi
+          tofu plan -no-color -out=tfplan 2>&1 | tee plan.txt
+          echo "exitcode=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        working-directory: ./opentofu/${{ inputs.stack }}
+        continue-on-error: true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_admin_email: ${{ env.ADMIN_EMAIL }}
+          TF_VAR_authentik_api_token: ${{ env.AUTHENTIK_API_TOKEN }}
+          TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+          TF_VAR_cloudflare_account_id: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_zone_id: ${{ env.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_cloudflare_zone_name: ${{ env.CLOUDFLARE_ZONE_NAME }}
+          TF_VAR_default_vm_password: ${{ env.DEFAULT_VM_PASSWORD }}
+          TF_VAR_proxmox_host: "chronobyte"
+          TF_VAR_public_ip: ${{ env.PUBLIC_IP }}
+          TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
+
+      - name: Comment Plan on PR
+        uses: actions/github-script@v9
+        if: inputs.action == 'plan' && github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('./opentofu/${{ inputs.stack }}/plan.txt', 'utf8');
+            const truncatedPlan = plan.length > 65000 ? plan.substring(0, 65000) + '\n... (truncated)' : plan;
+            const output = `#### OpenTofu Plan — \`${{ inputs.stack }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`hcl
+            ${truncatedPlan}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Fail if Plan Failed
+        if: inputs.action == 'plan' && steps.plan.outputs.exitcode != '0'
+        run: exit 1
+
+      - name: OpenTofu Apply
+        if: inputs.action == 'apply'
+        run: tofu apply -auto-approve -no-color
         working-directory: ./opentofu/${{ inputs.stack }}
         env:
           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
