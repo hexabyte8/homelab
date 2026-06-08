@@ -1,13 +1,3 @@
-resource "tailscale_tailnet_key" "vm_auth" {
-  reusable            = true
-  ephemeral           = false
-  preauthorized       = true
-  expiry              = 7776000 # 90 days
-  description         = "Cloud-init VM auth key"
-  tags                = ["tag:server"]
-  recreate_if_invalid = "always"
-}
-
 resource "tailscale_acl" "as_json" {
   acl = <<-EOT
       {
