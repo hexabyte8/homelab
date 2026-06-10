@@ -87,7 +87,7 @@ jobs:
           tofu_wrapper: false
 
       - name: Setup tflint
-        uses: terraform-linters/setup-tflint@v4
+        uses: terraform-linters/setup-tflint@v6
 
       - name: tflint init
         run: tflint --init
