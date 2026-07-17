@@ -1,0 +1,74 @@
+# ClusterIP for signaling traffic routed through the Traefik ingress.
+# WebRTC media is relayed through the LiveKit TURN server via the same
+# signaling WebSocket — no UDP/TCP port forwarding required.
+apiVersion: v1
+kind: Service
+metadata:
+  name: livekit
+  namespace: chatto
+spec:
+  selector:
+    app: livekit
+  ports:
+    - name: signaling
+      port: 7880
+      targetPort: 7880
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livekit
+  namespace: chatto
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: livekit
+  template:
+    metadata:
+      labels:
+        app: livekit
+    spec:
+      containers:
+        - name: livekit
+          image: livekit/livekit-server:v1.13.3
+          args:
+            - --config
+            - /etc/livekit/livekit.yaml
+          env:
+            - name: LIVEKIT_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chatto-config
+                  key: CHATTO_LIVEKIT_API_SECRET
+          ports:
+            - name: signaling
+              containerPort: 7880
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/livekit
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 7880
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 7880
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      volumes:
+        - name: config
+          configMap:
+            name: livekit-config
