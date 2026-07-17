@@ -92,10 +92,16 @@ jobs:
       - name: tflint init
         run: tflint --init
         working-directory: ./opentofu/${{ inputs.stack }}
+        env:
+          # Unset GITHUB_TOKEN to force PGP verification instead of sigstore attestation,
+          # which panics with a nil pointer in some tflint versions (tflint#2591).
+          GITHUB_TOKEN: ""
 
       - name: tflint
         run: tflint --no-color
         working-directory: ./opentofu/${{ inputs.stack }}
+        env:
+          GITHUB_TOKEN: ""
 
       - name: OpenTofu Init
         run: tofu init -no-color
