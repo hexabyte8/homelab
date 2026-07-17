@@ -1,4 +1,6 @@
-# ClusterIP for signaling traffic routed through the Traefik ingress
+# ClusterIP for signaling traffic routed through the Traefik ingress.
+# WebRTC media is relayed through the LiveKit TURN server via the same
+# signaling WebSocket — no UDP/TCP port forwarding required.
 apiVersion: v1
 kind: Service
 metadata:
@@ -12,45 +14,6 @@ spec:
       port: 7880
       targetPort: 7880
       protocol: TCP
----
-# LoadBalancer (MetalLB) for direct WebRTC media and TURN relay.
-# Forward these ports on your router to the assigned MetalLB IP:
-#   7881/TCP  — WebRTC media fallback
-#   7882/UDP  — WebRTC media
-#   3478/UDP  — TURN/STUN relay
-apiVersion: v1
-kind: Service
-metadata:
-  name: livekit-tcp
-  namespace: chatto
-spec:
-  type: LoadBalancer
-  selector:
-    app: livekit
-  ports:
-    - name: webrtc-tcp
-      port: 7881
-      targetPort: 7881
-      protocol: TCP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: livekit-udp
-  namespace: chatto
-spec:
-  type: LoadBalancer
-  selector:
-    app: livekit
-  ports:
-    - name: webrtc-udp
-      port: 7882
-      targetPort: 7882
-      protocol: UDP
-    - name: turn
-      port: 3478
-      targetPort: 3478
-      protocol: UDP
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -83,15 +46,6 @@ spec:
             - name: signaling
               containerPort: 7880
               protocol: TCP
-            - name: webrtc-tcp
-              containerPort: 7881
-              protocol: TCP
-            - name: webrtc-udp
-              containerPort: 7882
-              protocol: UDP
-            - name: turn
-              containerPort: 3478
-              protocol: UDP
           volumeMounts:
             - name: config
               mountPath: /etc/livekit

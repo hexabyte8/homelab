@@ -7,15 +7,19 @@ data:
   # LiveKit substitutes ${VAR} from environment at startup.
   # LIVEKIT_API_SECRET is injected by the livekit Deployment from chatto-config.
   # The key name "chatto" must match CHATTO_LIVEKIT_API_KEY in secret.yaml.
+  # use_external_ip is disabled — all media is relayed through the TURN server
+  # over the signaling WebSocket (no direct UDP/TCP ports exposed).
   livekit.yaml: |
     port: 7880
     rtc:
-      tcp_port: 7881
-      udp_port: 7882
-      use_external_ip: true
+      use_external_ip: false
+      force_relay: true
     turn:
       enabled: true
-      udp_port: 3478
+      tls_port: 5349
+      domain: livekit.chat.chronobyte.net
+      cert_file: ""
+      key_file: ""
     keys:
       chatto: ${LIVEKIT_API_SECRET}
     webhook:
