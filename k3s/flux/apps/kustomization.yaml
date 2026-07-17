@@ -27,6 +27,7 @@ resources:
   - monitoring-manifests.yaml
   # Workloads
   - adguard.yaml
+  - chatto.yaml
   - calibre-web.yaml
   - dashy.yaml
   - fail2ban.yaml

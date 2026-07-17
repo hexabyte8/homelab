@@ -1,0 +1,120 @@
+# ClusterIP for signaling traffic routed through the Traefik ingress
+apiVersion: v1
+kind: Service
+metadata:
+  name: livekit
+  namespace: chatto
+spec:
+  selector:
+    app: livekit
+  ports:
+    - name: signaling
+      port: 7880
+      targetPort: 7880
+      protocol: TCP
+---
+# LoadBalancer (MetalLB) for direct WebRTC media and TURN relay.
+# Forward these ports on your router to the assigned MetalLB IP:
+#   7881/TCP  — WebRTC media fallback
+#   7882/UDP  — WebRTC media
+#   3478/UDP  — TURN/STUN relay
+apiVersion: v1
+kind: Service
+metadata:
+  name: livekit-tcp
+  namespace: chatto
+spec:
+  type: LoadBalancer
+  selector:
+    app: livekit
+  ports:
+    - name: webrtc-tcp
+      port: 7881
+      targetPort: 7881
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: livekit-udp
+  namespace: chatto
+spec:
+  type: LoadBalancer
+  selector:
+    app: livekit
+  ports:
+    - name: webrtc-udp
+      port: 7882
+      targetPort: 7882
+      protocol: UDP
+    - name: turn
+      port: 3478
+      targetPort: 3478
+      protocol: UDP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livekit
+  namespace: chatto
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: livekit
+  template:
+    metadata:
+      labels:
+        app: livekit
+    spec:
+      containers:
+        - name: livekit
+          image: livekit/livekit-server:v1.13.3
+          args:
+            - --config
+            - /etc/livekit/livekit.yaml
+          env:
+            - name: LIVEKIT_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chatto-config
+                  key: CHATTO_LIVEKIT_API_SECRET
+          ports:
+            - name: signaling
+              containerPort: 7880
+              protocol: TCP
+            - name: webrtc-tcp
+              containerPort: 7881
+              protocol: TCP
+            - name: webrtc-udp
+              containerPort: 7882
+              protocol: UDP
+            - name: turn
+              containerPort: 3478
+              protocol: UDP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/livekit
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 7880
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 7880
+            initialDelaySeconds: 10
+            periodSeconds: 20
+      volumes:
+        - name: config
+          configMap:
+            name: livekit-config
