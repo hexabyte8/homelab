@@ -15,6 +15,13 @@ spec:
       labels:
         app: librechat
     spec:
+      initContainers:
+        - name: fix-uploads-perms
+          image: busybox:1.36
+          command: ["sh", "-c", "rm -rf /images/lost+found"]
+          volumeMounts:
+            - name: uploads
+              mountPath: /images
       containers:
         - name: librechat
           image: ghcr.io/danny-avila/librechat:v0.7.8
