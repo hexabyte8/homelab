@@ -13,11 +13,14 @@ data:
     bind = "[::]:8080"
     protocol = "http"
 
-    # SMTP submission (for internal services like Authentik)
+    # SMTP submission (for internal services like Authentik and Chatto)
+    # TLS is disabled so in-cluster clients don't need to trust the cert
+    # (Let's Encrypt cannot issue certs for cluster-internal DNS names)
     [server.listener.submission]
     bind = "[::]:587"
     protocol = "smtp"
     auth.require-tls = false
+    tls.enable = false
 
     # Allow PLAIN/LOGIN on port 587 regardless of TLS (internal cluster traffic)
     [[session.auth.mechanisms]]
