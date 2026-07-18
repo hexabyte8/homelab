@@ -13,7 +13,7 @@ data:
     bind = "[::]:8080"
     protocol = "http"
 
-    # SMTP submission (for internal services like Authentik and Chatto)
+    # SMTP submission (for internal services like Authentik)
     # TLS is disabled so in-cluster clients don't need to trust the cert
     # (Let's Encrypt cannot issue certs for cluster-internal DNS names)
     [server.listener.submission]
@@ -42,6 +42,12 @@ data:
     bind = "[::]:993"
     protocol = "imap"
     tls.implicit = true
+    tls.certificate = "default"
+
+    # TLS certificate (sourced from the cert-manager-managed stalwart-tls secret)
+    [certificate.default]
+    cert = "%{file:/opt/stalwart/tls/tls.crt}%"
+    private-key = "%{file:/opt/stalwart/tls/tls.key}%"
 
     # RocksDB storage backend
     [store.rocksdb]
