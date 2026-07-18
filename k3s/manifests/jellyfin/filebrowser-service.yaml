@@ -5,6 +5,11 @@ metadata:
   namespace: jellyfin
   annotations:
     metallb.universe.tf/loadBalancerIPs: "192.168.1.241"
+    # Port 80 is claimed by Traefik's svclb on all nodes; MetalLB already provides
+    # the VIP so the k3s servicelb pods are redundant and unschedulable. Tell the
+    # k3s servicelb controller to use a node selector that matches no nodes so it
+    # stops trying to create the svclb DaemonSet pods.
+    svccontroller.k3s.cattle.io/nodeselectorsterm: "kubernetes.io/hostname in (none)"
 spec:
   type: LoadBalancer
   selector:
