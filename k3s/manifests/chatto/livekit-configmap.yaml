@@ -15,10 +15,9 @@ data:
       use_external_ip: false
     turn:
       enabled: true
+      external_tls: true
       tls_port: 5349
       domain: livekit.chat.chronobyte.net
-      cert_file: ""
-      key_file: ""
     keys:
       chatto: ${LIVEKIT_API_SECRET}
     webhook:
