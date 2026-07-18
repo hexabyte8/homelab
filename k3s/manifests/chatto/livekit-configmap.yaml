@@ -13,7 +13,6 @@ data:
     port: 7880
     rtc:
       use_external_ip: false
-      force_relay: true
     turn:
       enabled: true
       tls_port: 5349
