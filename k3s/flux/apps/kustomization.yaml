@@ -31,7 +31,6 @@ resources:
   - dashy.yaml
   - fail2ban.yaml
   - jellyfin.yaml
-  - librechat.yaml
   - mcp-kubernetes.yaml
   - ntfy.yaml
   - ollama.yaml
