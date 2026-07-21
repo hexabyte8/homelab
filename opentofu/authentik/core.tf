@@ -67,7 +67,7 @@ resource "authentik_provider_proxy" "calibre" {
 resource "authentik_provider_proxy" "uptime_kuma" {
   name               = "uptime-kuma"
   mode               = "forward_single"
-  external_host      = "https://uptime-kuma.${var.cloudflare_zone_name}"
+  external_host      = "https://uptime.${var.cloudflare_zone_name}"
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id
 }
@@ -96,7 +96,7 @@ resource "authentik_application" "uptime_kuma" {
   name              = "Uptime Kuma"
   slug              = "uptime-kuma"
   protocol_provider = authentik_provider_proxy.uptime_kuma.id
-  meta_launch_url   = "https://uptime-kuma.${var.cloudflare_zone_name}"
+  meta_launch_url   = "https://uptime.${var.cloudflare_zone_name}"
   meta_description  = "Uptime Kuma monitoring dashboard (public, ForwardAuth-protected)."
   open_in_new_tab   = false
 }
