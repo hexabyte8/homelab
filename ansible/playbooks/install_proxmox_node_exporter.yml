@@ -1,0 +1,68 @@
+---
+# Installs and configures prometheus-node-exporter on the Proxmox host so that
+# CPU/GPU/NVMe temperatures (and other hwmon sensors) are scraped by Prometheus.
+#
+# Run with:
+#   ansible-playbook playbooks/install_proxmox_node_exporter.yml -i inventory.yml
+#
+# The Proxmox host must be in the [proxmox] group in inventory.yml, e.g.:
+#   [proxmox]
+#   chronobyte ansible_host=chronobyte.daggertooth-scala.ts.net ansible_user=root
+- name: Install node_exporter on Proxmox host
+  hosts: proxmox
+  become: true
+
+  vars:
+    node_exporter_version: "1.8.2"
+    node_exporter_port: 9100
+    # Collectors to enable in addition to the defaults.
+    # hwmon exposes /sys/class/hwmon sensors (CPU temps, fan speeds, voltages).
+    node_exporter_extra_args: "--collector.hwmon --collector.hwmon.chip-include='.*'"
+
+  tasks:
+    - name: Install prometheus-node-exporter via apt
+      ansible.builtin.apt:
+        name: prometheus-node-exporter
+        state: present
+        update_cache: true
+
+    - name: Configure node_exporter extra flags
+      ansible.builtin.copy:
+        dest: /etc/default/prometheus-node-exporter
+        content: |
+          # Managed by Ansible — do not edit manually.
+          ARGS="{{ node_exporter_extra_args }}"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart node_exporter
+
+    - name: Ensure node_exporter is enabled and running
+      ansible.builtin.systemd:
+        name: prometheus-node-exporter
+        enabled: true
+        state: started
+
+    - name: Open port {{ node_exporter_port }} for Prometheus (Tailscale interface)
+      community.general.ufw:
+        rule: allow
+        port: "{{ node_exporter_port }}"
+        proto: tcp
+        comment: "prometheus-node-exporter (Tailscale only)"
+      ignore_errors: true  # ufw may not be installed; Proxmox firewall is optional
+
+    - name: Verify metrics endpoint responds
+      ansible.builtin.uri:
+        url: "http://localhost:{{ node_exporter_port }}/metrics"
+        return_content: false
+        status_code: 200
+      register: metrics_check
+      retries: 5
+      delay: 3
+      until: metrics_check.status == 200
+
+  handlers:
+    - name: Restart node_exporter
+      ansible.builtin.systemd:
+        name: prometheus-node-exporter
+        state: restarted

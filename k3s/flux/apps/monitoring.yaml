@@ -110,6 +110,11 @@ spec:
             gnetId: 13950
             revision: 2
             datasource: Loki
+          # Hardware temperature & sensor dashboard (hwmon via node-exporter)
+          hardware-sensors:
+            gnetId: 16304
+            revision: 2
+            datasource: Prometheus
 
       additionalDataSources:
         - name: Loki
@@ -160,6 +165,19 @@ spec:
           limits:
             cpu: 1000m
             memory: 2Gi
+
+        # Bare-metal hosts outside the cluster scraped directly via Tailscale.
+        additionalScrapeConfigs:
+          # Proxmox host — node-exporter exposes hwmon temps, CPU, memory,
+          # disk, and network. Install node-exporter first with the Ansible
+          # playbook: ansible/playbooks/install_proxmox_node_exporter.yml
+          - job_name: "proxmox-host"
+            scrape_interval: 30s
+            static_configs:
+              - targets: ["chronobyte.daggertooth-scala.ts.net:9100"]
+                labels:
+                  instance: "proxmox-host"
+                  job: "node"
 
     # ── Alertmanager ──────────────────────────────────────────────────────────
     alertmanager:
