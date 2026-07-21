@@ -51,9 +51,10 @@ spec:
           client_id: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_ID}
           client_secret: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}
           scopes: openid email profile
-          # Authentik is now served via Cloudflare Tunnel at chronobyte.net
-          auth_url: https://authentik.chronobyte.net/application/o/grafana/authorize/
-          token_url: https://authentik.chronobyte.net/application/o/grafana/token/
+          # Authentik ≥ 2024.2 uses global (non-per-application) OIDC endpoints.
+          # Source of truth: https://authentik.chronobyte.net/application/o/grafana/.well-known/openid-configuration
+          auth_url: https://authentik.chronobyte.net/application/o/authorize/
+          token_url: https://authentik.chronobyte.net/application/o/token/
           api_url: https://authentik.chronobyte.net/application/o/userinfo/
           role_attribute_path: contains(groups[*], 'authentik Admins') && 'Admin' || 'Viewer'
 
