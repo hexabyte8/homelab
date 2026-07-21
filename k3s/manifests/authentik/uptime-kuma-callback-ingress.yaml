@@ -1,0 +1,26 @@
+---
+# Routes the Authentik callback path for uptime.chronobyte.net back to the
+# authentik-server so the outpost can complete the OAuth flow. Without this,
+# the /outpost.goauthentik.io/callback request is served by uptime-kuma and
+# the login loop never completes.
+# This ingress must live in the authentik namespace to reference authentik-server.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: uptime-kuma-authentik-callback
+  namespace: authentik
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-cloudflare-https-scheme@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: uptime.chronobyte.net
+      http:
+        paths:
+          - path: /outpost.goauthentik.io/
+            pathType: Prefix
+            backend:
+              service:
+                name: authentik-server
+                port:
+                  number: 80
