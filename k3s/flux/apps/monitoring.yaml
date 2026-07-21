@@ -172,10 +172,11 @@ spec:
           # Proxmox host — node-exporter exposes hwmon temps, CPU, memory,
           # disk, and network. Install node-exporter first with the Ansible
           # playbook: ansible/playbooks/install_proxmox_node_exporter.yml
+          # Uses Tailscale IP directly — MagicDNS is not resolvable from pods.
           - job_name: "proxmox-host"
             scrape_interval: 30s
             static_configs:
-              - targets: ["chronobyte.daggertooth-scala.ts.net:9100"]
+              - targets: ["100.66.103.14:9100"]
                 labels:
                   instance: "proxmox-host"
                   job: "node"
