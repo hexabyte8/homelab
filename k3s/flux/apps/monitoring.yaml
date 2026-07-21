@@ -113,8 +113,8 @@ spec:
             datasource: Loki
           # Hardware temperature & sensor dashboard (hwmon via node-exporter)
           hardware-sensors:
-            gnetId: 16304
-            revision: 2
+            gnetId: 12950
+            revision: 1
             datasource: Prometheus
 
       additionalDataSources:
