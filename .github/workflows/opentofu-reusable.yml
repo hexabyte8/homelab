@@ -180,3 +180,29 @@ jobs:
           TF_VAR_proxmox_host: "chronobyte"
           TF_VAR_public_ip: ${{ env.PUBLIC_IP }}
           TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
+
+      # After applying the authentik stack, write any sensitive outputs back to
+      # Bitwarden so the k3s-patch-secrets workflow can consume them without
+      # needing tofu access.
+      - name: Save authentik outputs to Bitwarden
+        if: inputs.action == 'apply' && inputs.stack == 'authentik'
+        working-directory: ./opentofu/${{ inputs.stack }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_authentik_api_token: ${{ env.AUTHENTIK_API_TOKEN }}
+          TF_VAR_cloudflare_zone_name: ${{ env.CLOUDFLARE_ZONE_NAME }}
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+        run: |
+          curl -sSfL https://github.com/bitwarden/sdk-sm/releases/latest/download/bws-x86_64-unknown-linux-gnu.zip \
+            -o bws.zip && unzip -q bws.zip && chmod +x bws && mv bws /usr/local/bin/bws
+
+          GRAFANA_CLIENT_ID=$(tofu output -raw grafana_oauth2_client_id)
+          GRAFANA_CLIENT_SECRET=$(tofu output -raw grafana_oauth2_client_secret)
+
+          bws secret edit 6298c6d7-3e70-465a-9d9c-b48e0176f8a3 \
+            --value "$GRAFANA_CLIENT_ID" > /dev/null
+          bws secret edit cfa6860a-116e-4893-9b23-b48e0176f8cd \
+            --value "$GRAFANA_CLIENT_SECRET" > /dev/null
+
+          echo "✅ Grafana OAuth2 credentials saved to Bitwarden."
