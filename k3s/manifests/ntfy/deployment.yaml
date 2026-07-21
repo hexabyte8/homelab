@@ -29,6 +29,8 @@ spec:
               value: https://ntfy.daggertooth-scala.ts.net
             - name: NTFY_BEHIND_PROXY
               value: "true"
+            - name: NTFY_UPSTREAM_BASE_URL
+              value: https://ntfy.sh
           volumeMounts:
             - name: data
               mountPath: /var/cache/ntfy
