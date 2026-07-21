@@ -181,25 +181,39 @@ jobs:
           TF_VAR_public_ip: ${{ env.PUBLIC_IP }}
           TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
 
-      # After applying the authentik stack, write any sensitive outputs back to
-      # Bitwarden so the k3s-patch-secrets workflow can consume them without
-      # needing tofu access.
-      - name: Save authentik outputs to Bitwarden
+      # After applying the authentik stack, read the Grafana OAuth2 outputs
+      # and patch the k8s secret directly (Tailscale is already connected).
+      - name: Install kubectl
+        if: inputs.action == 'apply' && inputs.stack == 'authentik'
+        uses: azure/setup-kubectl@v5
+
+      - name: Patch grafana-oauth-secret from tofu outputs
         if: inputs.action == 'apply' && inputs.stack == 'authentik'
         working-directory: ./opentofu/${{ inputs.stack }}
         env:
           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
         run: |
-          curl -sSfL \
-            https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.1.0/bws-x86_64-unknown-linux-gnu-2.1.0.zip \
-            -o bws.zip && unzip -q bws.zip && chmod +x bws && mv bws /usr/local/bin/bws
-
           GRAFANA_CLIENT_ID=$(tofu output -raw grafana_oauth2_client_id)
           GRAFANA_CLIENT_SECRET=$(tofu output -raw grafana_oauth2_client_secret)
 
-          bws secret edit --value "$GRAFANA_CLIENT_ID" 6298c6d7-3e70-465a-9d9c-b48e0176f8a3 > /dev/null
-          bws secret edit --value "$GRAFANA_CLIENT_SECRET" cfa6860a-116e-4893-9b23-b48e0176f8cd > /dev/null
+          # Fetch kubeconfig over Tailscale (already connected)
+          mkdir -p ~/.kube
+          ssh -o StrictHostKeyChecking=no ubuntu@k3s-server.daggertooth-scala.ts.net \
+            "sudo cat /etc/rancher/k3s/k3s.yaml" \
+            | sed 's|server: https://127\.0\.0\.1:6443|server: https://k3s-server:6443|' \
+            > ~/.kube/config
+          chmod 600 ~/.kube/config
 
-          echo "✅ Grafana OAuth2 credentials saved to Bitwarden."
+          if kubectl get secret grafana-oauth-secret -n monitoring >/dev/null 2>&1; then
+            kubectl patch secret grafana-oauth-secret -n monitoring --type=merge \
+              -p "$(jq -nc \
+                --arg id "$GRAFANA_CLIENT_ID" --arg secret "$GRAFANA_CLIENT_SECRET" \
+                '{stringData: {GF_AUTH_GENERIC_OAUTH_CLIENT_ID: $id, GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: $secret}}')"
+            kubectl annotate secret grafana-oauth-secret -n monitoring \
+              kustomize.toolkit.fluxcd.io/reconcile=disabled --overwrite
+            kubectl rollout restart deployment/monitoring-grafana -n monitoring
+            echo "✅ grafana-oauth-secret patched and Grafana restarted."
+          else
+            echo "::warning::grafana-oauth-secret not found — cluster may not be ready yet."
+          fi
