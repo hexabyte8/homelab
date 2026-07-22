@@ -1,0 +1,142 @@
+---
+# Minimal webhook relay: Alertmanager JSON → ntfy JSON API.
+# Alertmanager can't customise its webhook body, so this sidecar reformats
+# the payload into the format ntfy expects and forwards it.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-ntfy-relay
+  namespace: monitoring
+data:
+  relay.py: |
+    #!/usr/bin/env python3
+    import json, os
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    from urllib.request import urlopen, Request
+
+    NTFY_URL   = os.environ.get("NTFY_URL",   "http://ntfy.ntfy.svc.cluster.local")
+    NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "homelab-alerts")
+
+    PRIORITY = {"critical": 5, "warning": 3, "info": 2}
+    EMOJI    = {"critical": "🔥", "warning": "⚠️", "info": "ℹ️"}
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            length = int(self.headers.get("Content-Length", 0))
+            try:
+                body = json.loads(self.rfile.read(length))
+            except Exception:
+                self.send_response(400)
+                self.end_headers()
+                return
+
+            for alert in body.get("alerts", []):
+                labels      = alert.get("labels", {})
+                annotations = alert.get("annotations", {})
+                status      = alert.get("status", "firing")
+                severity    = labels.get("severity", "warning")
+                name        = labels.get("alertname", "Alert")
+                instance    = labels.get("instance", "")
+
+                if status == "resolved":
+                    title    = f"✅ RESOLVED: {name}"
+                    priority = 2
+                    tags     = ["white_check_mark"]
+                else:
+                    emoji    = EMOJI.get(severity, "⚠️")
+                    title    = f"{emoji} {name} [{severity.upper()}]"
+                    if instance:
+                        title += f" — {instance}"
+                    priority = PRIORITY.get(severity, 3)
+                    tags     = [severity]
+
+                message = (annotations.get("description")
+                           or annotations.get("summary")
+                           or f"Alert fired on {instance}")
+
+                payload = json.dumps({
+                    "topic":    NTFY_TOPIC,
+                    "title":    title,
+                    "message":  message,
+                    "priority": priority,
+                    "tags":     tags,
+                }).encode()
+
+                try:
+                    req = Request(
+                        NTFY_URL, data=payload,
+                        headers={"Content-Type": "application/json"},
+                        method="POST",
+                    )
+                    urlopen(req, timeout=10)
+                except Exception as e:
+                    print(f"ntfy publish failed: {e}", flush=True)
+
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, fmt, *args):
+            print(fmt % args, flush=True)
+
+    HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager-ntfy-relay
+  namespace: monitoring
+  labels:
+    app: alertmanager-ntfy-relay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager-ntfy-relay
+  template:
+    metadata:
+      labels:
+        app: alertmanager-ntfy-relay
+    spec:
+      containers:
+        - name: relay
+          image: python:3.12-slim
+          command: ["python3", "/app/relay.py"]
+          env:
+            - name: NTFY_URL
+              value: "http://ntfy.ntfy.svc.cluster.local"
+            - name: NTFY_TOPIC
+              value: "homelab-alerts"
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: script
+              mountPath: /app
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: script
+          configMap:
+            name: alertmanager-ntfy-relay
+            defaultMode: 0755
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-ntfy-relay
+  namespace: monitoring
+spec:
+  selector:
+    app: alertmanager-ntfy-relay
+  ports:
+    - port: 8080
+      targetPort: 8080

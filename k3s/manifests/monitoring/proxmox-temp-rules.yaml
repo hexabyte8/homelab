@@ -1,0 +1,84 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: proxmox-temperature
+  namespace: monitoring
+  labels:
+    release: monitoring  # picked up by kube-prometheus-stack
+spec:
+  groups:
+    - name: proxmox.temperature
+      interval: 1m
+      rules:
+        # ── CPU (coretemp sensor "temp1" = package temperature) ──────────────
+
+        - alert: ProxmoxCPUTempWarning
+          expr: |
+            node_hwmon_temp_celsius{
+              instance="proxmox-host",
+              chip=~"platform_coretemp.*",
+              sensor="temp1"
+            } > 80
+          for: 2m
+          labels:
+            severity: warning
+            component: proxmox
+          annotations:
+            summary: "Proxmox CPU temperature high ({{ $value | printf \"%.0f\" }}°C)"
+            description: >-
+              Proxmox host CPU package temperature is {{ $value | printf "%.0f" }}°C,
+              above the 80°C warning threshold. Check airflow and workload.
+
+        - alert: ProxmoxCPUTempCritical
+          expr: |
+            node_hwmon_temp_celsius{
+              instance="proxmox-host",
+              chip=~"platform_coretemp.*",
+              sensor="temp1"
+            } > 90
+          for: 1m
+          labels:
+            severity: critical
+            component: proxmox
+          annotations:
+            summary: "Proxmox CPU temperature critical ({{ $value | printf \"%.0f\" }}°C)"
+            description: >-
+              Proxmox host CPU package temperature is {{ $value | printf "%.0f" }}°C,
+              above the 90°C critical threshold. Risk of thermal throttling or shutdown.
+
+        # ── NVMe (temp1 = composite temperature) ─────────────────────────────
+
+        - alert: ProxmoxNVMeTempWarning
+          expr: |
+            node_hwmon_temp_celsius{
+              instance="proxmox-host",
+              chip=~"nvme.*",
+              sensor="temp1"
+            } > 65
+          for: 2m
+          labels:
+            severity: warning
+            component: proxmox
+          annotations:
+            summary: "Proxmox NVMe temperature high ({{ $value | printf \"%.0f\" }}°C)"
+            description: >-
+              Proxmox NVMe composite temperature is {{ $value | printf "%.0f" }}°C,
+              above the 65°C warning threshold.
+
+        - alert: ProxmoxNVMeTempCritical
+          expr: |
+            node_hwmon_temp_celsius{
+              instance="proxmox-host",
+              chip=~"nvme.*",
+              sensor="temp1"
+            } > 75
+          for: 1m
+          labels:
+            severity: critical
+            component: proxmox
+          annotations:
+            summary: "Proxmox NVMe temperature critical ({{ $value | printf \"%.0f\" }}°C)"
+            description: >-
+              Proxmox NVMe composite temperature is {{ $value | printf "%.0f" }}°C,
+              above the 75°C critical threshold. Risk of data loss.
