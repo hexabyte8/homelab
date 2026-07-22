@@ -38,3 +38,4 @@ ansible/inventory.yml
 *.p12
 *.pfx
 !opentofu/**/*.pem.example
+.env
