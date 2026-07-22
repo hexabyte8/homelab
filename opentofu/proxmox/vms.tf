@@ -7,7 +7,7 @@ resource "proxmox_vm_qemu" "k3s-server" {
   os_type       = "cloud-init"
   agent         = 1
   agent_timeout = 180
-  memory        = 8192
+  memory        = 6144 # reduced from 8192 (actual usage ~2.7 GB)
   scsihw        = "virtio-scsi-pci"
   vm_state      = "running"
   tags          = "k3s,kubernetes,infrastructure"
@@ -64,7 +64,7 @@ resource "proxmox_vm_qemu" "k3s-agent-1" {
   os_type       = "cloud-init"
   agent         = 1
   agent_timeout = 180
-  memory        = 16384
+  memory        = 12288 # reduced from 16384 (actual usage ~6.7 GB)
   scsihw        = "virtio-scsi-pci"
   vm_state      = "running"
   tags          = "k3s,kubernetes,infrastructure"
@@ -121,7 +121,7 @@ resource "proxmox_vm_qemu" "k3s-agent-2" {
   os_type       = "cloud-init"
   agent         = 1
   agent_timeout = 180
-  memory        = 16384
+  memory        = 8192 # reduced from 16384 (actual usage ~5.0 GB)
   scsihw        = "virtio-scsi-pci"
   vm_state      = "running"
   tags          = "k3s,kubernetes,infrastructure"
