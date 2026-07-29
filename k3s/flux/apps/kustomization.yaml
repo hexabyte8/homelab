@@ -33,6 +33,5 @@ resources:
   - jellyfin.yaml
   - mcp-kubernetes.yaml
   - ntfy.yaml
-  - ollama.yaml
   - stalwart.yaml
   - uptime-kuma.yaml
