@@ -72,6 +72,14 @@ resource "authentik_provider_proxy" "uptime_kuma" {
   invalidation_flow  = data.authentik_flow.default_invalidation.id
 }
 
+resource "authentik_provider_proxy" "actual" {
+  name               = "actual"
+  mode               = "forward_single"
+  external_host      = "https://actual.${var.cloudflare_zone_name}"
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+}
+
 # ---------- Applications ----------
 
 resource "authentik_application" "dashy" {
@@ -101,6 +109,15 @@ resource "authentik_application" "uptime_kuma" {
   open_in_new_tab   = false
 }
 
+resource "authentik_application" "actual" {
+  name              = "Actual Budget"
+  slug              = "actual"
+  protocol_provider = authentik_provider_proxy.actual.id
+  meta_launch_url   = "https://actual.${var.cloudflare_zone_name}"
+  meta_description  = "Actual Budget personal finance tracker (public, ForwardAuth-protected)."
+  open_in_new_tab   = false
+}
+
 
 # ---------- Policy bindings ----------
 #
@@ -123,6 +140,7 @@ resource "authentik_outpost" "embedded" {
     authentik_provider_proxy.dashy.id,
     authentik_provider_proxy.calibre.id,
     authentik_provider_proxy.uptime_kuma.id,
+    authentik_provider_proxy.actual.id,
   ]
   config = jsonencode({
     authentik_host          = "https://authentik.${var.cloudflare_zone_name}"
