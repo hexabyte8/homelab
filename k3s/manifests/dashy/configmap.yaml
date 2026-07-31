@@ -156,3 +156,13 @@ data:
             statusCheckUrl: http://docs.chronobyte.net
             icon: hl-mkdocs
             target: newtab
+
+      - name: Finance
+        icon: fas fa-dollar-sign
+        items:
+          - title: Actual 
+            description: Personal finance manager
+            url: https://actual.chronobyte.net
+            statusCheckUrl: http://actual.svc.cluster.local
+            icon: favicon
+            target: newtab
