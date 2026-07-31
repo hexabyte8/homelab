@@ -15,6 +15,7 @@ spec:
       labels:
         app: actual
     spec:
+      enableServiceLinks: false
       securityContext:
         fsGroup: 1000
       containers:
