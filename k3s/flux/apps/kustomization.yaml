@@ -26,6 +26,7 @@ resources:
   - monitoring-config.yaml
   - monitoring-manifests.yaml
   # Workloads
+  - actual.yaml
   - adguard.yaml
   - calibre-web.yaml
   - dashy.yaml
