@@ -88,15 +88,8 @@ data:
           - title: Transmission
             description: BitTorrent client (via VPN)
             url: https://jellyfin-transmission.daggertooth-scala.ts.net
-            statusCheckUrl: http://transmission.jellyfin.svc.cluster.local:9091
+            statusCheckUrl: http://transmission.jellyfin.svc.cluster.local
             icon: hl-transmission
-            target: newtab
-
-          - title: Metube
-            description: YouTube video downloader (yt-dlp)
-            url: https://jellyfin-ytdl.daggertooth-scala.ts.net
-            statusCheckUrl: http://metube.jellyfin.svc.cluster.local:8081
-            icon: fas fa-download
             target: newtab
 
           - title: Jellyfin (Public)
