@@ -5,11 +5,6 @@ metadata:
   namespace: actual
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
-    # cloudflare-https-scheme MUST come first: cloudflared connects over HTTP,
-    # so without rewriting X-Forwarded-Proto Authentik builds http:// callback
-    # URLs and the ForwardAuth round-trip fails.
-    traefik.ingress.kubernetes.io/router.middlewares: >-
-      kube-system-cloudflare-https-scheme@kubernetescrd,authentik-authentik-forward-auth@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
