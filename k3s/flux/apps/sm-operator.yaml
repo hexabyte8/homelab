@@ -1,0 +1,53 @@
+---
+# Bitwarden Secrets Manager Operator
+# Watches BitwardenSecret CRDs in any namespace and syncs BWS secrets into
+# native k8s Secrets. Replaces the placeholder-Secret + k3s-patch-secrets
+# pattern for all Flux-managed workloads.
+#
+# Operator namespace: sm-operator-system (created by Helm install)
+# CRD: BitwardenSecret (k8s.bitwarden.com/v1)
+#
+# Each app namespace that uses BitwardenSecret needs a `bw-auth-token` Secret
+# (the machine account access token). Those are bootstrapped by the
+# k3s-patch-secrets workflow; they are NOT stored in git.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sm-operator
+  namespace: flux-system
+spec:
+  interval: 1h
+  releaseName: sm-operator
+  targetNamespace: sm-operator-system
+  install:
+    createNamespace: true
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: sm-operator
+      version: "2.0.3"
+      sourceRef:
+        kind: HelmRepository
+        name: bitwarden
+        namespace: flux-system
+      interval: 12h
+  values:
+    settings:
+      # Sync secrets from BWS every 5 minutes. Minimum allowed: 180s.
+      bwSecretsManagerRefreshInterval: 300
+      cloudRegion: US
+    containers:
+      manager:
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi

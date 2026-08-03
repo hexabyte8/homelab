@@ -15,6 +15,7 @@ resources:
   - monitoring.yaml
   - tailscale-operator.yaml
   - authentik.yaml
+  - sm-operator.yaml
   # Plain-manifest infrastructure config
   - cert-manager-config.yaml
   - longhorn-config.yaml

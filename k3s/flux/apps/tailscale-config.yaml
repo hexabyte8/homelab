@@ -15,5 +15,7 @@ spec:
     name: flux-system
   path: ./k3s/manifests/tailscale
   targetNamespace: tailscale
+  dependsOn:
+    - name: sm-operator
   # tailscale-operator is a HelmRelease; Kustomization dependsOn only supports
   # Kustomization-kind dependencies, so retries handle CRD readiness.
