@@ -15,5 +15,7 @@ spec:
     name: flux-system
   path: ./k3s/manifests/authentik
   targetNamespace: authentik
+  dependsOn:
+    - name: sm-operator
   # authentik is a HelmRelease; Kustomization dependsOn only supports
   # Kustomization-kind dependencies, so retries handle readiness.

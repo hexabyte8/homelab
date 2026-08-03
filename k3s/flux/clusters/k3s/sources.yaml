@@ -76,6 +76,15 @@ spec:
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
+  name: bitwarden
+  namespace: flux-system
+spec:
+  interval: 12h
+  url: https://charts.bitwarden.com/
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
   name: grafana
   namespace: flux-system
 spec:

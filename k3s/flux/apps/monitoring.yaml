@@ -28,8 +28,7 @@ spec:
     grafana:
       enabled: true
 
-      # Admin credentials come from a patched secret (REPLACE_ME → real values
-      # via kubectl patch or the k3s-patch-secrets workflow)
+      # Admin credentials synced from BWS via grafana-admin-secret
       admin:
         existingSecret: grafana-admin-secret
         userKey: admin-user

@@ -15,3 +15,5 @@ spec:
     name: flux-system
   path: ./k3s/manifests/actual
   targetNamespace: actual
+  dependsOn:
+    - name: sm-operator

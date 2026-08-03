@@ -181,39 +181,43 @@ jobs:
           TF_VAR_public_ip: ${{ env.PUBLIC_IP }}
           TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
 
-      # After applying the authentik stack, read the Grafana OAuth2 outputs
-      # and patch the k8s secret directly (Tailscale is already connected).
-      - name: Install kubectl
+      # After applying the authentik stack, read the Grafana and Actual OAuth2
+      # outputs and write them to BWS so the sm-operator picks them up on its
+      # next sync cycle (no direct kubectl patching needed).
+      - name: Install bws CLI
         if: inputs.action == 'apply' && inputs.stack == 'authentik'
-        uses: azure/setup-kubectl@v5
+        run: |
+          curl -sSLo /tmp/bws.zip \
+            "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.1.0/bws-x86_64-unknown-linux-gnu-2.1.0.zip"
+          echo "ba8233c3a4aee5d43e3c73bbd04d99e9bc5aba13bbbfd06d89b073abe732b860  /tmp/bws.zip" | sha256sum -c -
+          unzip -q /tmp/bws.zip bws -d /tmp
+          chmod +x /tmp/bws
+          sudo mv /tmp/bws /usr/local/bin/bws
+          bws --version
 
-      - name: Patch grafana-oauth-secret from tofu outputs
+      - name: Write Grafana OAuth2 secret to BWS
         if: inputs.action == 'apply' && inputs.stack == 'authentik'
         working-directory: ./opentofu/${{ inputs.stack }}
         env:
           AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
         run: |
-          GRAFANA_CLIENT_ID=$(tofu output -raw grafana_oauth2_client_id)
           GRAFANA_CLIENT_SECRET=$(tofu output -raw grafana_oauth2_client_secret)
+          # BWS UUID for GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
+          bws secret edit cfa6860a-116e-4893-9b23-b48e0176f8cd --value "$GRAFANA_CLIENT_SECRET"
+          echo "✅ Grafana OAuth2 client_secret written to BWS — sm-operator will sync it within 5 minutes."
 
-          # Fetch kubeconfig over Tailscale (already connected)
-          mkdir -p ~/.kube
-          ssh -o StrictHostKeyChecking=no ubuntu@k3s-server.daggertooth-scala.ts.net \
-            "sudo cat /etc/rancher/k3s/k3s.yaml" \
-            | sed 's|server: https://127\.0\.0\.1:6443|server: https://k3s-server:6443|' \
-            > ~/.kube/config
-          chmod 600 ~/.kube/config
-
-          if kubectl get secret grafana-oauth-secret -n monitoring >/dev/null 2>&1; then
-            kubectl patch secret grafana-oauth-secret -n monitoring --type=merge \
-              -p "$(jq -nc \
-                --arg id "$GRAFANA_CLIENT_ID" --arg secret "$GRAFANA_CLIENT_SECRET" \
-                '{stringData: {GF_AUTH_GENERIC_OAUTH_CLIENT_ID: $id, GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: $secret}}')"
-            kubectl annotate secret grafana-oauth-secret -n monitoring \
-              kustomize.toolkit.fluxcd.io/reconcile=disabled --overwrite
-            kubectl rollout restart deployment/monitoring-grafana -n monitoring
-            echo "✅ grafana-oauth-secret patched and Grafana restarted."
-          else
-            echo "::warning::grafana-oauth-secret not found — cluster may not be ready yet."
-          fi
+      - name: Write Actual OpenID secret to BWS
+        if: inputs.action == 'apply' && inputs.stack == 'authentik'
+        working-directory: ./opentofu/${{ inputs.stack }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+          TF_VAR_cloudflare_zone_name: ${{ env.CLOUDFLARE_ZONE_NAME }}
+        run: |
+          ACTUAL_CLIENT_SECRET=$(tofu output -raw actual_oauth2_client_secret)
+          # BWS UUID for ACTUAL_OPENID_CLIENT_SECRET
+          bws secret edit "1f5eb6e8-6c44-4cec-9a9d-b49b0173d913" --value "$ACTUAL_CLIENT_SECRET"
+          echo "✅ Actual OpenID client_secret written to BWS."

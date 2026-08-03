@@ -25,6 +25,9 @@ spec:
           ports:
             - name: http
               containerPort: 5006
+          envFrom:
+            - secretRef:
+                name: actual-openid-secret
           env:
             - name: ACTUAL_UPLOAD_FILE_SYNC_SIZE_LIMIT_MB
               value: "20"
