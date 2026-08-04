@@ -52,7 +52,7 @@ jobs:
         run: |
           sudo tailscale set --accept-dns=true
           for i in $(seq 1 18); do
-            if nslookup authentik.daggertooth-scala.ts.net 100.100.100.100 >/dev/null 2>&1; then
+            if getent hosts authentik.daggertooth-scala.ts.net >/dev/null 2>&1; then
               echo "MagicDNS ready after $((i * 5))s"
               exit 0
             fi
