@@ -120,7 +120,7 @@ graph LR
 
     subgraph lan["LAN (<lan-cidr>)"]
         proxmox_host["Proxmox host<br/><proxmox-lan-ip>"]
-        vm_net["VMs<br/><k3s-agent-1-lan-ip>–<k3s-agent-2-lan-ip>"]
+        vm_net["VMs<br/><k3s-agent-1-lan-ip>-<k3s-agent-2-lan-ip>"]
     end
 
     subgraph cluster_net["Cluster Network"]

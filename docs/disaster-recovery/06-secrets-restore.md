@@ -1,6 +1,6 @@
 # Phase 6: Secrets Restore
 
-> **Time estimate:** ~20–25 minutes
+> **Time estimate:** ~20-25 minutes
 >
 > **What this does:** Applies credentials that cannot be stored in the GitHub repository
 > (because they are secrets) and must be manually injected after Flux bootstrap.
@@ -33,7 +33,7 @@ the operator handles everything automatically.
 | # | What to do | How |
 |---|------------|-----|
 | 1 | Bootstrap `bw-auth-token` in all operator namespaces | Run `k3s-patch-secrets` → target: `bw-auth-token` |
-| 2 | All operator-managed secrets (authentik, cert-manager, cloudflared, grafana, stalwart, tailscale, actual, transmission) | Automatic — sm-operator syncs from BWS within 5 minutes |
+| 2 | All operator-managed secrets (authentik, cert-manager, cloudflared, grafana, stalwart, tailscale, actual, transmission) | Automatic  -  sm-operator syncs from BWS within 5 minutes |
 | 3 | chatto, minecraft, mcp-proxmox secrets | Run `k3s-patch-secrets` → target: `all` |
 | 4 | cert-manager letsencrypt email | Run `k3s-patch-secrets` → target: `cert-manager-letsencrypt-email` |
 
@@ -44,7 +44,7 @@ the operator handles everything automatically.
 The `sm-operator` needs a BWS Machine Account Access Token in each namespace where
 it manages secrets. This is the only thing you need to seed manually.
 
-**Prerequisites (already configured — only relevant if rebuilding from scratch):**
+**Prerequisites (already configured  -  only relevant if rebuilding from scratch):**
 1. BWS Machine Account exists with Read+Write access to the homelab project
 2. Access Token stored as BWS secret `68a5f06c-2b1f-4308-ba6b-b49b01722993` (`BWS-OPS-TOKEN`)
 3. GitHub secret `BW_ACCESS_TOKEN` contains the machine account access token
@@ -118,8 +118,8 @@ Before proceeding to Phase 7:
 
 - [ ] `bw-auth-token` bootstrapped in all operator namespaces (`k3s-patch-secrets` → `bw-auth-token`)
 - [ ] sm-operator pods running in `sm-operator-system` namespace
-- [ ] `kubectl get bitwardensecret -A` — all show Ready
+- [ ] `kubectl get bitwardensecret -A`  -  all show Ready
 - [ ] Authentik accessible at `https://authentik.<tailnet>`
-- [ ] OpenTofu Apply completed — Authentik flows and OAuth providers provisioned
+- [ ] OpenTofu Apply completed  -  Authentik flows and OAuth providers provisioned
 - [ ] Non-operator secrets patched (`k3s-patch-secrets` → `all`)
 - [ ] (Optional) Game server services restored

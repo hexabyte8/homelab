@@ -23,9 +23,9 @@ k3s-agent-1   Ready    <none>                 Xm    v1.x.x    <k3s-agent-1-ts-ip
 k3s-agent-2   Ready    <none>                 Xm    v1.x.x    <k3s-agent-2-ts-ip>     <none>
 ```
 
-✅ **Pass:** All 3 nodes `Ready`, all `INTERNAL-IP` values start with `100.`  
-❌ **Fail - LAN IPs shown:** Re-run the k3s Ansible playbook (the `flannel-iface` config was not applied)  
-❌ **Fail - node not Ready:** Check node logs: `sudo kubectl describe node <name>`
+PASS: All 3 nodes `Ready`, all `INTERNAL-IP` values start with `100.`  
+FAIL - LAN IPs shown:** Re-run the k3s Ansible playbook (the `flannel-iface` config was not applied)  
+FAIL - node not Ready:** Check node logs: `sudo kubectl describe node <name>`
 
 ---
 
@@ -91,8 +91,8 @@ kubectl logs -n cloudflared deployment/cloudflared --since=5m | grep -E "connect
 3. Confirm destination `admin@example.com` shows **Verified**
    - If Unverified: click the address and resend the verification email
 
-✅ **Pass:** Tunnel connected, DNS records present, Email Routing enabled and verified
-❌ **Fail - tunnel not connected:** Check `cloudflared-tunnel-credentials` secret was patched (Phase 6.2)
+PASS: Tunnel connected, DNS records present, Email Routing enabled and verified
+FAIL - tunnel not connected:** Check `cloudflared-tunnel-credentials` secret was patched (Phase 6.2)
 
 ---
 
@@ -146,8 +146,8 @@ Name:      kubernetes.default.svc.cluster.local
 Address 1: 10.43.0.1 kubernetes.default.svc.cluster.local
 ```
 
-✅ **Pass:** DNS resolves successfully  
-❌ **Fail - command hangs:** Flannel VXLAN is broken
+PASS: DNS resolves successfully  
+FAIL - command hangs:** Flannel VXLAN is broken
 
 **If DNS hangs, investigate Flannel:**
 ```bash
@@ -212,9 +212,9 @@ aws s3 ls s3://<S3_BACKUP_BUCKET_NAME> --region us-east-1
 aws s3 ls s3://<S3_BACKUP_BUCKET_NAME>/ --recursive --human-readable
 ```
 
-✅ **Pass:** Bucket is accessible and lists backup objects  
-❌ **Fail - access denied:** Check AWS credentials are correct  
-❌ **Fail - bucket not found:** Run `tofu apply` to recreate the bucket
+PASS: Bucket is accessible and lists backup objects  
+FAIL - access denied:** Check AWS credentials are correct  
+FAIL - bucket not found:** Run `tofu apply` to recreate the bucket
 
 ---
 
@@ -230,9 +230,9 @@ kubectl get certificates --all-namespaces | grep -v "True\|Ready"
 # No output means all certs are issued
 ```
 
-✅ **Pass:** ClusterIssuer Ready, no failed certificates  
-❌ **Fail - ACME registration failing:** Check cert-manager logs (`kubectl logs -n cert-manager deployment/cert-manager`)  
-❌ **Fail - certificate not issued:** Cloudflare Tunnel must be working first (Section 7.4) so HTTP-01 challenges can reach the cluster
+PASS: ClusterIssuer Ready, no failed certificates  
+FAIL - ACME registration failing:** Check cert-manager logs (`kubectl logs -n cert-manager deployment/cert-manager`)  
+FAIL - certificate not issued:** Cloudflare Tunnel must be working first (Section 7.4) so HTTP-01 challenges can reach the cluster
 
 ---
 
@@ -260,9 +260,9 @@ kubectl logs -n authentik deployment/authentik-server --since=2m | grep -i error
     cluster PVC survived, the config is intact. If the PVC was wiped, you need to manually
     recreate providers and applications - see `docs/authentik.md` for the procedure.
 
-✅ **Pass:** Both pods Running, UI accessible, apps and outpost present  
-❌ **Fail - pods CrashLoopBackOff:** Usually a bad `secret-key` - verify `authentik-credentials` was patched (Phase 6.3)  
-❌ **Fail - database connection refused:** CNPG cluster may need time to come up; wait 5 minutes and retry
+PASS: Both pods Running, UI accessible, apps and outpost present  
+FAIL - pods CrashLoopBackOff:** Usually a bad `secret-key` - verify `authentik-credentials` was patched (Phase 6.3)  
+FAIL - database connection refused:** CNPG cluster may need time to come up; wait 5 minutes and retry
 
 ---
 
@@ -293,10 +293,10 @@ kubectl exec -n authentik deployment/authentik-worker -- ak test_email admin@exa
 
 Check `admin@example.com` inbox (or Resend dashboard at resend.com) to confirm delivery.
 
-✅ **Pass:** Pod running, admin UI accessible, test email delivered  
-❌ **Fail - pod not starting:** Check `stalwart-secrets` was patched (Phase 6.4); check logs for config parse errors  
-❌ **Fail - auth rejected (535):** SMTP username must be `noreply` (short form), not `noreply@example.com`  
-❌ **Fail - email not delivered:** Check Resend dashboard for bounces; verify `resend-api-key` is correct
+PASS: Pod running, admin UI accessible, test email delivered  
+FAIL - pod not starting:** Check `stalwart-secrets` was patched (Phase 6.4); check logs for config parse errors  
+FAIL - auth rejected (535):** SMTP username must be `noreply` (short form), not `noreply@example.com`  
+FAIL - email not delivered:** Check Resend dashboard for bounces; verify `resend-api-key` is correct
 
 ---
 
@@ -318,12 +318,12 @@ flux reconcile kustomization apps -n flux-system
 sudo kubectl get <resource> -n <namespace> -o yaml | grep <your-annotation>
 ```
 
-✅ **Pass:** Change appears in the cluster within 10 minutes  
-❌ **Fail:** Check `flux get sources git -n flux-system` and verify the SSH deploy key is correct
+PASS: Change appears in the cluster within 10 minutes  
+FAIL:** Check `flux get sources git -n flux-system` and verify the SSH deploy key is correct
 
 ---
 
-## Recovery Complete! 🎉
+## Recovery Complete! 
 
 If all checks above pass, the homelab has been successfully recovered.
 

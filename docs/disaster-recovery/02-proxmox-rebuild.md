@@ -1,6 +1,6 @@
 # Phase 2: Proxmox Server Rebuild
 
-> **Time estimate:** 30–45 minutes (excluding Proxmox ISO download time)
+> **Time estimate:** 30-45 minutes (excluding Proxmox ISO download time)
 >
 > **What you need:**
 > - A USB drive (4 GB or larger)

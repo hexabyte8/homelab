@@ -208,5 +208,5 @@ Current node disk allocation:
 Longhorn uses a portion of each node's disk for volume storage. The remaining space
 is used by the OS, k3s, container images, etc.
 
-**Recommended:** Allocate at least 20–30 GB per node to Longhorn for a 3-node cluster
+**Recommended:** Allocate at least 20-30 GB per node to Longhorn for a 3-node cluster
 with default 2-replica volumes.

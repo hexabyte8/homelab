@@ -176,7 +176,7 @@ K3S_TOKEN="$TOKEN" K3S_URL="$K3S_URL" \
 
 ## 4.3 Apply the Tailscale Startup Ordering Fix
 
-> ⚠️ **Required after every fresh k3s deployment.** Without this, k3s nodes may fail to
+> WARNING: **Required after every fresh k3s deployment.** Without this, k3s nodes may fail to
 > initialize Flannel correctly after a reboot, causing pods on different nodes to lose
 > network connectivity.
 

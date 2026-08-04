@@ -179,41 +179,85 @@ To re-enable, add the entry back and commit.
 
 ---
 
-## Patched Secrets
+## Secrets Management
 
-Several `Secret` resources are committed to git with placeholder values (`REPLACE_ME`)
-and are populated out-of-band by the `k3s-patch-secrets.yml` GitHub Actions workflow.
-These secrets carry the annotation:
+Secrets are managed by the **Bitwarden Secrets Manager (BWS) sm-operator**. The operator
+watches `BitwardenSecret` CRDs across all namespaces and syncs secret values directly from
+BWS into native k8s `Secret` objects. No plaintext or placeholder values are committed to git.
 
-```yaml
-kustomize.toolkit.fluxcd.io/reconcile: disabled
+### How it works
+
+```
+BWS (source of truth)
+  -> sm-operator polls every 5 minutes
+  -> k8s Secret created/updated
+  -> Reloader detects Secret change
+  -> Pod restarted with new value
 ```
 
-This tells `kustomize-controller` to **skip apply and prune** for that object. Flux
-will never overwrite the live value with the placeholder from git.
+The operator authenticates per-namespace using a `bw-auth-token` Secret (bootstrapped
+by the `k3s-patch-secrets` workflow - never committed to git).
 
-!!! warning "Do not remove this annotation"
-    Removing `kustomize.toolkit.fluxcd.io/reconcile: disabled` from a patched secret
-    will cause Flux to reset its `/data` to the `REPLACE_ME` placeholder on the next
-    reconciliation, breaking the corresponding workload.
+### Adding a secret for a new service
 
-The five secrets requiring this annotation today:
+1. Create the secret in BWS under the homelab project. Copy its UUID.
+2. Create `k3s/manifests/<my-app>/bw-secret.yaml`:
 
-| Namespace     | Secret                           |
-|---------------|----------------------------------|
-| `authentik`   | `authentik-credentials`          |
-| `cloudflared` | `cloudflared-tunnel-credentials` |
-| `mcp-proxmox` | `mcp-proxmox-secrets`            |
-| `stalwart`    | `stalwart-secrets`               |
-| `tailscale`   | `operator-oauth`                 |
+   ```yaml
+   apiVersion: k8s.bitwarden.com/v1
+   kind: BitwardenSecret
+   metadata:
+     name: my-app-credentials
+     namespace: my-app
+   spec:
+     organizationId: "5f82d531-e61f-4c86-963c-b40f00c51c93"
+     projectId: "aece2880-f0d0-4a77-9b0c-b40f00c78f1e"
+     secretName: my-app-credentials
+     authToken:
+       secretName: bw-auth-token
+       secretKey: token
+     map:
+       - bwSecretId: "<UUID-from-BWS>"
+         secretKeyName: my-key
+   ```
 
-To patch a secret manually (use `kubectl patch`, not `kubectl apply`, to avoid
-Server-Side Apply field-manager conflicts):
+3. Add the `bw-auth-token` bootstrap for the namespace in `k3s-patch-secrets.yml`
+   if the namespace is not already covered.
+4. Annotate your Deployment to auto-restart when the secret rotates:
 
-```bash
-kubectl patch secret <name> -n <namespace> --type=merge \
-  -p '{"stringData":{"key":"value"}}'
-```
+   ```yaml
+   spec:
+     template:
+       metadata:
+         annotations:
+           secret.reloader.stakater.com/reload: "my-app-credentials"
+   ```
+
+### Secrets that still use the patch workflow
+
+A small set of secrets cannot use the operator (they predate it or are managed
+externally) and are still patched directly by `k3s-patch-secrets.yml`:
+
+| Namespace     | Secret                |
+|---------------|-----------------------|
+| `chatto`      | `chatto-config`       |
+| `minecraft`   | `minecraft-secrets`   |
+| `mcp-proxmox` | `mcp-proxmox-secrets` |
+
+### Secret rotation
+
+Four secrets rotate automatically every Sunday at 03:00 UTC via the
+`secrets-rotation.yml` workflow:
+
+| Secret | How it propagates |
+|--------|-------------------|
+| Grafana OAuth client secret | BWS -> tofu apply (Authentik) -> sm-operator -> Reloader |
+| Actual OpenID client secret | BWS -> tofu apply (Authentik) -> sm-operator -> Reloader |
+| Grafana admin password | BWS -> sm-operator -> Reloader |
+| Stalwart admin password | BWS -> sm-operator -> Reloader |
+
+All current secret values are in BWS under the homelab project. Access them at
+[sm.bitwarden.com](https://sm.bitwarden.com).
 
 ---
 

@@ -98,9 +98,9 @@ See [Tailscale Proxy Performance Degradation](troubleshooting/tailscale-proxy-mt
 
 | Concern                      | `flannel-iface: tailscale0` | `flannel-iface: eth0` (current) |
 | ---------------------------- | --------------------------- | ------------------------------- |
-| Stable node IPs              | ✅ (via tailscale0)         | ✅ (via `node-ip: 100.x.x.x`)   |
+| Stable node IPs              | [OK] (via tailscale0)         | [OK] (via `node-ip: 100.x.x.x`)   |
 | Pod MTU                      | 1230                        | **1450**                        |
-| Inter-node traffic encrypted | ✅ WireGuard                | ❌ Plain VXLAN on LAN           |
+| Inter-node traffic encrypted | [OK] WireGuard                | [FAIL] Plain VXLAN on LAN           |
 | Tailscale proxy throughput   | Degraded (triple-tunnel)    | **Normal**                      |
 | Breaks if LAN IP changes     | No                          | Yes - restart k3s-agent         |
 

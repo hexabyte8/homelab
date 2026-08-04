@@ -49,14 +49,14 @@ Follow these phases in order. Each phase links to a dedicated document with full
 |---|-------|------|-------------|
 | 0 | [Prerequisites](./00-prerequisites.md) | 15 min | Verify Bitwarden vault and gather all credentials |
 | 1 | [External Services](./01-external-services.md) | 10 min | Confirm GitHub, AWS S3, Cloudflare, Tailscale are intact |
-| 2 | [Proxmox Rebuild](./02-proxmox-rebuild.md) | 30–45 min | Install Proxmox VE, configure network, create VM template |
+| 2 | [Proxmox Rebuild](./02-proxmox-rebuild.md) | 30-45 min | Install Proxmox VE, configure network, create VM template |
 | 3 | [OpenTofu Apply](./03-opentofu-apply.md) | 15 min | Provision all 4 VMs, DNS records, S3 bucket, Tailscale keys |
 | 4 | [k3s Cluster](./04-k3s-cluster.md) | 20 min | Deploy Kubernetes control plane and worker nodes |
 | 5 | [Flux Bootstrap](./05-flux-bootstrap.md) | 15 min | Install Flux CD and trigger GitOps reconcile |
 | 6 | [Secrets Restore](./06-secrets-restore.md) | 10 min | Apply secrets that cannot be stored in git |
 | 7 | [Validation](./07-validation.md) | 15 min | Verify all services are healthy |
 
-**Total estimated time: 2–3 hours** (assuming Proxmox installs cleanly and VMs boot without issues)
+**Total estimated time: 2-3 hours** (assuming Proxmox installs cleanly and VMs boot without issues)
 
 ---
 

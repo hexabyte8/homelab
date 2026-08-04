@@ -56,7 +56,7 @@ An `alpine:3.19` init container runs before Stalwart starts. It:
 
 Stalwart stores all configuration in RocksDB. On startup it reads the config file and writes values to the DB. **DB values take precedence over the config file for keys that already exist in the DB.** This means:
 
-- First boot: config file values are written to DB ✓
+- First boot: config file values are written to DB
 - Subsequent boots: DB values are used (config file changes are ignored for existing keys)
 - To update a setting: change it via the Admin UI, the API, or delete the DB key so the config file value is re-read
 

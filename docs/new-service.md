@@ -482,22 +482,34 @@ spec:
       storage: 5Gi
 ```
 
-### Environment variable from a Secret
+### Environment variable from a Secret (via BWS operator)
+
+Secrets are synced from Bitwarden Secrets Manager into k8s Secrets automatically by
+the sm-operator. Never commit real secret values to git.
+
+Create a `bw-secret.yaml` in your manifest directory:
 
 ```yaml
-# In the Secret
-apiVersion: v1
-kind: Secret
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
 metadata:
   name: myapp-credentials
   namespace: myapp
-type: Opaque
-stringData:
-  api-key: "REPLACE_ME"
+spec:
+  organizationId: "5f82d531-e61f-4c86-963c-b40f00c51c93"
+  projectId: "aece2880-f0d0-4a77-9b0c-b40f00c78f1e"
+  secretName: myapp-credentials
+  authToken:
+    secretName: bw-auth-token
+    secretKey: token
+  map:
+    - bwSecretId: "<UUID-from-BWS>"
+      secretKeyName: api-key
 ```
 
+Then reference it in your Deployment:
+
 ```yaml
-# In the Deployment container spec
 env:
   - name: API_KEY
     valueFrom:
@@ -506,12 +518,18 @@ env:
         key: api-key
 ```
 
-!!! warning "Secrets in git"
-Never commit real secret values. Commit a placeholder (`REPLACE_ME`) and patch the
-live value with `kubectl patch` after Flux creates the object. Annotate the secret with
-`kustomize.toolkit.fluxcd.io/reconcile: disabled` so Flux never resets it. See
-[gitops-flux.md](gitops-flux.md#patched-secrets) for the full pattern and the list of
-currently patched secrets.
+Add a Reloader annotation so the pod restarts automatically when the secret is rotated:
+
+```yaml
+spec:
+  template:
+    metadata:
+      annotations:
+        secret.reloader.stakater.com/reload: "myapp-credentials"
+```
+
+See [gitops-flux.md](gitops-flux.md#secrets-management) for the full secrets management
+reference including rotation and the BWS org/project IDs.
 
 ### Init container for permission fixing
 

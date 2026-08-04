@@ -317,7 +317,7 @@ ForwardAuth requires an Authentik **Proxy Provider** and an **Application** entr
    ```
    This is the URL the `authentik-forward-auth` Traefik middleware calls.
 
-> **Note:** Authentik auto-registers new applications with the embedded outpost on save in recent versions. If auth is not working after step 5, check step 7–8 manually.
+> **Note:** Authentik auto-registers new applications with the embedded outpost on save in recent versions. If auth is not working after step 5, check step 7-8 manually.
 
 ---
 
@@ -509,7 +509,7 @@ Causes:
 - **Missing `cloudflare-https-scheme` middleware**: `cloudflared` connects to Traefik over `http://`, so Traefik sets `X-Forwarded-Proto: http`. Authentik then builds the OIDC callback URL with `http://`, which it rejects. **Always chain `kube-system-cloudflare-https-scheme@kubernetescrd` before the ForwardAuth middleware** (see ingress example above).
 - **External Host mismatch**: the Proxy Provider's **External Host** in Authentik is `http://...` but the site is accessed over `https://...`, or the domain is wrong. Correct it in **Applications → Providers → your provider → External Host**. Must be the exact `https://` URL users visit.
 - **Cookie domain mismatch**: if Authentik and the app are on different domains (e.g. `tailnet.ts.net` vs `example.com`), the ForwardAuth session cookie cannot be shared. Move Authentik to a `example.com` subdomain (see [Exposing Authentik Itself](#exposing-authentik-itself-via-cloudflare-tunnel)).
-- **Outpost not updated**: after creating the Proxy Provider and Application, the embedded outpost must have the application assigned (Step 7–8 in [Approach A](#approach-a-traefik-forwardauth-recommended-for-internal-auth)).
+- **Outpost not updated**: after creating the Proxy Provider and Application, the embedded outpost must have the application assigned (Step 7-8 in [Approach A](#approach-a-traefik-forwardauth-recommended-for-internal-auth)).
 
 ### CORS errors
 

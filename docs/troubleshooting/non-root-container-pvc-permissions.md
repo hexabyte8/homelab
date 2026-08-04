@@ -152,7 +152,7 @@ adding it, confirm the app binds on `0.0.0.0`:
 
 ```bash
 kubectl logs -n <namespace> <pod-name>
-# Running on http://0.0.0.0:5000   ✓
+# Running on http://0.0.0.0:5000  
 ```
 
 ### Both fixes together

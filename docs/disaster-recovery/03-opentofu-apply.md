@@ -1,6 +1,6 @@
 # Phase 3: OpenTofu Apply
 
-> **Time estimate:** 15 minutes (plus ~5–10 minutes for VMs to boot)
+> **Time estimate:** 15 minutes (plus ~5-10 minutes for VMs to boot)
 >
 > **What this does:** Creates all 4 virtual machines, configures DNS records,
 > creates the Tailscale auth key and ACL policy, and creates the S3 backup bucket.
@@ -59,7 +59,7 @@ The workflow will:
 4. Run `tofu apply -auto-approve`
 
 **Monitor progress:** Click on the running workflow to see real-time logs.  
-**Expected time:** ~5–10 minutes for VMs to clone and boot.
+**Expected time:** ~5-10 minutes for VMs to clone and boot.
 
 ---
 
