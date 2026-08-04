@@ -3,6 +3,9 @@ name: Authentik - Send Invitation
 # Sends an Authentik enrollment invitation email by invoking
 # `ansible/playbooks/authentik_send_invite.yml`.
 #
+# Authentik is reached via its public Cloudflare URL (authentik.chronobyte.net)
+# so no Tailscale setup is required.
+#
 # Why ansible? Keeps the workflow trivially short and lets the same logic
 # be run locally for testing/debugging without GitHub Actions.
 
@@ -38,15 +41,6 @@ jobs:
           secrets: |
             73f4bb30-0c41-445c-908e-b43a00ef7863 > AUTHENTIK_API_TOKEN
             4f8db3c6-416a-412d-9f6f-b4160169641f > STALWART_RESEND_API_KEY
-            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
-            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
-      - name: Setup Tailscale
-        uses: tailscale/github-action@v4
-        with:
-          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
-          tags: tag:ci
-          version: 1.68.1
 
       - name: Install Ansible
         run: pip install --quiet ansible-core

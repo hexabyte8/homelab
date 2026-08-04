@@ -20,7 +20,7 @@
   connection: local
   gather_facts: true
   vars:
-    authentik_url: https://authentik.daggertooth-scala.ts.net
+    authentik_url: https://authentik.chronobyte.net
     enrollment_flow_slug: default-invitation-enrollment
     mail_from: "Chronobyte Homelab <noreply@chronobyte.net>"
     expires_days: 7
