@@ -186,3 +186,31 @@ jobs:
           TF_VAR_proxmox_host: "chronobyte"
           TF_VAR_public_ip: ${{ env.PUBLIC_IP }}
           TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
+
+      - name: Sync Authentik client IDs to BWS
+        if: inputs.action == 'apply' && inputs.stack == 'authentik'
+        working-directory: ./opentofu/${{ inputs.stack }}
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          # Read client IDs from tofu state (deterministic but confirm from state)
+          ACTUAL_CLIENT_ID=$(tofu output -raw actual_oauth2_client_id)
+          GRAFANA_CLIENT_ID=$(tofu output -raw grafana_oauth2_client_id)
+
+          echo "::add-mask::$ACTUAL_CLIENT_ID"
+          echo "::add-mask::$GRAFANA_CLIENT_ID"
+
+          curl -sSLo /tmp/bws.zip \
+            "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.1.0/bws-x86_64-unknown-linux-gnu-2.1.0.zip"
+          echo "ba8233c3a4aee5d43e3c73bbd04d99e9bc5aba13bbbfd06d89b073abe732b860  /tmp/bws.zip" | sha256sum -c -
+          unzip -q /tmp/bws.zip bws -d /tmp && chmod +x /tmp/bws && sudo mv /tmp/bws /usr/local/bin/bws
+
+          # b5410954 = ACTUAL_OPENID_CLIENT_ID in bw-secret.yaml
+          bws secret edit b5410954-5339-4a93-9c78-b49b0173a58b --value "$ACTUAL_CLIENT_ID"
+          echo "[OK] ACTUAL_OPENID_CLIENT_ID synced to BWS"
+
+          # cfa6860b = GF_AUTH_GENERIC_OAUTH_CLIENT_ID in monitoring bw-secret
+          # (update if a grafana client_id BWS entry exists)
+          echo "[OK] Grafana client_id: $GRAFANA_CLIENT_ID (update BWS entry manually if needed)"
