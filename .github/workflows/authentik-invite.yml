@@ -30,7 +30,11 @@ jobs:
 
     steps:
       - name: Mask recipient email
-        run: echo "::add-mask::${{ inputs.email }}"
+        env:
+          EMAIL: ${{ inputs.email }}
+        run: |
+          set +x
+          echo "::add-mask::$EMAIL"
 
       - uses: actions/checkout@v7
 
