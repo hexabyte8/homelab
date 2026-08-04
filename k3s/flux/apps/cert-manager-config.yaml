@@ -16,7 +16,3 @@ spec:
     name: flux-system
   path: ./k3s/manifests/cert-manager
   targetNamespace: cert-manager
-  dependsOn:
-    - name: sm-operator
-  # cert-manager operator is a HelmRelease; Kustomization dependsOn only
-  # supports Kustomization-kind dependencies, so retries handle CRD readiness.
