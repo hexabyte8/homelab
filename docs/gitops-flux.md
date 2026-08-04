@@ -1,37 +1,8 @@
 # GitOps with Flux CD
 
-This cluster is GitOps-managed by **Flux CD** - full stop. All Kubernetes workloads
-and Helm releases are reconciled from this repository. There is no other GitOps
-controller; ArgoCD was removed when the migration to Flux was completed.
+This cluster is GitOps-managed by **Flux CD**
 
 ---
-
-## Repository Layout
-
-```
-k3s/flux/
-├── clusters/k3s/
-│   ├── flux-system/         # populated by `flux bootstrap` (gotk-components, gotk-sync)
-│   ├── apps.yaml            # root Flux Kustomization → ../../apps
-│   └── sources.yaml         # HelmRepositories used by HelmReleases
-└── apps/
-    ├── kustomization.yaml   # bundle of every active per-service file
-    ├── namespaces.yaml      # Namespace objects for plain-manifest services
-    ├── cert-manager.yaml         # HelmRelease (operator)
-    ├── cert-manager-config.yaml  # Kustomization (config; dependsOn: cert-manager)
-    ├── cnpg-operator.yaml
-    ├── longhorn-operator.yaml
-    ├── longhorn-config.yaml
-    ├── tailscale-operator.yaml
-    ├── tailscale-config.yaml
-    ├── authentik.yaml
-    ├── authentik-config.yaml
-    ├── traefik-config.yaml
-    ├── cloudflared.yaml
-    ├── metallb-config.yaml
-    ├── stalwart.yaml        # dependsOn: cnpg-operator
-    └── <other workloads>.yaml
-```
 
 `k3s/flux/clusters/k3s/apps.yaml` is the **root Kustomization** - Flux's equivalent of
 an "App-of-Apps". It reconciles everything under `k3s/flux/apps/`, which in turn renders
@@ -239,7 +210,7 @@ A small set of secrets cannot use the operator (they predate it or are managed
 externally) and are still patched directly by `k3s-patch-secrets.yml`:
 
 | Namespace     | Secret                |
-|---------------|-----------------------|
+| ------------- | --------------------- |
 | `chatto`      | `chatto-config`       |
 | `minecraft`   | `minecraft-secrets`   |
 | `mcp-proxmox` | `mcp-proxmox-secrets` |
@@ -249,12 +220,12 @@ externally) and are still patched directly by `k3s-patch-secrets.yml`:
 Four secrets rotate automatically every Sunday at 03:00 UTC via the
 `secrets-rotation.yml` workflow:
 
-| Secret | How it propagates |
-|--------|-------------------|
+| Secret                      | How it propagates                                        |
+| --------------------------- | -------------------------------------------------------- |
 | Grafana OAuth client secret | BWS -> tofu apply (Authentik) -> sm-operator -> Reloader |
 | Actual OpenID client secret | BWS -> tofu apply (Authentik) -> sm-operator -> Reloader |
-| Grafana admin password | BWS -> sm-operator -> Reloader |
-| Stalwart admin password | BWS -> sm-operator -> Reloader |
+| Grafana admin password      | BWS -> sm-operator -> Reloader                           |
+| Stalwart admin password     | BWS -> sm-operator -> Reloader                           |
 
 All current secret values are in BWS under the homelab project. Access them at
 [sm.bitwarden.com](https://sm.bitwarden.com).
@@ -263,27 +234,27 @@ All current secret values are in BWS under the homelab project. Access them at
 
 ## Troubleshooting
 
-| Problem | First thing to check |
-|---------|----------------------|
-| `Kustomization` is `False` | `flux describe kustomization <name>` and `flux logs --kind=Kustomization` |
-| `HelmRelease` stuck in `Pending` | `flux describe helmrelease <name> -n flux-system`; usually a missing CRD or dependency |
-| Drift not being reverted | Confirm the live resource does not carry `kustomize.toolkit.fluxcd.io/reconcile=disabled` |
-| Source not updating | `flux reconcile source git flux-system` |
-| New commit not picked up | Flux polls every 1 min by default; force with `flux reconcile source git flux-system` |
+| Problem                          | First thing to check                                                                      |
+| -------------------------------- | ----------------------------------------------------------------------------------------- |
+| `Kustomization` is `False`       | `flux describe kustomization <name>` and `flux logs --kind=Kustomization`                 |
+| `HelmRelease` stuck in `Pending` | `flux describe helmrelease <name> -n flux-system`; usually a missing CRD or dependency    |
+| Drift not being reverted         | Confirm the live resource does not carry `kustomize.toolkit.fluxcd.io/reconcile=disabled` |
+| Source not updating              | `flux reconcile source git flux-system`                                                   |
+| New commit not picked up         | Flux polls every 1 min by default; force with `flux reconcile source git flux-system`     |
 
 ---
 
 ## Reference
 
-| Resource | Value |
-|---|---|
-| Git repo | `https://github.com/hexabyte8/homelab` (deploy key) |
-| Tracked branch | `main` |
-| Bootstrap path | `k3s/flux/clusters/k3s` |
-| Apps directory | `k3s/flux/apps` |
-| Flux namespace | `flux-system` |
-| Reconciliation interval (Kustomization) | 10 minutes |
-| Reconciliation interval (HelmRelease) | 30 minutes |
+| Resource                                | Value                                               |
+| --------------------------------------- | --------------------------------------------------- |
+| Git repo                                | `https://github.com/hexabyte8/homelab` (deploy key) |
+| Tracked branch                          | `main`                                              |
+| Bootstrap path                          | `k3s/flux/clusters/k3s`                             |
+| Apps directory                          | `k3s/flux/apps`                                     |
+| Flux namespace                          | `flux-system`                                       |
+| Reconciliation interval (Kustomization) | 10 minutes                                          |
+| Reconciliation interval (HelmRelease)   | 30 minutes                                          |
 
 **See also:**
 
