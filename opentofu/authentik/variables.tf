@@ -1,3 +1,15 @@
+variable "grafana_client_secret" {
+  description = "OAuth2 client secret for the Grafana provider. Rotated weekly by the secrets-rotation workflow and stored in BWS."
+  type        = string
+  sensitive   = true
+}
+
+variable "actual_client_secret" {
+  description = "OAuth2 client secret for the Actual Budget provider. Rotated weekly by the secrets-rotation workflow and stored in BWS."
+  type        = string
+  sensitive   = true
+}
+
 variable "authentik_url" {
   description = "Base URL of the Authentik instance."
   type        = string

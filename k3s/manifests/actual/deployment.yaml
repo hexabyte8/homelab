@@ -14,6 +14,9 @@ spec:
     metadata:
       labels:
         app: actual
+      annotations:
+        # Reloader: restart pod when the OpenID secret is rotated
+        secret.reloader.stakater.com/reload: "actual-openid-secret"
     spec:
       enableServiceLinks: false
       securityContext:
