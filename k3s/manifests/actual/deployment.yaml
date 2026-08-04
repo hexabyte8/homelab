@@ -32,6 +32,16 @@ spec:
             - secretRef:
                 name: actual-openid-secret
           env:
+            - name: ACTUAL_LOGIN_METHOD
+              value: "openid"
+            - name: ACTUAL_OPENID_SERVER_HOSTNAME
+              value: "https://actual.chronobyte.net"
+            - name: ACTUAL_OPENID_ENFORCE
+              value: "true"
+            - name: ACTUAL_OPENID_AUTH_METHOD
+              value: "openid"
+            - name: ACTUAL_USER_CREATION_MODE
+              value: "login"
             - name: ACTUAL_UPLOAD_FILE_SYNC_SIZE_LIMIT_MB
               value: "20"
             - name: ACTUAL_UPLOAD_SYNC_ENCRYPTED_FILE_SYNC_SIZE_LIMIT_MB
