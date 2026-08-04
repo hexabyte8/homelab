@@ -83,7 +83,7 @@
 
     - name: Render email body from template
       ansible.builtin.set_fact:
-        email_html: "{{ lookup('template', 'authentik_invite_email.html.j2') }}"
+        email_html: "{{ lookup('template', playbook_dir + '/../templates/authentik_invite_email.html.j2') }}"
 
     - name: Send invitation email via Resend
       ansible.builtin.uri:
