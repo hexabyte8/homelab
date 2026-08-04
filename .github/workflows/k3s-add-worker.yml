@@ -1,4 +1,4 @@
-name: Ansible - Add k3s Worker Node (Tailscale)
+name: Add k3s Worker Node (Tailscale)
 
 on:
   workflow_dispatch:

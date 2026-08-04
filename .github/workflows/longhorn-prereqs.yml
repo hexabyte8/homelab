@@ -1,4 +1,4 @@
-name: Ansible - Install Longhorn Prerequisites
+name: Install Longhorn Prerequisites
 
 on:
   workflow_dispatch:
