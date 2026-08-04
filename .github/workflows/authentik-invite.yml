@@ -48,20 +48,6 @@ jobs:
           tags: tag:ci
           version: 1.68.1
 
-      - name: Enable MagicDNS and wait for resolver
-        run: |
-          sudo tailscale set --accept-dns=true
-          for i in $(seq 1 18); do
-            if getent hosts authentik.daggertooth-scala.ts.net >/dev/null 2>&1; then
-              echo "MagicDNS ready after $((i * 5))s"
-              exit 0
-            fi
-            echo "Waiting for MagicDNS... attempt $i/18"
-            sleep 5
-          done
-          echo "ERROR: MagicDNS did not resolve within 90 seconds"
-          exit 1
-
       - name: Install Ansible
         run: pip install --quiet ansible-core
 
