@@ -15,8 +15,9 @@ spec:
       labels:
         app: actual
       annotations:
-        # Reloader: restart pod when the OpenID secret is rotated
+        # Reloader: restart pod when the OpenID secret or config is rotated
         secret.reloader.stakater.com/reload: "actual-openid-secret"
+        configmap.reloader.stakater.com/reload: "actual-config"
     spec:
       enableServiceLinks: false
       securityContext:
@@ -29,25 +30,10 @@ spec:
             - name: http
               containerPort: 5006
           envFrom:
+            - configMapRef:
+                name: actual-config
             - secretRef:
                 name: actual-openid-secret
-          env:
-            - name: ACTUAL_LOGIN_METHOD
-              value: "openid"
-            - name: ACTUAL_OPENID_SERVER_HOSTNAME
-              value: "https://actual.chronobyte.net"
-            - name: ACTUAL_OPENID_ENFORCE
-              value: "true"
-            - name: ACTUAL_OPENID_AUTH_METHOD
-              value: "openid"
-            - name: ACTUAL_USER_CREATION_MODE
-              value: "login"
-            - name: ACTUAL_UPLOAD_FILE_SYNC_SIZE_LIMIT_MB
-              value: "20"
-            - name: ACTUAL_UPLOAD_SYNC_ENCRYPTED_FILE_SYNC_SIZE_LIMIT_MB
-              value: "50"
-            - name: ACTUAL_UPLOAD_FILE_SIZE_LIMIT_MB
-              value: "20"
           volumeMounts:
             - name: data
               mountPath: /data
