@@ -44,14 +44,12 @@ the operator handles everything automatically.
 The `sm-operator` needs a BWS Machine Account Access Token in each namespace where
 it manages secrets. This is the only thing you need to seed manually.
 
-**One-time prerequisite (if not already done):**
-1. Go to [sm.bitwarden.com](https://sm.bitwarden.com) → Machine Accounts
-2. Create (or reuse) a Machine Account with access to all homelab secrets
-3. Create an Access Token → copy the value
-4. Store it as a new BWS secret → copy the UUID
-5. Replace `FILL_IN_BWS_K8S_OPERATOR_TOKEN_UUID` in `.github/workflows/k3s-patch-secrets.yml`
-6. Replace `FILL_IN_BWS_ORG_ID` in all `k3s/manifests/*/bw-secret.yaml` files with your
-   BWS Organization UUID (BWS Settings → Organizations)
+**Prerequisites (already configured — only relevant if rebuilding from scratch):**
+1. BWS Machine Account exists with Read+Write access to the homelab project
+2. Access Token stored as BWS secret `68a5f06c-2b1f-4308-ba6b-b49b01722993` (`BWS-OPS-TOKEN`)
+3. GitHub secret `BW_ACCESS_TOKEN` contains the machine account access token
+4. Org ID `5f82d531-e61f-4c86-963c-b40f00c51c93` and Project ID `aece2880-f0d0-4a77-9b0c-b40f00c78f1e`
+   are already set in all `k3s/manifests/*/bw-secret.yaml` files
 
 **Run the workflow:**
 ```
