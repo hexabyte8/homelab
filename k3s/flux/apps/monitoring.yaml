@@ -28,9 +28,9 @@ spec:
     grafana:
       enabled: true
 
-    podAnnotations:
-      # Reloader: restart Grafana pod when either secret changes
-      secret.reloader.stakater.com/reload: "grafana-admin-secret,grafana-oauth-secret"
+      podAnnotations:
+        # Reloader: restart Grafana pod when either secret changes
+        secret.reloader.stakater.com/reload: "grafana-admin-secret,grafana-oauth-secret"
 
       # Admin credentials synced from BWS via grafana-admin-secret
       admin:
@@ -54,7 +54,7 @@ spec:
           client_id: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_ID}
           client_secret: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}
           scopes: openid email profile
-          # Authentik ≥ 2024.2 uses global (non-per-application) OIDC endpoints.
+          # Authentik >= 2024.2 uses global (non-per-application) OIDC endpoints.
           # Source of truth: https://authentik.chronobyte.net/application/o/grafana/.well-known/openid-configuration
           auth_url: https://authentik.chronobyte.net/application/o/authorize/
           token_url: https://authentik.chronobyte.net/application/o/token/
@@ -66,7 +66,7 @@ spec:
         ingressClassName: tailscale
         annotations:
           tailscale.com/proxy-class: "prod"
-        # Empty host — Tailscale derives the hostname from tls.hosts
+        # Empty host -- Tailscale derives the hostname from tls.hosts
         hosts:
           - ""
         tls:
