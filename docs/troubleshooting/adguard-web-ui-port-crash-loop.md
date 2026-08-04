@@ -96,7 +96,7 @@ kubectl exec adguard-fix -n adguard -- \
 
 # Verify
 kubectl exec adguard-fix -n adguard -- grep 'address:' /conf/AdGuardHome.yaml
-# address: 0.0.0.0:3000  ✓
+# address: 0.0.0.0:3000 
 ```
 
 ### 5. Clean up and restore
@@ -114,10 +114,10 @@ flux resume kustomization adguard -n flux-system
 ```bash
 kubectl get pods -n adguard -w
 # adguard-home-...-xxxxx   0/1   ContainerCreating   0   5s
-# adguard-home-...-xxxxx   1/1   Running             0   30s  ✓
+# adguard-home-...-xxxxx   1/1   Running             0   30s 
 
 kubectl logs -n adguard -l app=adguard-home | grep "go to http"
-# [info] go to http://10.42.x.x:3000  ✓
+# [info] go to http://10.42.x.x:3000 
 ```
 
 The web UI should be reachable at `https://adguard.tailnet.ts.net` within

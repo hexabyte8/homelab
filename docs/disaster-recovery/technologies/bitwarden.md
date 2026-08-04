@@ -238,6 +238,6 @@ Secrets in Bitwarden SM are referenced by UUID in workflow files. To find a UUID
 2. Try recovery codes if you have 2FA enabled
 3. Contact Bitwarden support at [bitwarden.com/contact](https://bitwarden.com/contact)
 
-> ⚠️ **Important:** If you lose access to your Bitwarden vault, disaster recovery
+> WARNING: **Important:** If you lose access to your Bitwarden vault, disaster recovery
 > becomes impossible. Ensure you have recovery options set up and your master password
 > is backed up safely.

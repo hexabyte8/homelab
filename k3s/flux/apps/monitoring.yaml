@@ -28,6 +28,10 @@ spec:
     grafana:
       enabled: true
 
+    podAnnotations:
+      # Reloader: restart Grafana pod when either secret changes
+      secret.reloader.stakater.com/reload: "grafana-admin-secret,grafana-oauth-secret"
+
       # Admin credentials synced from BWS via grafana-admin-secret
       admin:
         existingSecret: grafana-admin-secret

@@ -83,7 +83,7 @@ jobs:
         run: |
           echo "## ContainerLab Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ ContainerLab has been deployed!" >> $GITHUB_STEP_SUMMARY
+          echo "[OK] ContainerLab has been deployed!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Host:** \`${{ inputs.target_host }}\` (\`${{ inputs.target_host }}.daggertooth-scala.ts.net\`)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

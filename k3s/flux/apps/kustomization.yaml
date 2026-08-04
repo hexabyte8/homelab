@@ -16,6 +16,7 @@ resources:
   - tailscale-operator.yaml
   - authentik.yaml
   - sm-operator.yaml
+  - reloader.yaml
   # Plain-manifest infrastructure config
   - cert-manager-config.yaml
   - longhorn-config.yaml

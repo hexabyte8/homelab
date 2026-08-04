@@ -77,14 +77,14 @@ flux bootstrap github \
 **Expected output:**
 ```
 ► connecting to github.com
-✓ bootstrapping cluster
+bootstrapping cluster
 ► cloning branch "main" from Git repository "https://github.com/hexabyte8/homelab.git"
-✓ cloned repository
+cloned repository
 ► generating component manifests
-✓ generated components
+generated components
 ► installing components in flux-system namespace
 ...
-✓ bootstrap completed
+bootstrap completed
 ```
 
 ---

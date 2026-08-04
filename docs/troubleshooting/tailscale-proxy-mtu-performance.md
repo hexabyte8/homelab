@@ -169,7 +169,7 @@ cat /run/flannel/subnet.env
 # New pods should show 1450
 kubectl run mtu-test --image=busybox --restart=Never --rm -it --command -- \
   ip link show eth0
-# mtu 1450 ✓
+# mtu 1450
 
 # Proxy pods should show 1450
 for pod in $(kubectl get pods -n tailscale --no-headers -l '' -o name | grep ts-); do

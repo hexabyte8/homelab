@@ -140,6 +140,7 @@ resource "authentik_outpost" "embedded" {
 resource "authentik_provider_oauth2" "actual" {
   name               = "Actual Budget"
   client_id          = "actual"
+  client_secret      = var.actual_client_secret
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id
   signing_key        = data.authentik_certificate_key_pair.default.id
@@ -170,12 +171,6 @@ output "actual_oauth2_client_id" {
   value       = authentik_provider_oauth2.actual.client_id
 }
 
-output "actual_oauth2_client_secret" {
-  description = "Authentik OAuth2 client_secret for Actual Budget. Written to BWS by CI after apply."
-  value       = authentik_provider_oauth2.actual.client_secret
-  sensitive   = true
-}
-
 # ---------- OAuth2/OIDC provider — Grafana (Tailscale-only) ----------
 #
 # Grafana uses the generic OAuth2 provider to authenticate against Authentik.
@@ -189,6 +184,7 @@ output "actual_oauth2_client_secret" {
 resource "authentik_provider_oauth2" "grafana" {
   name               = "Grafana"
   client_id          = "grafana"
+  client_secret      = var.grafana_client_secret
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id
   signing_key        = data.authentik_certificate_key_pair.default.id
@@ -219,10 +215,4 @@ resource "authentik_application" "grafana" {
 output "grafana_oauth2_client_id" {
   description = "Authentik OAuth2 client_id for Grafana."
   value       = authentik_provider_oauth2.grafana.client_id
-}
-
-output "grafana_oauth2_client_secret" {
-  description = "Authentik OAuth2 client_secret for Grafana. Use to patch grafana-oauth-secret in the monitoring namespace."
-  value       = authentik_provider_oauth2.grafana.client_secret
-  sensitive   = true
 }
