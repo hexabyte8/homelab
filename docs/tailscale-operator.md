@@ -1,53 +1,28 @@
 # Tailscale Operator
 
-This document covers the Tailscale Kubernetes operator deployed in this cluster: what it does, how credentials are managed, and how to expose services on the `your-tailnet` tailnet.
-
----
-
 ## Overview
 
-The [Tailscale Kubernetes operator](https://tailscale.com/kb/1236/kubernetes-operator) runs in the `tailscale` namespace and acts as a bridge between Kubernetes resources and your Tailscale network. It watches for Services and Ingresses that request Tailscale exposure and provisions *proxy StatefulSets* that join the tailnet on their behalf.
+The [Tailscale Kubernetes operator](https://tailscale.com/kb/1236/kubernetes-operator) runs in the `tailscale` namespace and acts as a bridge between Kubernetes resources and your Tailscale network. It watches for Services and Ingresses that request Tailscale exposure and provisions _proxy StatefulSets_ that join the tailnet on their behalf.
 
 In this cluster it is deployed via Flux CD using the official Helm chart:
 
-| Item | Value |
-|---|---|
-| Chart | `tailscale-operator` |
-| Version | `1.94.2` |
-| Chart repo | `https://pkgs.tailscale.com/helmcharts` |
-| Operator hostname (tailnet) | `k3s-tailscale-operator` |
-| Namespace | `tailscale` |
-| Flux HelmRelease | `tailscale-operator` (`tailscale.yaml`) |
-
-### Node affinity
-
-The operator is configured in `tailscale.yaml` with a `nodeAffinity` rule that prevents it from scheduling on `k3s-agent-1`.
-
-```yaml
-operatorConfig:
-  hostname: k3s-tailscale-operator
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: NotIn
-                values:
-                  - k3s-agent-1
-```
-
----
+| Item                        | Value                                   |
+| --------------------------- | --------------------------------------- |
+| Chart                       | `tailscale-operator`                    |
+| Chart repo                  | `https://pkgs.tailscale.com/helmcharts` |
+| Operator hostname (tailnet) | `k3s-tailscale-operator`                |
+| Namespace                   | `tailscale`                             |
+| Flux HelmRelease            | `tailscale-operator` (`tailscale.yaml`) |
 
 ## Prerequisites: Tailscale ACL Tags
 
 The operator uses OAuth credentials scoped to specific ACL tags. These tags must exist in your Tailscale ACL policy **before** installing the operator. In the `your-tailnet` tailnet the following tags are defined:
 
-| Tag | Purpose |
-|---|---|
-| `tag:k8s-operator` | The operator pod itself |
-| `tag:k8s` | Proxy pods (owned by `tag:k8s-operator`) |
-| `tag:k8s-operator-proxy` | Alternative proxy tag if needed |
+| Tag                      | Purpose                                  |
+| ------------------------ | ---------------------------------------- |
+| `tag:k8s-operator`       | The operator pod itself                  |
+| `tag:k8s`                | Proxy pods (owned by `tag:k8s-operator`) |
+| `tag:k8s-operator-proxy` | Alternative proxy tag if needed          |
 
 Relevant ACL snippet (for reference):
 
@@ -67,7 +42,7 @@ Relevant ACL snippet (for reference):
 
 The `operator-oauth` Secret in the `tailscale` namespace contains the OAuth `client_id` and `client_secret` that the operator uses to authenticate with Tailscale. These values must **never be committed to git**.
 
-The git repo contains a *placeholder* secret (`k3s/manifests/tailscale/operator-oauth-secret.yaml`) with `REPLACE_ME` values so that Flux can create the Secret object. The secret carries the annotation `kustomize.toolkit.fluxcd.io/reconcile: disabled` so Flux will never overwrite real credentials with the placeholder:
+The git repo contains a _placeholder_ secret (`k3s/manifests/tailscale/operator-oauth-secret.yaml`) with `REPLACE_ME` values so that Flux can create the Secret object. The secret carries the annotation `kustomize.toolkit.fluxcd.io/reconcile: disabled` so Flux will never overwrite real credentials with the placeholder:
 
 ```yaml
 # operator-oauth-secret.yaml (excerpt)
@@ -176,8 +151,8 @@ metadata:
   namespace: my-namespace
   annotations:
     tailscale.com/expose: "true"
-    tailscale.com/hostname: "my-service"   # tailnet hostname (defaults to service name)
-    tailscale.com/proxy-class: "prod"      # use the prod ProxyClass
+    tailscale.com/hostname: "my-service" # tailnet hostname (defaults to service name)
+    tailscale.com/proxy-class: "prod" # use the prod ProxyClass
 spec:
   type: ClusterIP
   selector:
@@ -244,10 +219,11 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - my-app     # becomes my-app.tailnet.ts.net
+        - my-app # becomes my-app.tailnet.ts.net
 ```
 
 > **Important - HTTP redirect gotcha:** The Tailscale proxy sends traffic to your backend over plain HTTP (to the port listed in `backend.service.port`). If your backend automatically redirects `http://` → `https://` you will get a redirect loop. Fix this by either:
+>
 > - Disabling the internal HTTP→HTTPS redirect in your app (preferred), **or**
 > - Pointing the Ingress `port` at the app's HTTPS port and accepting a self-signed cert.
 
@@ -299,7 +275,7 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - my-public-app     # becomes my-public-app.tailnet.ts.net (public)
+        - my-public-app # becomes my-public-app.tailnet.ts.net (public)
 ```
 
 #### How to enable Funnel on a Service
@@ -337,12 +313,6 @@ kubectl logs -n tailscale ts-my-public-app-<hash>-0 | grep -i funnel
 curl https://my-public-app.tailnet.ts.net
 ```
 
-#### Security considerations
-
-- Funnel services are publicly reachable. Always apply authentication/authorization at the application layer.
-- Restrict which namespaces or teams can create Funnel-enabled resources using Kubernetes RBAC and/or Tailscale ACL tags.
-- Monitor access in the Tailscale admin console under **Machines → \<proxy device\> → Funnel**.
-
 ---
 
 ## Example: Complete Walkthrough of Adding a New HTTP Service
@@ -352,6 +322,7 @@ This walks through exposing a hypothetical app `my-dashboard` running on port `3
 ### Step 1 - Manifest files
 
 `k3s/manifests/my-dashboard/deployment.yaml`:
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -376,6 +347,7 @@ spec:
 ```
 
 `k3s/manifests/my-dashboard/service.yaml`:
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -392,6 +364,7 @@ spec:
 ```
 
 `k3s/manifests/my-dashboard/tailscale-ingress.yaml`:
+
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -420,6 +393,7 @@ spec:
 ### Step 2 - Register with Flux
 
 `k3s/flux/apps/my-dashboard.yaml`:
+
 ```yaml
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -458,16 +432,6 @@ Once the proxy is `Running`, the service is available at `https://my-dashboard.t
 
 ---
 
-## Viewing Exposed Services in Tailscale Admin
-
-1. Go to <https://login.tailscale.com/admin/machines>.
-2. Filter by tag `tag:k8s` or `tag:k8s-operator` to see only cluster devices.
-3. Each proxy appears as a separate device with the hostname you configured.
-
-The operator itself appears as `k3s-tailscale-operator`.
-
----
-
 ## Troubleshooting
 
 ### Operator logs
@@ -477,6 +441,7 @@ kubectl logs -n tailscale operator-<hash> --tail=100
 ```
 
 Common issues:
+
 - `oauth2: cannot fetch token: 401 Unauthorized` / `API token invalid`: OAuth credentials have expired or are wrong. Generate a new OAuth client at <https://login.tailscale.com/admin/settings/oauth> (scopes: `devices:write`, `dns:read`, `dns:write`; tag: `tag:k8s-operator`), apply with `kubectl patch`, then restart the operator - see [Applying credentials to the cluster](#applying-credentials-to-the-cluster). **Note:** existing proxy pods keep running with stale-but-valid auth; only new proxy provisioning fails.
 - `failed to authenticate`: OAuth credentials are wrong or not yet applied - re-run the `kubectl patch` command.
 - `tag not permitted`: the OAuth client's tag list in Tailscale admin does not include `tag:k8s-operator`.
@@ -491,6 +456,7 @@ kubectl logs -n tailscale ts-my-app-<hash>-0 --tail=100
 ```
 
 Look for:
+
 - `login complete` - proxy joined the tailnet successfully.
 - `Error: tag:k8s not permitted` - the ACL tag ownership is not set up correctly (see [Prerequisites](#prerequisites-tailscale-acl-tags)).
 
@@ -528,6 +494,7 @@ Usually caused by invalid OAuth credentials or network connectivity issues from 
 ### Tag permission errors
 
 If the operator logs show `permission denied` for a tag, verify in the Tailscale ACL that:
+
 1. `tag:k8s-operator` is listed in `tagOwners` (can be empty `[]` for admin-owned).
 2. `tag:k8s` is owned by `tag:k8s-operator`.
 3. The OAuth client was created with the `tag:k8s-operator` tag selected.
@@ -552,17 +519,17 @@ If the operator pod is not running, check its logs and ensure the `operator-oaut
 
 ## Reference
 
-| Item | Value |
-|---|---|
-| Tailscale admin | <https://login.tailscale.com/admin/machines> |
-| Tailnet name | `your-tailnet` |
-| Operator hostname | `k3s-tailscale-operator` |
-| Operator namespace | `tailscale` |
-| OAuth secret name | `operator-oauth` |
-| ProxyClass name (tailnet) | `prod` |
-| ProxyClass name (Funnel) | `funnel` |
-| Helm chart version | `1.94.2` |
+| Item                      | Value                                        |
+| ------------------------- | -------------------------------------------- |
+| Tailscale admin           | <https://login.tailscale.com/admin/machines> |
+| Tailnet name              | `your-tailnet`                               |
+| Operator hostname         | `k3s-tailscale-operator`                     |
+| Operator namespace        | `tailscale`                                  |
+| OAuth secret name         | `operator-oauth`                             |
+| ProxyClass name (tailnet) | `prod`                                       |
+| ProxyClass name (Funnel)  | `funnel`                                     |
 
 **See also:**
+
 - [gitops-flux.md](gitops-flux.md) - how Flux manages these manifests
 - [manifests-and-helm.md](manifests-and-helm.md) - full manifest/Helm reference
