@@ -1,4 +1,4 @@
-name: Ansible - Deploy S3 Backup Service
+name: Deploy S3 Backup Service
 
 on:
   workflow_dispatch:

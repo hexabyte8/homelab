@@ -1,20 +1,20 @@
-name: Ansible - Deploy k3s
+name: Deploy Minecraft Service
 
 on:
   workflow_dispatch:
     inputs:
       target_host:
-        description: 'Target host from inventory (e.g., k3s-server)'
+        description: 'Target host from Tailscale inventory (e.g., game-server)'
         required: true
         type: string
-        default: 'k3s-server'
+        default: 'game-server'
 
 jobs:
-  deploy-k3s:
+  deploy-minecraft:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -58,29 +58,23 @@ jobs:
           ---
           all:
             children:
-              k3s:
+              gameserver:
                 hosts:
                   ${{ inputs.target_host }}:
                     ansible_host: ${{ inputs.target_host }}.daggertooth-scala.ts.net
                     ansible_user: ubuntu
-                    ansible_ssh_common_args: '-o StrictHostKeyChecking=yes'
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
                 vars:
                   ansible_python_interpreter: /usr/bin/python3
           EOF
 
-      - name: Configure SSH known hosts
+      - name: Setup SSH known hosts
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          # Tailscale SSH is used, so no key file needed
           ssh-keyscan ${{ inputs.target_host }}.daggertooth-scala.ts.net >> ~/.ssh/known_hosts 2>/dev/null || true
 
-      - name: Deploy k3s
+      - name: Deploy Minecraft Service
         run: |
           cd ansible
-          ansible-playbook playbooks/deploy_k3s.yml
-
-      - name: Verify k3s deployment
-        run: |
-          cd ansible
-          ansible k3s -i inventory.yml -m shell -a "k3s kubectl get nodes" --become
+          ansible-playbook playbooks/deploy_minecraft.yml

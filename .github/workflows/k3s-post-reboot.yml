@@ -1,16 +1,16 @@
-name: Ansible - Deploy Minecraft Service
+name: Post-Reboot Cluster Restore
 
 on:
   workflow_dispatch:
     inputs:
       target_host:
-        description: 'Target host from Tailscale inventory (e.g., game-server)'
+        description: 'k3s server host (must be control-plane node)'
         required: true
         type: string
-        default: 'game-server'
+        default: 'k3s-server'
 
 jobs:
-  deploy-minecraft:
+  post-reboot-restore:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,6 +24,7 @@ jobs:
         with:
           access_token: ${{ secrets.BW_ACCESS_TOKEN }}
           secrets: |
+            3289b15b-f52c-45aa-8b9f-b41600f5e14f > CLOUDFLARE_TUNNEL_TOKEN
             2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
             9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
       - name: Setup Tailscale
@@ -38,9 +39,7 @@ jobs:
         run: sudo tailscale set --accept-dns=true | cat
 
       - name: Wait for DNS to be available
-        run: |
-          echo "Waiting for Tailscale DNS to be ready..."
-          sleep 10
+        run: sleep 10
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -58,7 +57,7 @@ jobs:
           ---
           all:
             children:
-              gameserver:
+              k3s:
                 hosts:
                   ${{ inputs.target_host }}:
                     ansible_host: ${{ inputs.target_host }}.daggertooth-scala.ts.net
@@ -68,13 +67,14 @@ jobs:
                   ansible_python_interpreter: /usr/bin/python3
           EOF
 
-      - name: Setup SSH known hosts
+      - name: Configure SSH known hosts
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
           ssh-keyscan ${{ inputs.target_host }}.daggertooth-scala.ts.net >> ~/.ssh/known_hosts 2>/dev/null || true
 
-      - name: Deploy Minecraft Service
+      - name: Run post-reboot restore playbook
         run: |
           cd ansible
-          ansible-playbook playbooks/deploy_minecraft.yml
+          ansible-playbook playbooks/post_reboot_restore.yml
+        env:
+          CLOUDFLARE_TUNNEL_TOKEN: ${{ env.CLOUDFLARE_TUNNEL_TOKEN }}

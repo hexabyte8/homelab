@@ -1,20 +1,20 @@
-name: Ansible - Post-Reboot Cluster Restore
+name: Deploy k3s
 
 on:
   workflow_dispatch:
     inputs:
       target_host:
-        description: 'k3s server host (must be control-plane node)'
+        description: 'Target host from inventory (e.g., k3s-server)'
         required: true
         type: string
         default: 'k3s-server'
 
 jobs:
-  post-reboot-restore:
+  deploy-k3s:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -24,7 +24,6 @@ jobs:
         with:
           access_token: ${{ secrets.BW_ACCESS_TOKEN }}
           secrets: |
-            3289b15b-f52c-45aa-8b9f-b41600f5e14f > CLOUDFLARE_TUNNEL_TOKEN
             2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
             9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
       - name: Setup Tailscale
@@ -39,7 +38,9 @@ jobs:
         run: sudo tailscale set --accept-dns=true | cat
 
       - name: Wait for DNS to be available
-        run: sleep 10
+        run: |
+          echo "Waiting for Tailscale DNS to be ready..."
+          sleep 10
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -62,19 +63,24 @@ jobs:
                   ${{ inputs.target_host }}:
                     ansible_host: ${{ inputs.target_host }}.daggertooth-scala.ts.net
                     ansible_user: ubuntu
-                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=yes'
                 vars:
                   ansible_python_interpreter: /usr/bin/python3
           EOF
 
       - name: Configure SSH known hosts
         run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          # Tailscale SSH is used, so no key file needed
           ssh-keyscan ${{ inputs.target_host }}.daggertooth-scala.ts.net >> ~/.ssh/known_hosts 2>/dev/null || true
 
-      - name: Run post-reboot restore playbook
+      - name: Deploy k3s
         run: |
           cd ansible
-          ansible-playbook playbooks/post_reboot_restore.yml
-        env:
-          CLOUDFLARE_TUNNEL_TOKEN: ${{ env.CLOUDFLARE_TUNNEL_TOKEN }}
+          ansible-playbook playbooks/deploy_k3s.yml
+
+      - name: Verify k3s deployment
+        run: |
+          cd ansible
+          ansible k3s -i inventory.yml -m shell -a "k3s kubectl get nodes" --become

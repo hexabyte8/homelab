@@ -1,4 +1,4 @@
-name: Ansible - Manage fail2ban
+name: Manage fail2ban
 
 on:
   workflow_dispatch:

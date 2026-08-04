@@ -1,4 +1,4 @@
-name: Ansible - Run Backup Now
+name: Run Backup Now
 
 on:
   workflow_dispatch:
