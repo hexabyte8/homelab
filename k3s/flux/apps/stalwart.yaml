@@ -16,7 +16,3 @@ spec:
     name: flux-system
   path: ./k3s/manifests/stalwart
   targetNamespace: stalwart
-  dependsOn:
-    - name: sm-operator
-  # cnpg-operator is a HelmRelease; Kustomization dependsOn only supports
-  # Kustomization-kind dependencies, so retries handle CRD readiness.

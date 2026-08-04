@@ -18,5 +18,3 @@ spec:
     name: flux-system
   path: ./k3s/manifests/monitoring-config
   targetNamespace: monitoring
-  dependsOn:
-    - name: sm-operator

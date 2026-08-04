@@ -15,5 +15,3 @@ spec:
     name: flux-system
   path: ./k3s/manifests/jellyfin
   targetNamespace: jellyfin
-  dependsOn:
-    - name: sm-operator
