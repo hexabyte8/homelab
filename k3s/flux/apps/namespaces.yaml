@@ -12,7 +12,7 @@
 #   - tailscale       (has its own k3s/manifests/tailscale/namespace.yaml)
 #   - cloudflared     (has its own k3s/manifests/cloudflared/namespace.yaml)
 #   - calibre-web/jellyfin (calibre-web manifests target the `jellyfin` ns; jellyfin Namespace declared below)
-#   - dashy, fail2ban, healthygames, mcp-kubernetes, mcp-proxmox, stalwart
+#   - dashy, fail2ban, healthygames, mcp-kubernetes, mcp-proxmox, stalwart, actual-mcp
 #                     (each ships its own namespace.yaml under k3s/manifests/<svc>/)
 apiVersion: v1
 kind: Namespace
