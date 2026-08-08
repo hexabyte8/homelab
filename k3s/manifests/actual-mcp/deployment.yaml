@@ -29,7 +29,6 @@ spec:
           args:
             - "--sse"
             - "--enable-write"
-            - "--enable-bearer"
           ports:
             - name: http
               containerPort: 3000
