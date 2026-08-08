@@ -16,6 +16,10 @@ jobs:
   # The job MUST be named `copilot-setup-steps` or Copilot will not use it.
   copilot-setup-steps:
     runs-on: ubuntu-latest
+    # Copilot cloud agent only exposes secrets/variables from the `copilot`
+    # GitHub Actions environment. Repo-level secrets are NOT available here.
+    # Add BW_ACCESS_TOKEN under: Settings → Environments → copilot → Secrets.
+    environment: copilot
     permissions:
       contents: read
 
