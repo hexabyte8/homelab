@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: actual-mcp
+  namespace: actual-mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: actual-mcp
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: actual-mcp
+      annotations:
+        # Reloader: restart pod when the BWS-synced secret or config changes
+        secret.reloader.stakater.com/reload: "actual-mcp-secret"
+        configmap.reloader.stakater.com/reload: "actual-mcp-config"
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: actual-mcp
+          image: sstefanov/actual-mcp:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--sse"
+            - "--enable-write"
+            - "--enable-bearer"
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: actual-mcp-config
+            - secretRef:
+                name: actual-mcp-secret
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: actual-mcp-data
