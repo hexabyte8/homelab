@@ -24,7 +24,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: actual-mcp
-          image: sstefanov/actual-mcp:latest
+          image: sstefanov/actual-mcp:v1.12.0
           imagePullPolicy: IfNotPresent
           args:
             - "--sse"
