@@ -29,7 +29,7 @@ The runner is only allowed to reach the mcp-kubernetes proxy pod on
 
 | File | Purpose |
 |---|---|
-| `.github/workflows/copilot-setup-steps.yml` | Runs before every Copilot session. Joins the runner to the tailnet as `tag:copilot`, enables MagicDNS, and probes the MCP endpoint as a diagnostic. |
+| `.github/workflows/copilot-setup-steps.yml` | Runs before every Copilot session. Fast-fails if `BW_ACCESS_TOKEN` is missing in the `copilot` environment, verifies Bitwarden returned the Tailscale OAuth values, joins the runner to the tailnet as `tag:copilot`, enables MagicDNS, and validates MCP DNS resolution. |
 | `opentofu/tailscale.tf` | Declares `tag:copilot` as a tagOwner and grants `tag:copilot → tag:k8s-operator:443`. |
 
 ### Bitwarden items reused
@@ -96,14 +96,23 @@ These steps cannot be expressed in code and must be done manually:
 
 After merging to `main`:
 
-1. Run `Copilot Setup Steps` manually from the **Actions** tab. The
-   diagnostic step should log a resolved IP and an HTTP status code for
-   `mcp-kubernetes.daggertooth-scala.ts.net`.
-2. Start a Copilot task that needs cluster access (e.g. "list all pods in
-   `jellyfin` namespace"). The setup steps logs appear in the session
-   transcript.
-3. After the session, the Tailscale admin UI should show the `tag:copilot`
-   node as expired/offline (the action logs out at end of job).
+1. Run `Copilot Setup Steps` manually from the **Actions** tab. The workflow
+should pass these setup checks in order:
+- `Validate copilot environment secret`
+- `Load secrets from Bitwarden`
+- `Validate Bitwarden secret mapping`
+- `Setup Tailscale`
+- `Enable MagicDNS`
+- `Wait for DNS to be available`
+- `Validate MCP DNS resolution`
+2. The DNS validation step should resolve:
+- `mcp-kubernetes.daggertooth-scala.ts.net`
+- `actual-mcp.daggertooth-scala.ts.net`
+3. Start a Copilot task that needs cluster access (e.g. "list all pods in
+`jellyfin` namespace"). The setup steps logs appear in the session
+transcript.
+4. After the session, the Tailscale admin UI should show the `tag:copilot`
+node as expired/offline (the action logs out at end of job).
 
 ---
 
