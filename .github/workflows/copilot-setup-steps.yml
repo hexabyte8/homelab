@@ -68,33 +68,3 @@ jobs:
         run: |
           echo "Waiting for Tailscale DNS to be ready..."
           sleep 10
-
-      - name: Validate MCP DNS resolution (retry)
-        run: |
-          set -euo pipefail
-          hosts=(
-            "mcp-kubernetes.daggertooth-scala.ts.net"
-            "actual-mcp.daggertooth-scala.ts.net"
-          )
-
-          # Allow up to 60s per host for runner DNS to converge after MagicDNS.
-          max_retries=12
-          retry_delay=5
-
-          for host in "${hosts[@]}"; do
-            resolved=0
-            for attempt in $(seq 1 "${max_retries}"); do
-              echo "Resolving ${host} (attempt ${attempt}/${max_retries})..."
-              if getent ahosts "${host}" >/dev/null; then
-                echo "Resolved ${host}."
-                resolved=1
-                break
-              fi
-              sleep "${retry_delay}"
-            done
-
-            if [ "${resolved}" -ne 1 ]; then
-              echo "::error::Failed to resolve ${host} after ${max_retries} attempts. Check runner DNS, Tailscale MagicDNS, and name publication."
-              exit 1
-            fi
-          done
