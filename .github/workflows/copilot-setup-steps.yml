@@ -69,17 +69,50 @@ jobs:
           echo "Waiting for Tailscale DNS to be ready..."
           sleep 10
 
-      - name: Validate MCP DNS resolution
+      - name: Collect runner DNS diagnostics
+        run: |
+          set -euo pipefail
+          echo "=== tailscale status ==="
+          tailscale status || true
+          echo
+          echo "=== tailscale netcheck ==="
+          tailscale netcheck || true
+          echo
+          echo "=== resolv.conf ==="
+          cat /etc/resolv.conf || true
+          echo
+          echo "=== resolvectl dns ==="
+          resolvectl dns || true
+          echo
+          echo "=== resolvectl status (first 200 lines) ==="
+          resolvectl status | sed -n '1,200p' || true
+
+      - name: Validate MCP DNS resolution (retry)
         run: |
           set -euo pipefail
           hosts=(
             "mcp-kubernetes.daggertooth-scala.ts.net"
             "actual-mcp.daggertooth-scala.ts.net"
           )
+
+          max_retries=12
+          retry_delay=5
+
           for host in "${hosts[@]}"; do
-            echo "Resolving ${host}..."
-            if ! getent ahosts "${host}" >/dev/null; then
-              echo "::error::Failed to resolve ${host}. Check Tailscale setup, MagicDNS, and ACLs."
+            resolved=0
+            for attempt in $(seq 1 "${max_retries}"); do
+              echo "Resolving ${host} (attempt ${attempt}/${max_retries})..."
+              if getent ahosts "${host}" >/dev/null; then
+                echo "Resolved ${host}."
+                resolved=1
+                break
+              fi
+              resolvectl query "${host}" || true
+              sleep "${retry_delay}"
+            done
+
+            if [ "${resolved}" -ne 1 ]; then
+              echo "::error::Failed to resolve ${host} after ${max_retries} attempts. Check runner DNS, Tailscale MagicDNS, and name publication."
               exit 1
             fi
           done
