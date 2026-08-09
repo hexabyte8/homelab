@@ -11,7 +11,6 @@ resources:
   - cnpg-operator.yaml
   - falco.yaml
   - longhorn-operator.yaml
-  - loki.yaml
   - monitoring.yaml
   - tailscale-operator.yaml
   - authentik.yaml
