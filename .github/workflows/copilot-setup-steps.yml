@@ -95,6 +95,7 @@ jobs:
             "actual-mcp.daggertooth-scala.ts.net"
           )
 
+          # Allow up to 60s per host for runner DNS to converge after MagicDNS.
           max_retries=12
           retry_delay=5
 
