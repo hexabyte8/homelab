@@ -97,12 +97,12 @@ by OpenTofu in Phase 3 - no manual action is needed here, just confirm access.
 ## 1.4 Tailscale
 
 Tailscale is the private network that connects all VMs to each other and to your devices.
-The tailnet (`tailnet.ts.net`) and its configuration persist independently of the hardware.
+The tailnet (`daggertooth-scala.ts.net`) and its configuration persist independently of the hardware.
 
 **What to check:**
 
 1. Log in to [login.tailscale.com/admin](https://login.tailscale.com/admin)
-2. Confirm the tailnet `tailnet.ts.net` is listed
+2. Confirm the tailnet `daggertooth-scala.ts.net` is listed
 3. Under **Machines**, old (destroyed) VM entries will show as offline - you can delete them
    after the new VMs are created
 4. Navigate to **Settings → OAuth clients** and confirm the CI OAuth client (`tag:ci`) exists
@@ -156,7 +156,7 @@ Before proceeding to Phase 2, confirm:
 - [ ] AWS S3 state bucket `chronobyte-homelab-tf-state` exists with `homelab/terraform.tfstate`
 - [ ] GitHub repository `hexabyte8/homelab` is accessible on `main` branch
 - [ ] Cloudflare dashboard shows the domain zone as Active
-- [ ] Tailscale admin shows tailnet `tailnet.ts.net` 
+- [ ] Tailscale admin shows tailnet `daggertooth-scala.ts.net` 
 - [ ] Tailscale CI OAuth client exists (or you have created a new one)
 - [ ] AWS console is accessible and credentials are valid
 - [ ] `BW_ACCESS_TOKEN` is set as a GitHub Actions repository secret

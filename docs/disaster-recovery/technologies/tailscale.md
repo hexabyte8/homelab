@@ -43,15 +43,15 @@ graph LR
 A **tailnet** is your private Tailscale network. All devices in the tailnet can
 communicate with each other using stable `100.x.x.x` IP addresses.
 
-This homelab uses the tailnet `tailnet.ts.net`.
+This homelab uses the tailnet `daggertooth-scala.ts.net`.
 
 ### MagicDNS
 
 Tailscale's **MagicDNS** assigns each device a DNS hostname based on its name.
-For example, a machine named `k3s-server` in tailnet `tailnet.ts.net`
-gets the hostname `k3s-server.tailnet.ts.net`.
+For example, a machine named `k3s-server` in tailnet `daggertooth-scala.ts.net`
+gets the hostname `k3s-server.daggertooth-scala.ts.net`.
 
-This means you can SSH to `ubuntu@k3s-server.tailnet.ts.net` from anywhere
+This means you can SSH to `ubuntu@k3s-server.daggertooth-scala.ts.net` from anywhere
 without memorizing IP addresses.
 
 ### Tailscale SSH
@@ -147,13 +147,13 @@ spec:
 
 When Flux applies this ingress, the Tailscale operator:
 1. Creates a new Tailscale device named `dashy`
-2. The device appears in the admin console at `dashy.tailnet.ts.net`
-3. Traffic to `https://dashy.tailnet.ts.net` is proxied to the Dashy service
+2. The device appears in the admin console at `dashy.daggertooth-scala.ts.net`
+3. Traffic to `https://dashy.daggertooth-scala.ts.net` is proxied to the Dashy service
 
 ### 4. Public Internet Exposure (Tailscale Funnel)
 
 **Tailscale Funnel** allows selected Kubernetes services to be reached by anyone on the
-internet - not just tailnet members - at `https://<hostname>.tailnet.ts.net`.
+internet - not just tailnet members - at `https://<hostname>.daggertooth-scala.ts.net`.
 
 It is enabled per-resource by adding `tailscale.com/funnel: "true"` to an Ingress or
 Service and referencing the `funnel` ProxyClass. The Tailscale ACL in

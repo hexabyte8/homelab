@@ -46,7 +46,7 @@ For detailed explanation, see [Flannel over Tailscale](../flannel-over-tailscale
 3. Click **Run workflow**
 
 **What this does:**
-- Connects to `k3s-server.tailnet.ts.net` via Tailscale SSH
+- Connects to `k3s-server.daggertooth-scala.ts.net` via Tailscale SSH
 - Retrieves the node's Tailscale IP (`tailscale ip -4`)
 - Writes `/etc/rancher/k3s/config.yaml`:
   ```yaml
@@ -78,7 +78,7 @@ Run **Actions → Ansible - Add k3s Worker Node (Tailscale)** twice:
 
 **What this does for each worker:**
 - Fetches the node token from `/var/lib/rancher/k3s/server/node-token` on the server
-- Sets the server URL: `K3S_URL=https://k3s-server.tailnet.ts.net:6443`
+- Sets the server URL: `K3S_URL=https://k3s-server.daggertooth-scala.ts.net:6443`
 - Connects to the worker node via Tailscale SSH
 - Retrieves the worker's Tailscale IP
 - Writes `/etc/rancher/k3s/config.yaml` with Tailscale IP configuration
@@ -98,7 +98,7 @@ pip install ansible
 tailscale up
 
 # Add the k3s-server host key to known_hosts via ssh-keyscan
-ssh-keyscan k3s-server.tailnet.ts.net >> ~/.ssh/known_hosts 2>/dev/null
+ssh-keyscan k3s-server.daggertooth-scala.ts.net >> ~/.ssh/known_hosts 2>/dev/null
 ```
 
 ```bash
@@ -110,7 +110,7 @@ all:
     k3s:
       hosts:
         k3s-server:
-          ansible_host: k3s-server.tailnet.ts.net
+          ansible_host: k3s-server.daggertooth-scala.ts.net
           ansible_user: ubuntu
           ansible_ssh_common_args: '-o StrictHostKeyChecking=yes'
       vars:
@@ -126,9 +126,9 @@ ansible-playbook playbooks/deploy_k3s.yml -i /tmp/inventory-server.yml
 
 ```bash
 # Get the cluster join token from the server
-TOKEN=$(ssh ubuntu@k3s-server.tailnet.ts.net \
+TOKEN=$(ssh ubuntu@k3s-server.daggertooth-scala.ts.net \
   "sudo cat /var/lib/rancher/k3s/server/node-token")
-K3S_URL="https://k3s-server.tailnet.ts.net:6443"
+K3S_URL="https://k3s-server.daggertooth-scala.ts.net:6443"
 echo "Token: $TOKEN"
 ```
 
@@ -141,7 +141,7 @@ all:
     k3s_workers:
       hosts:
         k3s-agent-1:
-          ansible_host: k3s-agent-1.tailnet.ts.net
+          ansible_host: k3s-agent-1.daggertooth-scala.ts.net
           ansible_user: ubuntu
       vars:
         ansible_python_interpreter: /usr/bin/python3
@@ -161,7 +161,7 @@ all:
     k3s_workers:
       hosts:
         k3s-agent-2:
-          ansible_host: k3s-agent-2.tailnet.ts.net
+          ansible_host: k3s-agent-2.daggertooth-scala.ts.net
           ansible_user: ubuntu
       vars:
         ansible_python_interpreter: /usr/bin/python3
@@ -240,7 +240,7 @@ Not familiar with Longhorn? See the [Longhorn technology guide](./technologies/l
 SSH to the k3s server and confirm all nodes are Ready:
 
 ```bash
-ssh ubuntu@k3s-server.tailnet.ts.net
+ssh ubuntu@k3s-server.daggertooth-scala.ts.net
 
 # Check all nodes
 sudo kubectl get nodes -o wide
@@ -273,10 +273,10 @@ If you want to run `kubectl` commands from your laptop instead of SSHing to the 
 
 ```bash
 # Copy kubeconfig from the server
-scp ubuntu@k3s-server.tailnet.ts.net:/etc/rancher/k3s/k3s.yaml ~/.kube/k3s-config
+scp ubuntu@k3s-server.daggertooth-scala.ts.net:/etc/rancher/k3s/k3s.yaml ~/.kube/k3s-config
 
 # Update the server address to the Tailscale hostname
-sed -i 's|https://127.0.0.1:6443|https://k3s-server.tailnet.ts.net:6443|' \
+sed -i 's|https://127.0.0.1:6443|https://k3s-server.daggertooth-scala.ts.net:6443|' \
   ~/.kube/k3s-config
 
 # Use this kubeconfig

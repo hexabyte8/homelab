@@ -42,7 +42,7 @@ automatically via Bitwarden and connects to Proxmox via Tailscale.
 
 **Prerequisites:**
 - `BW_ACCESS_TOKEN` is set as a GitHub Actions secret (see [Prerequisites](./00-prerequisites.md))
-- Proxmox host is online and reachable via `chronobyte.tailnet.ts.net`
+- Proxmox host is online and reachable via `chronobyte.daggertooth-scala.ts.net`
 - The GitHub Actions runner must be able to reach Tailscale
 
 **Steps:**
@@ -193,9 +193,9 @@ tailscale status
 
 **Verify SSH access works:**
 ```bash
-ssh ubuntu@k3s-server.tailnet.ts.net
-ssh ubuntu@k3s-agent-1.tailnet.ts.net
-ssh ubuntu@k3s-agent-2.tailnet.ts.net
+ssh ubuntu@k3s-server.daggertooth-scala.ts.net
+ssh ubuntu@k3s-agent-1.daggertooth-scala.ts.net
+ssh ubuntu@k3s-agent-2.daggertooth-scala.ts.net
 ```
 
 > **If VMs don't appear in Tailscale within 10 minutes:**
@@ -238,9 +238,9 @@ Before proceeding to Phase 4:
 
 - [ ] `tofu apply` completed without errors
 - [ ] All 4 VMs appear as online in the Tailscale admin console
-- [ ] SSH to `ubuntu@k3s-server.tailnet.ts.net` succeeds
-- [ ] SSH to `ubuntu@k3s-agent-1.tailnet.ts.net` succeeds
-- [ ] SSH to `ubuntu@k3s-agent-2.tailnet.ts.net` succeeds
+- [ ] SSH to `ubuntu@k3s-server.daggertooth-scala.ts.net` succeeds
+- [ ] SSH to `ubuntu@k3s-agent-1.daggertooth-scala.ts.net` succeeds
+- [ ] SSH to `ubuntu@k3s-agent-2.daggertooth-scala.ts.net` succeeds
 - [ ] Cloudflare DNS records visible in the dashboard
 - [ ] S3 bucket visible in AWS console
 

@@ -98,13 +98,13 @@ Not sure what a technology does or how it works? These pages explain each one fr
 | Service | Namespace | Access | Purpose |
 |---------|-----------|--------|---------|
 | Flux CD | `flux-system` | - (cluster internal) | GitOps controller |
-| Authentik | `authentik` | `https://authentik.tailnet.ts.net` | SSO / Identity Provider |
-| Stalwart | `stalwart` | `https://mail.tailnet.ts.net` | Email server + webmail |
-| AdGuard Home | `adguard` | `https://adguard.tailnet.ts.net` | DNS-based ad blocking |
-| Jellyfin | `jellyfin` | `https://jellyfin.tailnet.ts.net` | Media server |
+| Authentik | `authentik` | `https://authentik.daggertooth-scala.ts.net` | SSO / Identity Provider |
+| Stalwart | `stalwart` | `https://mail.daggertooth-scala.ts.net` | Email server + webmail |
+| AdGuard Home | `adguard` | `https://adguard.daggertooth-scala.ts.net` | DNS-based ad blocking |
+| Jellyfin | `jellyfin` | `https://jellyfin.daggertooth-scala.ts.net` | Media server |
 | Uptime Kuma | `uptime-kuma` | `https://status.example.com` (public) | Uptime monitoring |
 | MkDocs/Zensical | GitHub Pages | `https://docs.chronobyte.net` | This documentation |
-| Longhorn | `longhorn-system` | `https://longhorn.tailnet.ts.net` | Storage UI |
+| Longhorn | `longhorn-system` | `https://longhorn.daggertooth-scala.ts.net` | Storage UI |
 | cert-manager | `cert-manager` | - (cluster internal) | Automatic TLS certificates |
 | cloudflared | `cloudflared` | - (cluster internal) | Cloudflare Tunnel daemon |
 | Traefik | `kube-system` | - (cluster internal) | Ingress reverse proxy |
@@ -118,7 +118,7 @@ Not sure what a technology does or how it works? These pages explain each one fr
 
 ```mermaid
 graph TD
-    subgraph phys["Physical Server: chronobyte<br/>OS: Proxmox VE | LAN: <proxmox-lan-ip> | Tailscale: chronobyte.tailnet.ts.net"]
+    subgraph phys["Physical Server: chronobyte<br/>OS: Proxmox VE | LAN: <proxmox-lan-ip> | Tailscale: chronobyte.daggertooth-scala.ts.net"]
         srv["VM: k3s-server (VMID 102)<br/>LAN: <k3s-server-lan-ip> | Tailscale: <k3s-server-ts-ip><br/>Role: Kubernetes control plane"]
         ag1["VM: k3s-agent-1 (VMID 101)<br/>LAN: <k3s-agent-1-lan-ip> | Tailscale: <k3s-agent-1-ts-ip><br/>Role: Kubernetes worker node"]
         ag2["VM: k3s-agent-2 (VMID 103)<br/>LAN: <k3s-agent-2-lan-ip> | Tailscale: <k3s-agent-2-ts-ip><br/>Role: Kubernetes worker node"]

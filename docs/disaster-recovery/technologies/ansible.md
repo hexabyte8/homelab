@@ -23,7 +23,7 @@ It allows you to define what you want a server to look like in simple YAML files
 
 ```bash
 # Manually SSH to every node and run:
-ssh ubuntu@k3s-server.tailnet.ts.net
+ssh ubuntu@k3s-server.daggertooth-scala.ts.net
 curl -sfL https://get.k3s.io | sh -  # What flags? I forgot...
 # Then repeat for k3s-agent-1, k3s-agent-2
 # What if one node is already configured and the other isn't?
@@ -58,7 +58,7 @@ all:
     k3s:
       hosts:
         k3s-server:
-          ansible_host: k3s-server.tailnet.ts.net
+          ansible_host: k3s-server.daggertooth-scala.ts.net
           ansible_user: ubuntu
           ansible_ssh_common_args: "-o StrictHostKeyChecking=yes"
       vars:
@@ -145,7 +145,7 @@ all:
     k3s:
       hosts:
         k3s-server:
-          ansible_host: k3s-server.tailnet.ts.net
+          ansible_host: k3s-server.daggertooth-scala.ts.net
           ansible_user: ubuntu
 EOF
 
@@ -207,11 +207,11 @@ pip3 install ansible
 If a VM was recreated (new host key), remove the old entry:
 
 ```bash
-ssh-keygen -R k3s-server.tailnet.ts.net
+ssh-keygen -R k3s-server.daggertooth-scala.ts.net
 ```
 
 Or repopulate the host key with `ssh-keyscan`:
 
 ```bash
-ssh-keyscan k3s-server.tailnet.ts.net >> ~/.ssh/known_hosts
+ssh-keyscan k3s-server.daggertooth-scala.ts.net >> ~/.ssh/known_hosts
 ```

@@ -13,7 +13,7 @@ Proxmox server, managed via GitOps with Flux CD.
 | Networking  | Flannel (VXLAN) + Tailscale operator                                                  |
 | Storage     | Longhorn (distributed)                                                                |
 | GitOps      | Flux CD                                                                               |
-| Ingress     | Traefik (Cloudflare Tunnel `*.example.com`) + Tailscale operator (`*.tailnet.ts.net`) |
+| Ingress     | Traefik (Cloudflare Tunnel `*.example.com`) + Tailscale operator (`*.daggertooth-scala.ts.net`) |
 | TLS         | cert-manager + Let's Encrypt (Cloudflare path); Tailscale (Tailscale path)            |
 
 ## Guides

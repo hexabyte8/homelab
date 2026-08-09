@@ -13,7 +13,7 @@ This document covers the Authentik deployment in the homelab k3s cluster - what 
 - **LDAP** - for apps that only speak LDAP (via built-in LDAP outpost)
 - **ForwardAuth** - proxy-level authentication via Traefik, so services without any auth support can be gated behind a login page
 
-Authentik is accessible at **<https://authentik.tailnet.ts.net>**.
+Authentik is accessible at **<https://authentik.daggertooth-scala.ts.net>**.
 
 ---
 
@@ -24,7 +24,7 @@ Authentik is accessible at **<https://authentik.tailnet.ts.net>**.
 | **PostgreSQL** | CNPG cluster `authentik-db` in the `authentik` namespace |
 | **Redis** | Authentik's built-in Redis (bundled in the Helm chart) |
 | **TLS** | cert-manager with ClusterIssuer `letsencrypt-production` |
-| **Ingress** | Tailscale Funnel at `authentik.tailnet.ts.net` |
+| **Ingress** | Tailscale Funnel at `authentik.daggertooth-scala.ts.net` |
 | **Credentials secret** | `authentik-credentials` (must be patched after deploy - see below) |
 | **ForwardAuth middleware** | `authentik-forward-auth` in namespace `authentik` |
 
@@ -103,7 +103,7 @@ expires after the default configured lifetime.
 
 The recipient receives an email with a link like:
 ```
-https://authentik.tailnet.ts.net/if/flow/default-invitation-enrollment/?itoken=<uuid>
+https://authentik.daggertooth-scala.ts.net/if/flow/default-invitation-enrollment/?itoken=<uuid>
 ```
 They click it, choose a username/display name/password, and are immediately logged in as a
 member of `family&friends`. If they visit the flow URL without a valid token, they see a
@@ -190,7 +190,7 @@ kubectl -n authentik patch secret authentik-credentials \
   --type='json' -p='[{"op":"replace","path":"/data/bootstrap-password","value":"'$(echo -n 'YourChosenPassword' | base64)'"}]'
 ```
 
-Then log in directly at **<https://authentik.tailnet.ts.net>** with:
+Then log in directly at **<https://authentik.daggertooth-scala.ts.net>** with:
 - **Username**: `akadmin`
 - **Password**: the bootstrap password you set above
 
@@ -371,7 +371,7 @@ This is the step most guides gloss over. The embedded outpost is what actually p
 
 The outpost updates within ~30 seconds. After that, any request to `https://myapp.example.com` that lacks a valid Authentik session will be redirected to the Authentik login page.
 
-> **Verify it's working:** open an incognito window and visit `https://myapp.example.com`. You should be redirected to `https://authentik.tailnet.ts.net/if/flow/...` before reaching the app.
+> **Verify it's working:** open an incognito window and visit `https://myapp.example.com`. You should be redirected to `https://authentik.daggertooth-scala.ts.net/if/flow/...` before reaching the app.
 
 ### For OIDC (apps with native login support)
 
@@ -391,7 +391,7 @@ If the app supports OAuth2/OIDC natively (e.g. Gitea, Grafana), create an **OAut
 **OIDC discovery URL** (use this in the app's "auto-discover" field if supported):
 
 ```
-https://authentik.tailnet.ts.net/application/o/<slug>/.well-known/openid-configuration
+https://authentik.daggertooth-scala.ts.net/application/o/<slug>/.well-known/openid-configuration
 ```
 
 Replace `<slug>` with the application slug you set in step 4 (e.g. `myservice`). The discovery document lists all token endpoints, supported scopes, and the JWKS URI - most OIDC clients can configure themselves from it automatically.
@@ -434,7 +434,7 @@ The email stage uses the global SMTP settings from the Authentik HelmRelease val
 ### Triggering a Password Reset
 
 **As a user:**
-1. Go to https://authentik.tailnet.ts.net
+1. Go to https://authentik.daggertooth-scala.ts.net
 2. Click **Forgot Password** below the login form
 3. Enter your username or email address
 4. Check your inbox for the recovery email (check spam if not received within 2 minutes)
@@ -677,8 +677,8 @@ The logs show every bind and search request with the exact `baseDN`, `filter`, a
 
 | Resource | Value |
 |---|---|
-| Authentik URL | `https://authentik.tailnet.ts.net` |
-| Login (akadmin) | `https://authentik.tailnet.ts.net` |
+| Authentik URL | `https://authentik.daggertooth-scala.ts.net` |
+| Login (akadmin) | `https://authentik.daggertooth-scala.ts.net` |
 | Namespace | `authentik` |
 | Credentials secret | `authentik-credentials` |
 | PostgreSQL cluster | `authentik-db` (CNPG) |

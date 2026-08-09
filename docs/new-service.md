@@ -181,7 +181,7 @@ spec:
 The value under `tls.hosts` becomes the MagicDNS hostname. After Flux syncs, the service is available at:
 
 ```
-https://myapp.tailnet.ts.net
+https://myapp.daggertooth-scala.ts.net
 ```
 
 !!! tip "Tailscale Funnel (public access via Tailscale)"
@@ -194,7 +194,7 @@ To make a Tailscale-hosted service reachable on the public internet without Clou
         tailscale.com/funnel: "true"
     ```
 
-    Funnel exposes the service at `https://myapp.tailnet.ts.net` publicly. No DNS record or cert-manager configuration is needed - Tailscale handles TLS. Note that Authentik ForwardAuth is still not available via this path.
+    Funnel exposes the service at `https://myapp.daggertooth-scala.ts.net` publicly. No DNS record or cert-manager configuration is needed - Tailscale handles TLS. Note that Authentik ForwardAuth is still not available via this path.
 
 See [tailscale-operator.md](tailscale-operator.md) for proxy classes and further configuration.
 
@@ -290,7 +290,7 @@ append the provider's id to `authentik_outpost.embedded.protocol_providers`, the
 
 **Or configure the application in the Authentik web UI (If not managing via Terraform/Tofu):**
 
-1. Log in at **<https://authentik.tailnet.ts.net>**
+1. Log in at **<https://authentik.daggertooth-scala.ts.net>**
 2. Go to **Applications → Providers → Create**
 3. Choose **Proxy Provider** and fill in:
    - **Name**: `myapp-proxy-provider`
@@ -413,7 +413,7 @@ Flux prunes the live resources on the next reconciliation. To re-enable, add the
 
 ## Step 8: Update the Dashy Dashboard
 
-Add a tile for the new service in `k3s/manifests/dashy/configmap.yaml` so it appears on the homelab dashboard at <https://dashy.tailnet.ts.net>:
+Add a tile for the new service in `k3s/manifests/dashy/configmap.yaml` so it appears on the homelab dashboard at <https://dashy.daggertooth-scala.ts.net>:
 
 1. Find the appropriate section under `sections:` (or add a new one)
 2. Append a new item:
@@ -421,7 +421,7 @@ Add a tile for the new service in `k3s/manifests/dashy/configmap.yaml` so it app
    ```yaml
    - title: My App
      description: What it does
-     url: https://myapp.tailnet.ts.net # or example.com URL
+     url: https://myapp.daggertooth-scala.ts.net # or example.com URL
      icon: hl-myapp # see docs/dashy.md for icon options
      target: newtab
    ```
@@ -459,7 +459,7 @@ For Tailscale Ingress, check that the proxy StatefulSet was created:
 kubectl get statefulset -n tailscale
 ```
 
-The service should be reachable at `https://myapp.tailnet.ts.net` (Tailscale) or `https://myapp.example.com` (Cloudflare Tunnel) within a few minutes of Flux reconciling.
+The service should be reachable at `https://myapp.daggertooth-scala.ts.net` (Tailscale) or `https://myapp.example.com` (Cloudflare Tunnel) within a few minutes of Flux reconciling.
 
 ---
 
