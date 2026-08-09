@@ -20,8 +20,9 @@ flowchart LR
   ingress --> svc["mcp-kubernetes Service<br/>(cluster, port 8000)"]
 ```
 
-The runner is only allowed to reach the mcp-kubernetes proxy pod on
-`tcp:443`. It has no other grants of its own - see `opentofu/tailscale.tf`.
+The runner is only allowed to reach MCP proxy tags on `tcp:443` (`tag:k8s-operator`,
+`tag:k8s-operator-proxy`, `tag:k8s`). It has no other grants of its own - see
+`opentofu/tailscale/acl.tf`.
 
 ---
 
@@ -30,7 +31,7 @@ The runner is only allowed to reach the mcp-kubernetes proxy pod on
 | File | Purpose |
 |---|---|
 | `.github/workflows/copilot-setup-steps.yml` | Runs before every Copilot session. Fast-fails if `BW_ACCESS_TOKEN` is missing in the `copilot` environment, verifies Bitwarden returned the Tailscale OAuth values, joins the runner to the tailnet as `tag:copilot`, enables MagicDNS, and validates MCP DNS resolution. |
-| `opentofu/tailscale.tf` | Declares `tag:copilot` as a tagOwner and grants `tag:copilot → tag:k8s-operator:443`. |
+| `opentofu/tailscale/acl.tf` | Declares `tag:copilot` as a tagOwner and grants `tag:copilot → {tag:k8s-operator, tag:k8s-operator-proxy, tag:k8s}:443`. |
 
 ### Bitwarden items reused
 
@@ -122,7 +123,8 @@ node as expired/offline (the action logs out at end of job).
   `autogroup:tagged`, cannot reach `tag:server`, and is not a Funnel node.
 - The existing ACL still contains a broad `{src: ["*"], dst: ["*"]}` grant.
   Tightening that is out of scope for this change but would make the
-  `tag:copilot → tag:k8s-operator:443` grant the only path available.
+  `tag:copilot → {tag:k8s-operator, tag:k8s-operator-proxy, tag:k8s}:443`
+  grant the only path available.
 - Consider provisioning a dedicated Tailscale OAuth client scoped solely to
   `tag:copilot` (and storing new Bitwarden item IDs) if you want to remove
   the shared blast radius with `ansible-k3s.yml` et al.

@@ -42,8 +42,9 @@ No `Authorization` header is needed.
 - The runner joins the tailnet as `tag:copilot` via the OAuth client stored in
   Bitwarden (secret `BW_ACCESS_TOKEN`, available in the `copilot` Actions
   environment).
-- The ACL grants `tag:copilot → tag:k8s-operator` on `tcp:443` only. The agent
-  cannot SSH to servers or reach any other tailnet node.
+- The ACL grants `tag:copilot → {tag:k8s-operator, tag:k8s-operator-proxy,
+  tag:k8s}` on `tcp:443` only. The agent cannot SSH to servers or reach any
+  other tailnet node.
 - MagicDNS is enabled (`tailscale set --accept-dns=true`) so the hostname
   `mcp-kubernetes.daggertooth-scala.ts.net` resolves correctly inside the runner.
 

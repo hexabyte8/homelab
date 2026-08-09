@@ -33,7 +33,7 @@ resource "tailscale_acl" "as_json" {
           },
           {
             "src": ["tag:copilot"],
-            "dst": ["tag:k8s-operator"],
+            "dst": ["tag:k8s-operator", "tag:k8s-operator-proxy", "tag:k8s"],
             "ip":  ["tcp:443"],
           },
           {
