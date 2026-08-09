@@ -24,6 +24,16 @@ jobs:
       contents: read
 
     steps:
+      - name: Validate copilot environment secret
+        env:
+          BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+        run: |
+          if [ -z "${BW_ACCESS_TOKEN}" ]; then
+            echo "::error::Missing required secret BW_ACCESS_TOKEN in the 'copilot' environment."
+            echo "::error::Go to Settings -> Environments -> copilot -> Secrets and add BW_ACCESS_TOKEN."
+            exit 1
+          fi
+
       - name: Load secrets from Bitwarden
         uses: bitwarden/sm-action@v2
         with:
@@ -31,6 +41,18 @@ jobs:
           secrets: |
             2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
             9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+
+      - name: Validate Bitwarden secret mapping
+        run: |
+          if [ -z "${TAILSCALE_OAUTH_CLIENT_ID}" ]; then
+            echo "::error::TAILSCALE_OAUTH_CLIENT_ID was not loaded from Bitwarden."
+            exit 1
+          fi
+          if [ -z "${TAILSCALE_OAUTH_CLIENT_SECRET}" ]; then
+            echo "::error::TAILSCALE_OAUTH_CLIENT_SECRET was not loaded from Bitwarden."
+            exit 1
+          fi
+
       - name: Setup Tailscale
         uses: tailscale/github-action@v4
         with:
