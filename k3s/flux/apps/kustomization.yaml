@@ -30,6 +30,7 @@ resources:
   # Workloads
   - actual.yaml
   - actual-mcp.yaml
+  - actual-mcp-secondary.yaml
   - adguard.yaml
   - calibre-web.yaml
   - dashy.yaml

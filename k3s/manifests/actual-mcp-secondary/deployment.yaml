@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: actual-mcp-secondary
+  namespace: actual-mcp-secondary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: actual-mcp-secondary
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: actual-mcp-secondary
+      annotations:
+        secret.reloader.stakater.com/reload: "actual-mcp-secondary-secret"
+        configmap.reloader.stakater.com/reload: "actual-mcp-secondary-config"
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: actual-mcp
+          image: sstefanov/actual-mcp:v1.12.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--sse"
+            - "--enable-write"
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: actual-mcp-secondary-config
+            - secretRef:
+                name: actual-mcp-secondary-secret
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: actual-mcp-secondary-data
