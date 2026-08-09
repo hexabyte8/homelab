@@ -21,7 +21,7 @@ session, so the endpoints are available by the time the agent starts.
 | Property | Value |
 |---|---|
 | Transport | HTTP (Streamable HTTP / SSE) |
-| URL | `https://mcp-kubernetes.tailnet.ts.net/mcp` |
+| URL | `https://mcp-kubernetes.daggertooth-scala.ts.net/mcp` |
 | Auth | None — presence on the tailnet is the credential |
 | Port | 443 (Tailscale Ingress → cluster Service on 8000) |
 
@@ -45,7 +45,7 @@ No `Authorization` header is needed.
 - The ACL grants `tag:copilot → tag:k8s-operator` on `tcp:443` only. The agent
   cannot SSH to servers or reach any other tailnet node.
 - MagicDNS is enabled (`tailscale set --accept-dns=true`) so the hostname
-  `mcp-kubernetes.tailnet.ts.net` resolves correctly inside the runner.
+  `mcp-kubernetes.daggertooth-scala.ts.net` resolves correctly inside the runner.
 
 ---
 

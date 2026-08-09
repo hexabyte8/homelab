@@ -36,7 +36,7 @@ Each node has `/etc/rancher/k3s/config.yaml` written before k3s starts:
 ```yaml
 write-kubeconfig-mode: "644"
 tls-san:
-  - k3s-server.tailnet.ts.net
+  - k3s-server.daggertooth-scala.ts.net
   - <k3s-server-ts-ip>
   - <k3s-server-lan-ip>
 node-ip: "<k3s-server-ts-ip>"

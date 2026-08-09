@@ -141,7 +141,7 @@ kubectl get pods -n tailscale
 
 ### Method 1: Annotate a ClusterIP Service
 
-The operator watches for the `tailscale.com/expose: "true"` annotation and creates a proxy StatefulSet. The service becomes reachable at `<hostname>.tailnet.ts.net`.
+The operator watches for the `tailscale.com/expose: "true"` annotation and creates a proxy StatefulSet. The service becomes reachable at `<hostname>.daggertooth-scala.ts.net`.
 
 ```yaml
 apiVersion: v1
@@ -195,7 +195,7 @@ The `EXTERNAL-IP` field in `kubectl get svc` will show a Tailscale IP once the p
 
 ### Method 3: Tailscale Ingress (HTTP/HTTPS - recommended for web services)
 
-Create a standard Kubernetes `Ingress` with `ingressClassName: tailscale`. The operator provisions an HTTPS-terminating proxy. The service becomes reachable at `https://<hostname>.tailnet.ts.net` with a valid TLS certificate provisioned automatically by Tailscale.
+Create a standard Kubernetes `Ingress` with `ingressClassName: tailscale`. The operator provisions an HTTPS-terminating proxy. The service becomes reachable at `https://<hostname>.daggertooth-scala.ts.net` with a valid TLS certificate provisioned automatically by Tailscale.
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -219,7 +219,7 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - my-app # becomes my-app.tailnet.ts.net
+        - my-app # becomes my-app.daggertooth-scala.ts.net
 ```
 
 > **Important - HTTP redirect gotcha:** The Tailscale proxy sends traffic to your backend over plain HTTP (to the port listed in `backend.service.port`). If your backend automatically redirects `http://` → `https://` you will get a redirect loop. Fix this by either:
@@ -231,7 +231,7 @@ spec:
 
 Tailscale Funnel exposes a service to the **public internet** - anyone can reach it, not just tailnet members. Traffic still routes through Tailscale's infrastructure, so there is no need to open firewall ports or configure port-forwarding on your router.
 
-> **Important:** Funnel is only available for HTTPS (port 443). The URL seen by the public is `https://<hostname>.tailnet.ts.net`.
+> **Important:** Funnel is only available for HTTPS (port 443). The URL seen by the public is `https://<hostname>.daggertooth-scala.ts.net`.
 
 #### Prerequisites
 
@@ -275,7 +275,7 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - my-public-app # becomes my-public-app.tailnet.ts.net (public)
+        - my-public-app # becomes my-public-app.daggertooth-scala.ts.net (public)
 ```
 
 #### How to enable Funnel on a Service
@@ -307,10 +307,10 @@ spec:
 ```bash
 # Confirm the proxy pod joined the tailnet and funnel is serving
 kubectl logs -n tailscale ts-my-public-app-<hash>-0 | grep -i funnel
-# Expected: "funnel: serving on https://my-public-app.tailnet.ts.net"
+# Expected: "funnel: serving on https://my-public-app.daggertooth-scala.ts.net"
 
 # Test public access (from any device, even off the tailnet)
-curl https://my-public-app.tailnet.ts.net
+curl https://my-public-app.daggertooth-scala.ts.net
 ```
 
 ---
@@ -428,7 +428,7 @@ kubectl get pods -n tailscale -w
 kubectl get ingress -n my-dashboard
 ```
 
-Once the proxy is `Running`, the service is available at `https://my-dashboard.tailnet.ts.net`.
+Once the proxy is `Running`, the service is available at `https://my-dashboard.daggertooth-scala.ts.net`.
 
 ---
 

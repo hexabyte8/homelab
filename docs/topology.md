@@ -39,7 +39,7 @@ sequenceDiagram
     participant TSProxy as Tailscale Proxy Pod
     participant App as Application Pod
 
-    User->>TS: HTTPS request to *.tailnet.ts.net
+    User->>TS: HTTPS request to *.daggertooth-scala.ts.net
     TS->>TSProxy: Route via WireGuard tunnel
     TSProxy->>App: Proxy to application (TLS terminated by Tailscale)
     App-->>TSProxy: Response
@@ -113,7 +113,7 @@ graph LR
         tunnel["Cloudflare Tunnel"]
     end
 
-    subgraph tailnet_zone["Tailnet (tailnet.ts.net)"]
+    subgraph tailnet_zone["Tailnet (daggertooth-scala.ts.net)"]
         admin["Admin / Developer<br/>(tailnet member)"]
         ts_mesh["WireGuard mesh"]
     end

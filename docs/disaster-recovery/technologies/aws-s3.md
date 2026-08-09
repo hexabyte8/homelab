@@ -102,7 +102,7 @@ Default schedule: `0 4 * * *` (4:00 AM daily).
 
 ```bash
 # Check backup timer status on game server
-ssh ubuntu@game-server.tailnet.ts.net
+ssh ubuntu@game-server.daggertooth-scala.ts.net
 sudo systemctl status minecraft-backup.timer
 sudo systemctl list-timers minecraft-backup.timer
 ```
@@ -114,7 +114,7 @@ sudo systemctl list-timers minecraft-backup.timer
 # Actions → Ansible - Run Backup Now → Run workflow
 
 # Or directly on the game server:
-ssh ubuntu@game-server.tailnet.ts.net
+ssh ubuntu@game-server.daggertooth-scala.ts.net
 sudo systemctl start minecraft-backup.service
 ```
 
@@ -154,7 +154,7 @@ tar -tzf /tmp/backup-test.tar.gz | head -20
 
 ```bash
 # On the game server
-ssh ubuntu@game-server.tailnet.ts.net
+ssh ubuntu@game-server.daggertooth-scala.ts.net
 
 # List available backups
 aws s3 ls s3://<S3_BACKUP_BUCKET_NAME>/backups/ --region us-east-1
@@ -283,7 +283,7 @@ aws sts get-caller-identity
 
 ```bash
 # Check backup service logs on game server
-ssh ubuntu@game-server.tailnet.ts.net
+ssh ubuntu@game-server.daggertooth-scala.ts.net
 sudo journalctl -u minecraft-backup.service --since "24 hours ago"
 ```
 

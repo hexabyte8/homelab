@@ -226,7 +226,7 @@ find /var/lib/vz -size +1G -ls
 
 OpenTofu uses the Proxmox API to create and manage VMs. The API is available at:
 ```
-https://chronobyte.tailnet.ts.net:8006/api2/json
+https://chronobyte.daggertooth-scala.ts.net:8006/api2/json
 ```
 
 The API uses token-based authentication. The token ID and secret are stored in Bitwarden

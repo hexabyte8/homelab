@@ -15,8 +15,8 @@ runner to the tailnet with a dedicated tag.
 ```mermaid
 flowchart LR
   task["Copilot task"] --> runner["Ephemeral GitHub Actions runner"]
-  runner -- "copilot-setup-steps.yml:<br/>1. bitwarden/sm-action pulls TS OAuth creds<br/>2. tailscale/github-action joins as tag:copilot<br/>3. MagicDNS enabled" --> tailnet["tailnet (tailnet.ts.net)"]
-  tailnet --> ingress["mcp-kubernetes.tailnet.ts.net:443<br/>(Tailscale Ingress, ProxyClass: prod)"]
+  runner -- "copilot-setup-steps.yml:<br/>1. bitwarden/sm-action pulls TS OAuth creds<br/>2. tailscale/github-action joins as tag:copilot<br/>3. MagicDNS enabled" --> tailnet["tailnet (daggertooth-scala.ts.net)"]
+  tailnet --> ingress["mcp-kubernetes.daggertooth-scala.ts.net:443<br/>(Tailscale Ingress, ProxyClass: prod)"]
   ingress --> svc["mcp-kubernetes Service<br/>(cluster, port 8000)"]
 ```
 
@@ -72,7 +72,7 @@ These steps cannot be expressed in code and must be done manually:
      "mcpServers": {
        "kubernetes": {
          "type": "http",
-         "url": "https://mcp-kubernetes.tailnet.ts.net/mcp",
+         "url": "https://mcp-kubernetes.daggertooth-scala.ts.net/mcp",
          "tools": ["*"]
        }
      }
@@ -98,7 +98,7 @@ After merging to `main`:
 
 1. Run `Copilot Setup Steps` manually from the **Actions** tab. The
    diagnostic step should log a resolved IP and an HTTP status code for
-   `mcp-kubernetes.tailnet.ts.net`.
+   `mcp-kubernetes.daggertooth-scala.ts.net`.
 2. Start a Copilot task that needs cluster access (e.g. "list all pods in
    `jellyfin` namespace"). The setup steps logs appear in the session
    transcript.

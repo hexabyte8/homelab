@@ -287,7 +287,7 @@ The `cloudflare-https-scheme` Middleware is defined in `k3s/manifests/traefik/cl
 
 ForwardAuth requires an Authentik **Proxy Provider** and an **Application** entry. The embedded outpost handles the actual auth check automatically.
 
-1. Log in to Authentik at `https://authentik.tailnet.ts.net` as `akadmin`.
+1. Log in to Authentik at `https://authentik.daggertooth-scala.ts.net` as `akadmin`.
 
 2. Go to **Applications → Providers → Create**.
 
@@ -336,7 +336,7 @@ This approach is preferable for:
 
 #### Step 1 - Configure Authentik as an OIDC provider
 
-1. Log in to Authentik at `https://authentik.tailnet.ts.net`.
+1. Log in to Authentik at `https://authentik.daggertooth-scala.ts.net`.
 
 2. Go to **Applications → Providers → Create**.
 
@@ -369,13 +369,13 @@ This approach is preferable for:
    | **Name** | `Authentik` |
    | **Client ID** | the client ID from Authentik |
    | **Client Secret** | the client secret from Authentik |
-   | **Auth URL** | `https://authentik.tailnet.ts.net/application/o/cloudflare-access/` |
-   | **Token URL** | `https://authentik.tailnet.ts.net/application/o/token/` |
-   | **Certificate URL** | `https://authentik.tailnet.ts.net/application/o/cloudflare-access/jwks/` |
+   | **Auth URL** | `https://authentik.daggertooth-scala.ts.net/application/o/cloudflare-access/` |
+   | **Token URL** | `https://authentik.daggertooth-scala.ts.net/application/o/token/` |
+   | **Certificate URL** | `https://authentik.daggertooth-scala.ts.net/application/o/cloudflare-access/jwks/` |
 
 4. Click **Save** and test the connection.
 
-> **Note:** The URLs above use the Tailscale Funnel address (`tailnet.ts.net`). If Authentik has been moved to a Cloudflare Tunnel URL (`authentik.example.com`), substitute that domain instead.
+> **Note:** The URLs above use the Tailscale Funnel address (`daggertooth-scala.ts.net`). If Authentik has been moved to a Cloudflare Tunnel URL (`authentik.example.com`), substitute that domain instead.
 
 #### Step 3 - Create a Cloudflare Access policy for the service
 
@@ -400,7 +400,7 @@ With this in place, any user hitting `myapp.example.com` must authenticate with 
 
 ## Exposing Authentik Itself via Cloudflare Tunnel
 
-Authentik is currently accessible via Tailscale Funnel at `https://authentik.tailnet.ts.net`. To also (or instead) expose it via Cloudflare Tunnel:
+Authentik is currently accessible via Tailscale Funnel at `https://authentik.daggertooth-scala.ts.net`. To also (or instead) expose it via Cloudflare Tunnel:
 
 ### Traefik Ingress for Authentik
 
@@ -508,7 +508,7 @@ Causes:
 
 - **Missing `cloudflare-https-scheme` middleware**: `cloudflared` connects to Traefik over `http://`, so Traefik sets `X-Forwarded-Proto: http`. Authentik then builds the OIDC callback URL with `http://`, which it rejects. **Always chain `kube-system-cloudflare-https-scheme@kubernetescrd` before the ForwardAuth middleware** (see ingress example above).
 - **External Host mismatch**: the Proxy Provider's **External Host** in Authentik is `http://...` but the site is accessed over `https://...`, or the domain is wrong. Correct it in **Applications → Providers → your provider → External Host**. Must be the exact `https://` URL users visit.
-- **Cookie domain mismatch**: if Authentik and the app are on different domains (e.g. `tailnet.ts.net` vs `example.com`), the ForwardAuth session cookie cannot be shared. Move Authentik to a `example.com` subdomain (see [Exposing Authentik Itself](#exposing-authentik-itself-via-cloudflare-tunnel)).
+- **Cookie domain mismatch**: if Authentik and the app are on different domains (e.g. `daggertooth-scala.ts.net` vs `example.com`), the ForwardAuth session cookie cannot be shared. Move Authentik to a `example.com` subdomain (see [Exposing Authentik Itself](#exposing-authentik-itself-via-cloudflare-tunnel)).
 - **Outpost not updated**: after creating the Proxy Provider and Application, the embedded outpost must have the application assigned (Step 7-8 in [Approach A](#approach-a-traefik-forwardauth-recommended-for-internal-auth)).
 
 ### CORS errors
@@ -522,7 +522,7 @@ If a service returns CORS errors when accessed via `myapp.example.com`:
 
 If Cloudflare Access redirects infinitely:
 - Verify the OIDC callback URL in the Authentik provider matches exactly: `https://<team-name>.cloudflareaccess.com/cdn-cgi/access/callback`.
-- Confirm `authentik.tailnet.ts.net` (or `authentik.example.com`) is reachable from your browser - Cloudflare Access will redirect there for login.
+- Confirm `authentik.daggertooth-scala.ts.net` (or `authentik.example.com`) is reachable from your browser - Cloudflare Access will redirect there for login.
 - Check Authentik's system logs under **System → System Tasks** for OIDC-related errors.
 
 ---

@@ -138,7 +138,7 @@ All VMs use gateway `<lan-gateway>` and DNS `8.8.8.8`.
 ## 2.3 Install Tailscale on the Proxmox Host
 
 **Why Tailscale on the Proxmox host?**  
-Terraform connects to Proxmox via its API at `chronobyte.tailnet.ts.net:8006`.
+Terraform connects to Proxmox via its API at `chronobyte.daggertooth-scala.ts.net:8006`.
 Tailscale MagicDNS resolves that hostname - so Tailscale must be running on the host
 before Terraform can reach it.
 
@@ -170,7 +170,7 @@ tailscale status
 
 From your laptop (which must also be on the same tailnet):
 ```bash
-ping chronobyte.tailnet.ts.net
+ping chronobyte.daggertooth-scala.ts.net
 ```
 
 If this responds, Terraform will be able to reach Proxmox.
@@ -302,7 +302,7 @@ Before proceeding to Phase 3:
 - [ ] Proxmox VE is installed and web UI is accessible at `https://<proxmox-lan-ip>:8006`
 - [ ] `vmbr0` network bridge is configured and VMs can reach the LAN
 - [ ] Tailscale is installed on the Proxmox host and shows as online in the admin console
-- [ ] `ping chronobyte.tailnet.ts.net` responds from your laptop
+- [ ] `ping chronobyte.daggertooth-scala.ts.net` responds from your laptop
 - [ ] Proxmox API token created with ID matching `PM_API_TOKEN_ID` in Bitwarden
 - [ ] Local storage has **Snippets** enabled
 - [ ] VM template 9000 created (Ubuntu 24.04 cloud-init image)

@@ -156,7 +156,7 @@ sudo kubectl -n kube-system logs -l app=flannel --tail=30 | grep -E "tailscale|i
 
 # On any affected node, check if flannel.1 interface exists
 # (run via kubectl debug or node SSH)
-ssh ubuntu@k3s-agent-1.tailnet.ts.net "ip link show flannel.1"
+ssh ubuntu@k3s-agent-1.daggertooth-scala.ts.net "ip link show flannel.1"
 ```
 
 If `flannel.1` is missing, see the [Flannel over Tailscale](../flannel-over-tailscale.md) guide
@@ -250,7 +250,7 @@ kubectl logs -n authentik deployment/authentik-server --since=2m | grep -i error
 
 **Log in to Authentik:**
 
-1. Open `https://authentik.tailnet.ts.net`
+1. Open `https://authentik.daggertooth-scala.ts.net`
 2. Log in as `akadmin` with the bootstrap password (from Phase 6.3)
 3. Navigate to **Applications → Applications** - verify your configured apps are listed
 4. Navigate to **Applications → Outposts** - verify the Embedded Outpost shows as healthy
@@ -280,7 +280,7 @@ kubectl logs -n stalwart deployment/stalwart --since=2m | grep -iE "error|panic|
 
 **Log in to the admin UI:**
 
-1. Open `https://mail.tailnet.ts.net`
+1. Open `https://mail.daggertooth-scala.ts.net`
 2. Log in as `admin` with the password from Phase 6.4
 3. Navigate to **Directory → Accounts** - verify `noreply@example.com` exists
 
@@ -339,7 +339,7 @@ If all checks above pass, the homelab has been successfully recovered.
 - [ ] Tailscale operator is running and authenticated
 - [ ] Longhorn storage nodes are healthy
 - [ ] Authentik UI accessible, applications and outpost configured
-- [ ] Stalwart admin UI accessible at `mail.tailnet.ts.net`
+- [ ] Stalwart admin UI accessible at `mail.daggertooth-scala.ts.net`
 - [ ] Test email sends successfully via Authentik → Stalwart → Resend
 - [ ] S3 bucket is accessible
 - [ ] Flux auto-reconciles a test commit from GitHub
@@ -356,7 +356,7 @@ If all checks above pass, the homelab has been successfully recovered.
 
 3. **Verify backup schedule** is running on the game server:
    ```bash
-   ssh ubuntu@game-server.tailnet.ts.net
+   ssh ubuntu@game-server.daggertooth-scala.ts.net
    sudo systemctl status minecraft-backup.timer
    ```
 
