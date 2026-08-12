@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radar
+  namespace: radar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radar
+  template:
+    metadata:
+      labels:
+        app: radar
+    spec:
+      serviceAccountName: radar
+      containers:
+        - name: radar
+          image: ghcr.io/skyhook-io/radar:v1.10.0
+          args:
+            - --port=9280
+            - --listen-address=0.0.0.0
+            - --no-browser
+          ports:
+            - name: http
+              containerPort: 9280
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 9280
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 9280
+            initialDelaySeconds: 15
+            periodSeconds: 30
