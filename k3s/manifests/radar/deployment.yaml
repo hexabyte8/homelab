@@ -16,7 +16,7 @@ spec:
       serviceAccountName: radar
       containers:
         - name: radar
-          image: ghcr.io/skyhook-io/radar:v1.8.3
+          image: ghcr.io/skyhook-io/radar:1.9.2
           args:
             - --port=9280
             - --listen-address=0.0.0.0
