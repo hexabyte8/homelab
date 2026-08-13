@@ -38,7 +38,6 @@ spec:
               [ -c /dev/net/tun ] || mknod /dev/net/tun c 10 200
               chmod 0666 /dev/net/tun
           securityContext:
-            allowPrivilegeEscalation: false
             capabilities:
               add:
                 - MKNOD
@@ -72,7 +71,6 @@ spec:
             - containerPort: 9091
               name: http
           securityContext:
-            allowPrivilegeEscalation: false
             capabilities:
               add:
                 - NET_ADMIN
