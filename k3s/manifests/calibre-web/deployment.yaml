@@ -23,7 +23,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: calibre-web
-          image: crocodilestick/calibre-web-automated:latest
+          image: crocodilestick/calibre-web-automated:v4.0.6
           imagePullPolicy: Always
           ports:
             - containerPort: 8083

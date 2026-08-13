@@ -111,23 +111,13 @@ spec:
             gnetId: 7249
             revision: 1
             datasource: Prometheus
-          # Suricata / Loki log explorer (community dashboard for EVE JSON)
-          suricata-loki:
-            gnetId: 13950
-            revision: 2
-            datasource: Loki
           # Hardware temperature & sensor dashboard (hwmon via node-exporter)
           hardware-sensors:
             gnetId: 12950
             revision: 1
             datasource: Prometheus
 
-      additionalDataSources:
-        - name: Loki
-          type: loki
-          url: http://loki.monitoring.svc.cluster.local:3100
-          access: proxy
-          isDefault: false
+      additionalDataSources: []
 
       resources:
         requests:
@@ -247,6 +237,18 @@ spec:
 
     kubeStateMetrics:
       enabled: true
+
+    # ── k3s compatibility ─────────────────────────────────────────────────────
+    # These components do not run as pods in k3s, so the default scrape
+    # Services have no endpoints. Disable them to silence the Radar warnings.
+    kubeControllerManager:
+      enabled: false
+    kubeScheduler:
+      enabled: false
+    kubeEtcd:
+      enabled: false
+    kubeProxy:
+      enabled: false
 
     # ── CRD install ───────────────────────────────────────────────────────────
     crds:
