@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: caretta
+  namespace: caretta
+spec:
+  selector:
+    matchLabels:
+      app: caretta
+  namespaceSelector:
+    matchNames:
+      - caretta
+  endpoints:
+    - port: prom-metrics
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s

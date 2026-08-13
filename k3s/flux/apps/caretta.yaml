@@ -1,4 +1,24 @@
 ---
+# The Helm chart's serviceMonitor.enabled flag doesn't render a Service or ServiceMonitor,
+# so we manage those explicitly in k3s/manifests/caretta/ via this Kustomization.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: caretta-config
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 5m
+  prune: true
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./k3s/manifests/caretta
+  dependsOn:
+    - name: caretta
+---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

@@ -28,8 +28,10 @@ spec:
     grafana:
       enabled: true
 
-      podAnnotations:
-        # Reloader: restart Grafana pod when either secret changes
+      # Reloader watches Deployment metadata annotations (not pod template annotations).
+      # Using `annotations` here ensures the annotation lands on the Deployment resource
+      # so Reloader triggers a rollout when grafana-admin-secret or grafana-oauth-secret change.
+      annotations:
         secret.reloader.stakater.com/reload: "grafana-admin-secret,grafana-oauth-secret"
 
       # Admin credentials synced from BWS via grafana-admin-secret
