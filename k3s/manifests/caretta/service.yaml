@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: caretta
+  namespace: caretta
+  labels:
+    app: caretta
+spec:
+  clusterIP: None  # headless — scrape each pod individually via ServiceMonitor
+  selector:
+    app: caretta
+  ports:
+    - name: prom-metrics
+      port: 7117
+      targetPort: 7117
+      protocol: TCP
