@@ -49,7 +49,7 @@ spec:
               mountPath: /etc/stalwart
       containers:
         - name: stalwart
-          image: stalwartlabs/stalwart:v0.15
+          image: stalwartlabs/stalwart:v0.16.17
           imagePullPolicy: Always
           ports:
             - name: http
