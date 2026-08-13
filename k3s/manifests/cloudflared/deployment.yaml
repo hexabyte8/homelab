@@ -20,6 +20,7 @@ spec:
       labels:
         app: cloudflared
     spec:
+      automountServiceAccountToken: false
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -42,11 +43,20 @@ spec:
                 secretKeyRef:
                   name: cloudflared-tunnel-credentials
                   key: tunnel-token
+          securityContext:
+            allowPrivilegeEscalation: false
           volumeMounts:
             - name: config
               mountPath: /etc/cloudflared/config.yaml
               subPath: config.yaml
               readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 2000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /ready

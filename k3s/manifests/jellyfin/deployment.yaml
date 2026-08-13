@@ -15,6 +15,7 @@ spec:
       annotations:
         kubectl.kubernetes.io/restartedAt: "2026-03-20T17:15:00Z"
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: jellyfin
           image: jellyfin/jellyfin:10.10.7
@@ -27,6 +28,8 @@ spec:
               mountPath: /config
             - name: media
               mountPath: /media
+          securityContext:
+            allowPrivilegeEscalation: false
           resources:
             requests:
               cpu: 500m
@@ -36,6 +39,17 @@ spec:
               cpu: "2"
               memory: 4Gi
               ephemeral-storage: 2Gi
+          readinessProbe:
+            tcpSocket:
+              port: 8096
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 8096
+            initialDelaySeconds: 40
+            periodSeconds: 30
       volumes:
         - name: config
           persistentVolumeClaim:

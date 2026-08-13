@@ -13,6 +13,7 @@ spec:
       labels:
         app: adguard-home
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: adguard-home
           image: adguard/adguardhome:v0.107.63
@@ -31,11 +32,14 @@ spec:
               mountPath: /opt/adguardhome/conf
             - name: work
               mountPath: /opt/adguardhome/work
+          securityContext:
+            allowPrivilegeEscalation: false
           resources:
             requests:
               cpu: 250m
               memory: 3Gi
             limits:
+              cpu: 1000m
               memory: 6Gi
           readinessProbe:
             httpGet:
