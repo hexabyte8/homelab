@@ -13,6 +13,7 @@ spec:
       labels:
         app: ntfy
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: ntfy
           image: binwiederhier/ntfy:v2.11.0
@@ -34,11 +35,14 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/cache/ntfy
+          securityContext:
+            allowPrivilegeEscalation: false
           resources:
             requests:
               cpu: 50m
               memory: 64Mi
             limits:
+              cpu: 250m
               memory: 128Mi
           readinessProbe:
             httpGet:

@@ -13,6 +13,7 @@ spec:
       labels:
         app: calibre-web
     spec:
+      automountServiceAccountToken: false
       # jellyfin-media is ReadWriteOnce — must be on the same node as Jellyfin.
       affinity:
         podAffinity:
@@ -47,6 +48,8 @@ spec:
             - name: media
               mountPath: /cwa-book-ingest
               subPath: cwa-ingest
+          securityContext:
+            allowPrivilegeEscalation: false
           resources:
             requests:
               cpu: 100m
@@ -56,6 +59,17 @@ spec:
               cpu: "1"
               memory: 1Gi
               ephemeral-storage: 512Mi
+          readinessProbe:
+            tcpSocket:
+              port: 8083
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 8083
+            initialDelaySeconds: 40
+            periodSeconds: 30
       volumes:
         - name: config
           persistentVolumeClaim:

@@ -13,6 +13,7 @@ spec:
       labels:
         app: uptime-kuma
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: uptime-kuma
           image: louislam/uptime-kuma:1.23.17
@@ -25,6 +26,28 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /app/data
+          securityContext:
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3001
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3001
+            initialDelaySeconds: 40
+            periodSeconds: 30
       volumes:
         - name: data
           persistentVolumeClaim:

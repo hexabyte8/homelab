@@ -15,6 +15,7 @@ spec:
       labels:
         app: stalwart
     spec:
+      automountServiceAccountToken: false
       initContainers:
         # Hash the admin password and substitute all secrets into config.toml.
         # Uses alpine for openssl SHA-512-crypt support (stalwart requires hashed passwords).
@@ -42,6 +43,8 @@ spec:
                 secretKeyRef:
                   name: stalwart-secrets
                   key: resend-api-key
+          securityContext:
+            allowPrivilegeEscalation: false
           volumeMounts:
             - name: config-template
               mountPath: /config-template
@@ -64,6 +67,8 @@ spec:
           env:
             - name: TZ
               value: UTC
+          securityContext:
+            allowPrivilegeEscalation: false
           volumeMounts:
             - name: data
               mountPath: /opt/stalwart
@@ -77,6 +82,7 @@ spec:
               cpu: 100m
               memory: 256Mi
             limits:
+              cpu: 500m
               memory: 512Mi
           readinessProbe:
             tcpSocket:

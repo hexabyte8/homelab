@@ -15,6 +15,7 @@ spec:
       annotations:
         kubectl.kubernetes.io/restartedAt: "2026-03-20T17:15:00Z"
     spec:
+      automountServiceAccountToken: false
       # Must run on the same node as Jellyfin because both share the
       # ReadWriteOnce jellyfin-media PVC (k3s local-path only supports RWO).
       affinity:
@@ -52,6 +53,8 @@ spec:
             - sh
             - -c
             - cp /vpn-secret/vpn.ovpn /etc/openvpn/custom/default.ovpn
+          securityContext:
+            allowPrivilegeEscalation: false
           volumeMounts:
             - name: vpn-secret
               mountPath: /vpn-secret
@@ -133,6 +136,17 @@ spec:
               cpu: "1"
               memory: 512Mi
               ephemeral-storage: 1Gi
+          readinessProbe:
+            tcpSocket:
+              port: 9091
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 9091
+            initialDelaySeconds: 40
+            periodSeconds: 30
       volumes:
         - name: config
           persistentVolumeClaim:
