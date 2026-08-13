@@ -7,6 +7,7 @@ kind: Kustomization
 resources:
   - namespaces.yaml
   # Helm-based infrastructure
+  - caretta.yaml
   - cert-manager.yaml
   - cnpg-operator.yaml
   - falco.yaml

@@ -99,3 +99,12 @@ metadata:
 spec:
   interval: 1h
   url: https://stakater.github.io/stakater-charts
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: groundcover
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://helm.groundcover.com/
