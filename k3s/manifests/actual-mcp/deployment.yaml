@@ -20,8 +20,11 @@ spec:
         configmap.reloader.stakater.com/reload: "actual-mcp-config"
     spec:
       enableServiceLinks: false
+      automountServiceAccountToken: false
       securityContext:
         fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: actual-mcp
           image: sstefanov/actual-mcp:v1.12.0
@@ -32,6 +35,12 @@ spec:
           ports:
             - name: http
               containerPort: 3000
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           envFrom:
             - configMapRef:
                 name: actual-mcp-config

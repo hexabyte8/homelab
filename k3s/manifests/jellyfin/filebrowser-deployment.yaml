@@ -47,6 +47,8 @@ spec:
               cpu: 500m
               memory: 256Mi
               ephemeral-storage: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
       volumes:
         - name: config
           persistentVolumeClaim:
