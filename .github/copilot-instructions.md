@@ -37,6 +37,27 @@ No `Authorization` header is needed.
 
 ---
 
+### radar — dependency & vulnerability analysis
+
+| Property | Value |
+|---|---|
+| Transport | HTTP (Streamable HTTP / SSE) |
+| URL | `https://mcp-radar.daggertooth-scala.ts.net/mcp` |
+| Auth | None — presence on the tailnet is the credential |
+| Port | 443 (Tailscale Ingress → cluster Service on 9280) |
+
+**What it provides:** tools to analyse dependencies, detect outdated packages,
+and surface CVEs across the repositories/projects tracked in Radar.
+
+**When to use it:** whenever a task involves dependency health, version upgrades,
+or vulnerability triage (e.g. "are there any critical CVEs in my dependencies?",
+"what packages are out of date?").
+
+**How to call it:** use the `radar` MCP server name exactly as configured.
+No `Authorization` header is needed.
+
+---
+
 ## Networking context
 
 - The runner joins the tailnet as `tag:copilot` via the OAuth client stored in
@@ -45,8 +66,9 @@ No `Authorization` header is needed.
 - The ACL grants `tag:copilot → {tag:k8s-operator, tag:k8s-operator-proxy,
   tag:k8s}` on `tcp:443` only. The agent cannot SSH to servers or reach any
   other tailnet node.
-- MagicDNS is enabled (`tailscale set --accept-dns=true`) so the hostname
-  `mcp-kubernetes.daggertooth-scala.ts.net` resolves correctly inside the runner.
+- MagicDNS is enabled (`tailscale set --accept-dns=true`) so hostnames like
+  `mcp-kubernetes.daggertooth-scala.ts.net` and
+  `mcp-radar.daggertooth-scala.ts.net` resolve correctly inside the runner.
 
 ---
 
