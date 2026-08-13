@@ -16,8 +16,6 @@ spec:
     kind: GitRepository
     name: flux-system
   path: ./k3s/manifests/caretta
-  dependsOn:
-    - name: caretta
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
