@@ -49,6 +49,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            - name: tmp
+              mountPath: /tmp
           resources:
             requests:
               cpu: 50m
@@ -71,3 +73,5 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: actual-mcp-data
+        - name: tmp
+          emptyDir: {}
