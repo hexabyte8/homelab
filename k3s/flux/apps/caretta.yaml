@@ -1,0 +1,51 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: caretta
+  namespace: flux-system
+spec:
+  interval: 30m
+  releaseName: caretta
+  targetNamespace: caretta
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: caretta
+      version: "0.x"
+      sourceRef:
+        kind: HelmRepository
+        name: groundcover
+        namespace: flux-system
+  values:
+    # Tolerate all nodes (including control-plane) so the eBPF DaemonSet
+    # captures traffic across the entire cluster.
+    tolerations:
+      - operator: "Exists"
+
+    # Disable bundled storage/visualisation — the cluster already has
+    # kube-prometheus-stack and Grafana; expose metrics via ServiceMonitor.
+    grafana:
+      enabled: false
+    victoria-metrics-single:
+      enabled: false
+
+    # Expose Prometheus metrics for kube-prometheus-stack to scrape.
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: monitoring
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
