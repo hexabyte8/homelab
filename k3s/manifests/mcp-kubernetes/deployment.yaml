@@ -17,6 +17,8 @@ spec:
       containers:
         - name: mcp-kubernetes
           image: ghcr.io/azure/mcp-kubernetes:v0.0.13
+          securityContext:
+            allowPrivilegeEscalation: false
           args:
             - --transport
             - streamable-http
