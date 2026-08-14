@@ -82,7 +82,11 @@ spec:
       enabled: false
 
     server:
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
       ingress:
         enabled: false
 
-    worker: {}
+    worker:
+      containerSecurityContext:
+        allowPrivilegeEscalation: false

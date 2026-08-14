@@ -27,6 +27,42 @@ spec:
     # modern_ebpf requires no kernel headers — best choice for k3s nodes
     driver:
       kind: modern_ebpf
+      modernEbpf:
+        # Required to allow allowPrivilegeEscalation: false — switches from
+        # privileged: true to explicit capability grants (BPF, SYS_RESOURCE,
+        # PERFMON, SYS_PTRACE). Without this, the chart auto-generates
+        # privileged: true which conflicts with allowPrivilegeEscalation: false.
+        leastPrivileged: true
+
+    # Set allowPrivilegeEscalation: false. leastPrivileged: true above is
+    # required — it replaces privileged: true with explicit capabilities.
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        add:
+          - BPF
+          - SYS_RESOURCE
+          - PERFMON
+          - SYS_PTRACE
+        drop:
+          - ALL
+
+    falcoctl:
+      artifact:
+        install:
+          securityContext:
+            allowPrivilegeEscalation: false
+        follow:
+          securityContext:
+            allowPrivilegeEscalation: false
+
+    # k8s-metacollector sub-chart — passes values through to the sub-chart
+    k8s-metacollector:
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
 
     # Structured JSON output for easier ingestion by log tools
     falco:

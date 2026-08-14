@@ -39,3 +39,5 @@ spec:
                     operator: NotIn
                     values:
                       - k3s-agent-1
+      securityContext:
+        allowPrivilegeEscalation: false
