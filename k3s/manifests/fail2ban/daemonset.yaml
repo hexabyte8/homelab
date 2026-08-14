@@ -35,7 +35,6 @@ spec:
             - name: F2B_DB_PURGE_AGE
               value: 7d
           securityContext:
-            privileged: true
             allowPrivilegeEscalation: false
             capabilities:
               add:

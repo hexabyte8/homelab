@@ -60,6 +60,11 @@ spec:
       labels:
         release: monitoring
 
+    securityContext:
+      privileged: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+
     resources:
       requests:
         cpu: 50m
