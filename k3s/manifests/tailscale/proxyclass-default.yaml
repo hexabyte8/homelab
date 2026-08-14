@@ -18,3 +18,6 @@ spec:
         env:
           - name: TS_EXTRA_ARGS
             value: "--advertise-tags=tag:k8s-operator"
+      tailscaleContainer:
+        securityContext:
+          allowPrivilegeEscalation: false
