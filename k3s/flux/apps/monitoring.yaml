@@ -119,6 +119,21 @@ spec:
 
       additionalDataSources: []
 
+      initChownData:
+        securityContext:
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          runAsUser: 0
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault
+          capabilities:
+            add:
+              - CHOWN
+              - DAC_OVERRIDE
+            drop:
+              - ALL
+
       resources:
         requests:
           cpu: 50m
@@ -234,6 +249,14 @@ spec:
     # ── Exporters ─────────────────────────────────────────────────────────────
     nodeExporter:
       enabled: true
+
+    prometheus-node-exporter:
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
 
     kubeStateMetrics:
       enabled: true

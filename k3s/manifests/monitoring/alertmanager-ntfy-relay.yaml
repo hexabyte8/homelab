@@ -100,6 +100,8 @@ spec:
       containers:
         - name: relay
           image: python:3.12.13-slim
+          securityContext:
+            allowPrivilegeEscalation: false
           command: ["python3", "/app/relay.py"]
           env:
             - name: NTFY_URL

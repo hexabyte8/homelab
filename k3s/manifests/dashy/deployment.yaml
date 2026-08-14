@@ -21,6 +21,8 @@ spec:
         - name: dashy
           image: lissy93/dashy:3.1.13
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
           ports:
             - name: http
               containerPort: 8080
