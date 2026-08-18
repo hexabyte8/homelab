@@ -116,6 +116,13 @@ data:
       - name: Monitoring & Notifications
         icon: fas fa-chart-line
         items:
+          - title: Radar
+            description: System monitoring dashboard
+            url: https://radar.daggertooth-scala.ts.net
+            statusCheckUrl: http://radar.radar.svc.cluster.local
+            icon: hl-radar
+            target: newtab
+
           - title: Uptime Kuma
             description: Service uptime monitoring
             url: https://uptime-kuma.daggertooth-scala.ts.net
