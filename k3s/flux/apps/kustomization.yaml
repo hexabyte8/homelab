@@ -41,3 +41,8 @@ resources:
   - radar.yaml
   - stalwart.yaml
   - uptime-kuma.yaml
+  - mealie.yaml
+  - velero-config.yaml
+  - velero.yaml
+  - loki.yaml
+  - promtail.yaml

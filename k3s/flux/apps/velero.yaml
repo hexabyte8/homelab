@@ -1,0 +1,102 @@
+---
+# Velero — cluster-level backup and restore for manifests and volumes.
+# Uses AWS S3 (or compatible) as the backup storage location.
+# Credentials injected from velero-s3-credentials Secret (synced via BWS).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: velero
+  namespace: flux-system
+spec:
+  interval: 30m
+  releaseName: velero
+  targetNamespace: velero
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: velero
+      version: "9.x"
+      sourceRef:
+        kind: HelmRepository
+        name: vmware-tanzu
+        namespace: flux-system
+  values:
+    # ── Credentials ──────────────────────────────────────────────────────────
+    # velero-s3-credentials Secret is synced by the sm-operator from BWS.
+    # The Velero chart mounts it as a file at /credentials/cloud.
+    credentials:
+      useSecret: true
+      existingSecret: velero-s3-credentials
+      secretContents: {}
+
+    # ── Backup Storage Location ───────────────────────────────────────────────
+    # Replace REPLACE_ME values with your actual S3 bucket name and region.
+    configuration:
+      backupStorageLocation:
+        - name: default
+          provider: aws
+          bucket: REPLACE_ME_BUCKET
+          default: true
+          config:
+            region: us-east-1
+            # Uncomment and set if using an S3-compatible endpoint (e.g. MinIO):
+            # s3Url: https://s3.example.com
+            # s3ForcePathStyle: "true"
+      volumeSnapshotLocation:
+        - name: default
+          provider: aws
+          config:
+            region: us-east-1
+
+    # ── Init containers (plugin download) ────────────────────────────────────
+    initContainers:
+      - name: velero-plugin-for-aws
+        image: velero/velero-plugin-for-aws:v1.12.0
+        volumeMounts:
+          - mountPath: /target
+            name: plugins
+
+    # ── Schedules ─────────────────────────────────────────────────────────────
+    schedules:
+      daily-full:
+        disabled: false
+        schedule: "0 2 * * *"
+        template:
+          ttl: 720h   # 30 days retention
+          includedNamespaces:
+            - "*"
+          storageLocation: default
+          volumeSnapshotLocations:
+            - default
+
+    # ── Resources ─────────────────────────────────────────────────────────────
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    # ── Node agent (for volume backups via restic/kopia) ─────────────────────
+    nodeAgent:
+      enabled: true
+      podVolumePath: /var/lib/kubelet/pods
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true

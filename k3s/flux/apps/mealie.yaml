@@ -1,0 +1,20 @@
+---
+# Mealie — self-hosted meal planning and recipe management.
+# Deployed as plain Kubernetes manifests (no Helm chart needed).
+# Gated behind Authentik ForwardAuth via Cloudflare Tunnel.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: mealie
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 5m
+  prune: true
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./k3s/manifests/mealie
+  targetNamespace: mealie

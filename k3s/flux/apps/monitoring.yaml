@@ -117,7 +117,15 @@ spec:
             revision: 1
             datasource: Prometheus
 
-      additionalDataSources: []
+      additionalDataSources:
+        - name: Loki
+          type: loki
+          uid: loki
+          access: proxy
+          url: http://loki-headless.monitoring.svc.cluster.local:3100
+          isDefault: false
+          jsonData:
+            maxLines: 1000
 
       initChownData:
         securityContext:
