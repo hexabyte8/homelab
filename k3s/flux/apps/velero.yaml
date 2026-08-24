@@ -2,6 +2,10 @@
 # Velero — cluster-level backup and restore for manifests and volumes.
 # Uses AWS S3 (or compatible) as the backup storage location.
 # Credentials injected from velero-s3-credentials Secret (synced via BWS).
+#
+# ⚠ Before merging: set the correct S3 bucket name in the `bucket` field below
+#   (search for REPLACE_ME_BUCKET). The HelmRelease will fail reconciliation
+#   until a valid bucket name is provided.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -11,6 +15,8 @@ spec:
   interval: 30m
   releaseName: velero
   targetNamespace: velero
+  dependsOn:
+    - name: velero-config
   install:
     createNamespace: true
     remediation:
