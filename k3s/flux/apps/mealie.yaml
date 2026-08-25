@@ -1,7 +1,7 @@
 ---
 # Mealie — self-hosted meal planning and recipe management.
 # Deployed as plain Kubernetes manifests (no Helm chart needed).
-# Gated behind Authentik ForwardAuth via Cloudflare Tunnel.
+# Authenticates via Authentik OIDC (native, no ForwardAuth needed).
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:

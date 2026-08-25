@@ -1,15 +1,14 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: mealie-cloudflare
+  name: mealie
   namespace: mealie
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-production
+    tailscale.com/proxy-class: "prod"
 spec:
-  ingressClassName: traefik
+  ingressClassName: tailscale
   rules:
-    - host: mealie.chronobyte.net
-      http:
+    - http:
         paths:
           - path: /
             pathType: Prefix
@@ -20,5 +19,4 @@ spec:
                   number: 9000
   tls:
     - hosts:
-        - mealie.chronobyte.net
-      secretName: mealie-cloudflare-tls
+        - mealie

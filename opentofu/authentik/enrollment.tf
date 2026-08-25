@@ -60,6 +60,18 @@ resource "authentik_stage_prompt_field" "enrol_password_repeat" {
   order     = 40
 }
 
+# ---------- Validation policy ----------
+
+resource "authentik_policy_expression" "enrolment_password_match" {
+  name       = "enrolment-password-match"
+  expression = <<-EOT
+    if request.context.get("prompt_data", {}).get("password") != request.context.get("prompt_data", {}).get("password_repeat"):
+        ak_message("Passwords do not match.")
+        return False
+    return True
+  EOT
+}
+
 resource "authentik_stage_prompt" "enrolment" {
   name = "default-invitation-enrolment-prompts"
   fields = [
@@ -68,6 +80,9 @@ resource "authentik_stage_prompt" "enrolment" {
     authentik_stage_prompt_field.enrol_email.id,
     authentik_stage_prompt_field.enrol_password.id,
     authentik_stage_prompt_field.enrol_password_repeat.id,
+  ]
+  validation_policies = [
+    authentik_policy_expression.enrolment_password_match.id,
   ]
 }
 
@@ -108,7 +123,7 @@ resource "authentik_flow_stage_binding" "enrolment_invitation" {
   target               = authentik_flow.enrolment.uuid
   stage                = authentik_stage_invitation.enrolment.id
   order                = 10
-  evaluate_on_plan     = true
+  evaluate_on_plan     = false
   re_evaluate_policies = false
 }
 
