@@ -48,8 +48,7 @@ data:
   MONGO_USERNAME: "pyos"
   MONGO_USERS_LIST: "pyos:readWrite:MANAGED_BY_BWS"
   MONGO_DBS_LIST: "image,fail2ban,loginHistory,applications,profiles,desktop"
-  # MONGODB_URL is the connection string for pyos; password comes from BWS secret.
-  MONGODB_URL: "******mongodb.abcdesktop.svc.cluster.local:27017/image"
+  MONGODB_URL: "******mongodb"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -103,7 +102,8 @@ spec:
           configMap:
             name: configmap-mongodb-scripts
         - name: data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: mongodb-data
 ---
 apiVersion: v1
 kind: Service

@@ -177,7 +177,7 @@ data:
     lpadmin:!::root,{{ uid }}
     messagebus:!::
     ssl-cert:!::
-    pulse:x:!::
+    pulse:!::
     pulse-access:!::
     plocate:!::
     input:!::

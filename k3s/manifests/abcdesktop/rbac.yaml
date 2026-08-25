@@ -8,6 +8,7 @@ metadata:
 ---
 # Role grants pyos the permissions it needs to create/manage user desktop pods,
 # their secrets, configmaps and PVCs inside the abcdesktop namespace.
+# PersistentVolumes are cluster-scoped and are managed via the ClusterRole below.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -39,9 +40,6 @@ rules:
     resources: ["pods/log"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
-    resources: ["persistentvolumes"]
-    verbs: ["get", "list", "create", "patch", "delete"]
-  - apiGroups: [""]
     resources: ["persistentvolumeclaims"]
     verbs: ["get", "list", "watch", "update", "create", "delete"]
 ---
@@ -57,4 +55,28 @@ subjects:
 roleRef:
   kind: Role
   name: pyos-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# PersistentVolumes are cluster-scoped, so they require a ClusterRole.
+# pyos creates and manages PVs when provisioning user home-directory volumes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pyos-pv-role
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "create", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pyos-pv-rbac
+subjects:
+  - kind: ServiceAccount
+    name: pyos-serviceaccount
+    namespace: abcdesktop
+roleRef:
+  kind: ClusterRole
+  name: pyos-pv-role
   apiGroup: rbac.authorization.k8s.io

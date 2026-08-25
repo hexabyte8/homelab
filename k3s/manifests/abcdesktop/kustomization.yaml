@@ -6,5 +6,6 @@ resources:
   - bw-secret.yaml
   - user-templates.yaml
   - config.yaml
+  - pvc.yaml
   - deployments.yaml
   - ingress.yaml

@@ -26,3 +26,10 @@ spec:
     name: flux-system
   path: ./k3s/manifests/abcdesktop
   targetNamespace: abcdesktop
+  # Inject OIDC credentials from the BWS-managed Secret into the od.config
+  # ConfigMap at reconcile time, keeping the values out of Git.
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: abcdesktop-oidc-secret
+        optional: false
