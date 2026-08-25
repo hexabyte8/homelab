@@ -39,3 +39,7 @@ spec:
               - ALL
       watchGlobally: false   # only watch annotated resources
       logFormat: json
+      # Namespaces containing Deployments with reloader annotations.
+      # reloader's own namespace is always watched; list every additional
+      # namespace that has `secret.reloader.stakater.com/reload` annotations.
+      namespaceSelector: "monitoring,mealie"
