@@ -53,7 +53,6 @@ jobs:
             9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
             cfa6860a-116e-4893-9b23-b48e0176f8cd > GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
             1f5eb6e8-6c44-4cec-9a9d-b49b0173d913 > ACTUAL_OPENID_CLIENT_SECRET
-            REPLACE_ME_MEALIE_OIDC_CLIENT_SECRET_UUID > MEALIE_OIDC_CLIENT_SECRET
 
       # Tailscale is needed for proxmox (API + SSH over MagicDNS) and authentik
       # (Authentik runs on the K3s cluster on Proxmox; its Cloudflare tunnel
@@ -217,8 +216,9 @@ jobs:
           echo "[OK] ACTUAL_OPENID_CLIENT_ID synced to BWS"
 
           # REPLACE_ME_MEALIE_OIDC_CLIENT_ID_UUID = OIDC_CLIENT_ID in mealie bw-secret.yaml
-          bws secret edit REPLACE_ME_MEALIE_OIDC_CLIENT_ID_UUID --value "$MEALIE_CLIENT_ID"
-          echo "[OK] MEALIE OIDC_CLIENT_ID synced to BWS"
+          # TODO: uncomment once BWS entry is created and UUID is known:
+          # bws secret edit <uuid> --value "$MEALIE_CLIENT_ID"
+          echo "[SKIP] MEALIE OIDC_CLIENT_ID — BWS UUID not yet set (see k3s/manifests/mealie/bw-secret.yaml)"
 
           # cfa6860b = GF_AUTH_GENERIC_OAUTH_CLIENT_ID in monitoring bw-secret
           # (update if a grafana client_id BWS entry exists)

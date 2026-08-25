@@ -14,6 +14,7 @@ variable "mealie_client_secret" {
   description = "OAuth2 client secret for the Mealie provider. Rotated weekly by the secrets-rotation workflow and stored in BWS."
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "authentik_url" {
