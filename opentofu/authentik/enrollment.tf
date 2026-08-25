@@ -114,7 +114,7 @@ resource "authentik_flow" "enrolment" {
   title          = "Welcome to the Homelab"
   slug           = "default-invitation-enrollment"
   designation    = "enrollment"
-  authentication = "none"
+  authentication = "require_unauthenticated"
   layout         = "stacked"
   denied_action  = "message_continue"
 }
