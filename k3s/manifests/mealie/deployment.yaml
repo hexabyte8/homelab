@@ -3,18 +3,24 @@ kind: Deployment
 metadata:
   name: mealie
   namespace: mealie
-  annotations:
-    secret.reloader.stakater.com/reload: "mealie-secret"
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: mealie
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
         app: mealie
+      annotations:
+        # Reloader: restart pod when either secret or config is rotated
+        secret.reloader.stakater.com/reload: "mealie-secret,mealie-oidc-secret"
+        configmap.reloader.stakater.com/reload: "mealie-config"
     spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 911
@@ -26,49 +32,44 @@ spec:
         - name: mealie
           image: ghcr.io/mealie-recipes/mealie:v3.24.0
           ports:
-            - containerPort: 9000
-          env:
-            - name: BASE_URL
-              value: "https://mealie.chronobyte.net"
-            - name: ALLOW_SIGNUP
-              value: "false"
-            - name: DB_ENGINE
-              value: "sqlite"
-            - name: OIDC_AUTH_ENABLED
-              value: "false"
-            - name: TZ
-              value: "America/New_York"
+            - name: http
+              containerPort: 9000
           envFrom:
+            - configMapRef:
+                name: mealie-config
             - secretRef:
                 name: mealie-secret
+            - secretRef:
+                name: mealie-oidc-secret
           volumeMounts:
             - name: data
               mountPath: /app/data
-          resources:
-            requests:
-              cpu: 50m
-              memory: 128Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
             capabilities:
               drop:
                 - ALL
-          livenessProbe:
-            httpGet:
-              path: /api/app/about
-              port: 9000
-            initialDelaySeconds: 30
-            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           readinessProbe:
             httpGet:
               path: /api/app/about
               port: 9000
             initialDelaySeconds: 15
             periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/app/about
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 30
       volumes:
         - name: data
           persistentVolumeClaim:

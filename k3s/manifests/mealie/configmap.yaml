@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mealie-config
+  namespace: mealie
+data:
+  # OIDC — credentials are injected from mealie-oidc-secret
+  OIDC_AUTH_ENABLED: "true"
+  OIDC_SIGNUP_ENABLED: "true"
+  OIDC_CONFIGURATION_URL: "https://authentik.chronobyte.net/application/o/mealie/.well-known/openid-configuration"
+  OIDC_USER_GROUP: "family&friends"
+  # Application
+  BASE_URL: "https://mealie.chronobyte.net"
+  TZ: "America/Chicago"
+  ALLOW_SIGNUP: "false"

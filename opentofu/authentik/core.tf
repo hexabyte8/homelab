@@ -72,14 +72,6 @@ resource "authentik_provider_proxy" "uptime_kuma" {
   invalidation_flow  = data.authentik_flow.default_invalidation.id
 }
 
-resource "authentik_provider_proxy" "mealie" {
-  name               = "mealie"
-  mode               = "forward_single"
-  external_host      = "https://mealie.${var.cloudflare_zone_name}"
-  authorization_flow = data.authentik_flow.default_authorization.id
-  invalidation_flow  = data.authentik_flow.default_invalidation.id
-}
-
 # ---------- Applications ----------
 
 resource "authentik_application" "dashy" {
@@ -109,15 +101,6 @@ resource "authentik_application" "uptime_kuma" {
   open_in_new_tab   = false
 }
 
-resource "authentik_application" "mealie" {
-  name              = "Mealie"
-  slug              = "mealie"
-  protocol_provider = authentik_provider_proxy.mealie.id
-  meta_launch_url   = "https://mealie.${var.cloudflare_zone_name}"
-  meta_description  = "Mealie meal planning and recipe manager (public, ForwardAuth-protected)."
-  open_in_new_tab   = false
-}
-
 
 # ---------- Policy bindings ----------
 #
@@ -140,7 +123,6 @@ resource "authentik_outpost" "embedded" {
     authentik_provider_proxy.dashy.id,
     authentik_provider_proxy.calibre.id,
     authentik_provider_proxy.uptime_kuma.id,
-    authentik_provider_proxy.mealie.id,
   ]
   config = jsonencode({
     authentik_host          = "https://authentik.${var.cloudflare_zone_name}"
@@ -233,4 +215,44 @@ resource "authentik_application" "grafana" {
 output "grafana_oauth2_client_id" {
   description = "Authentik OAuth2 client_id for Grafana."
   value       = authentik_provider_oauth2.grafana.client_id
+}
+
+# ---------- OAuth2/OIDC provider — Mealie ----------
+#
+# Mealie uses OpenID Connect for authentication. After `tofu apply`, the
+# opentofu-reusable.yml workflow writes the generated client_secret to BWS.
+# The sm-operator then syncs it into the `mealie-oidc-secret` k8s Secret.
+
+resource "authentik_provider_oauth2" "mealie" {
+  name               = "Mealie"
+  client_id          = "mealie"
+  client_secret      = var.mealie_client_secret
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+  signing_key        = data.authentik_certificate_key_pair.default.id
+  property_mappings  = data.authentik_property_mapping_provider_scope.oidc_standard.ids
+  allowed_redirect_uris = [
+    {
+      matching_mode = "strict"
+      url           = "https://mealie.${var.cloudflare_zone_name}/login"
+    }
+  ]
+  sub_mode                   = "hashed_user_id"
+  include_claims_in_id_token = true
+  access_token_validity      = "hours=1"
+  refresh_token_validity     = "days=30"
+}
+
+resource "authentik_application" "mealie" {
+  name              = "Mealie"
+  slug              = "mealie"
+  protocol_provider = authentik_provider_oauth2.mealie.id
+  meta_launch_url   = "https://mealie.${var.cloudflare_zone_name}"
+  meta_description  = "Mealie recipe manager (public, OIDC via Authentik)."
+  open_in_new_tab   = false
+}
+
+output "mealie_oauth2_client_id" {
+  description = "Authentik OAuth2 client_id for Mealie."
+  value       = authentik_provider_oauth2.mealie.client_id
 }

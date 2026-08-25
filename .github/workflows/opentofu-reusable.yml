@@ -132,6 +132,7 @@ jobs:
           TF_VAR_default_vm_password: ${{ env.DEFAULT_VM_PASSWORD }}
           TF_VAR_grafana_client_secret: ${{ env.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET }}
           TF_VAR_actual_client_secret: ${{ env.ACTUAL_OPENID_CLIENT_SECRET }}
+          TF_VAR_mealie_client_secret: ${{ env.MEALIE_OIDC_CLIENT_SECRET }}
           TF_VAR_proxmox_host: "chronobyte"
           TF_VAR_public_ip: ${{ env.PUBLIC_IP }}
           TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
@@ -183,6 +184,7 @@ jobs:
           TF_VAR_default_vm_password: ${{ env.DEFAULT_VM_PASSWORD }}
           TF_VAR_grafana_client_secret: ${{ env.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET }}
           TF_VAR_actual_client_secret: ${{ env.ACTUAL_OPENID_CLIENT_SECRET }}
+          TF_VAR_mealie_client_secret: ${{ env.MEALIE_OIDC_CLIENT_SECRET }}
           TF_VAR_proxmox_host: "chronobyte"
           TF_VAR_public_ip: ${{ env.PUBLIC_IP }}
           TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
@@ -198,9 +200,11 @@ jobs:
           # Read client IDs from tofu state (deterministic but confirm from state)
           ACTUAL_CLIENT_ID=$(tofu output -raw actual_oauth2_client_id)
           GRAFANA_CLIENT_ID=$(tofu output -raw grafana_oauth2_client_id)
+          MEALIE_CLIENT_ID=$(tofu output -raw mealie_oauth2_client_id)
 
           echo "::add-mask::$ACTUAL_CLIENT_ID"
           echo "::add-mask::$GRAFANA_CLIENT_ID"
+          echo "::add-mask::$MEALIE_CLIENT_ID"
 
           curl -sSLo /tmp/bws.zip \
             "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.1.0/bws-x86_64-unknown-linux-gnu-2.1.0.zip"
@@ -210,6 +214,11 @@ jobs:
           # b5410954 = ACTUAL_OPENID_CLIENT_ID in bw-secret.yaml
           bws secret edit b5410954-5339-4a93-9c78-b49b0173a58b --value "$ACTUAL_CLIENT_ID"
           echo "[OK] ACTUAL_OPENID_CLIENT_ID synced to BWS"
+
+          # REPLACE_ME_MEALIE_OIDC_CLIENT_ID_UUID = OIDC_CLIENT_ID in mealie bw-secret.yaml
+          # TODO: uncomment once BWS entry is created and UUID is known:
+          # bws secret edit <uuid> --value "$MEALIE_CLIENT_ID"
+          echo "[SKIP] MEALIE OIDC_CLIENT_ID — BWS UUID not yet set (see k3s/manifests/mealie/bw-secret.yaml)"
 
           # cfa6860b = GF_AUTH_GENERIC_OAUTH_CLIENT_ID in monitoring bw-secret
           # (update if a grafana client_id BWS entry exists)

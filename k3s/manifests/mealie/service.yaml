@@ -4,6 +4,7 @@ metadata:
   name: mealie
   namespace: mealie
 spec:
+  type: ClusterIP
   selector:
     app: mealie
   ports:
