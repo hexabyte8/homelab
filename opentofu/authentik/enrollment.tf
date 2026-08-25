@@ -124,7 +124,7 @@ resource "authentik_flow_stage_binding" "enrolment_invitation" {
   stage                = authentik_stage_invitation.enrolment.id
   order                = 10
   evaluate_on_plan     = false
-  re_evaluate_policies = false
+  re_evaluate_policies = true
 }
 
 resource "authentik_flow_stage_binding" "enrolment_prompt" {
