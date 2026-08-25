@@ -1,0 +1,33 @@
+# Exposes the abcdesktop frontend via Cloudflare Tunnel → Traefik.
+# The router-od service (port 80) handles both the web UI and the WebSocket
+# connections to user desktop pods, so all traffic is forwarded there.
+#
+# Authentik ForwardAuth is intentionally NOT applied here — abcdesktop
+# manages its own authentication via the Authentik OIDC flow configured in
+# od.config, so adding a second ForwardAuth layer would break the login flow.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: abcdesktop-cloudflare
+  namespace: abcdesktop
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      kube-system-cloudflare-https-scheme@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: abcdesktop.chronobyte.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: http-router
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - abcdesktop.chronobyte.net
+      secretName: abcdesktop-cloudflare-tls

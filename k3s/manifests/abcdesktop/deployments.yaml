@@ -1,0 +1,652 @@
+---
+# ── MongoDB ──────────────────────────────────────────────────────────────────
+# Internal document store for sessions, app catalogue, fail2ban data etc.
+# The secret-mongodb Secret is built from abcdesktop-mongodb-secret (BWS)
+# plus static non-sensitive values defined inline below.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-mongodb-scripts
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: mongodb-config
+data:
+  ensure-users.js: |
+    const targetDbList = cat('/etc/abcdesktop/MONGO_DBS_LIST');
+    const rootUser     = cat('/etc/abcdesktop/admin/MONGO_ROOT_USERNAME');
+    const rootPass     = cat('/etc/abcdesktop/admin/MONGO_ROOT_PASSWORD');
+    const usersStr     = cat('/etc/abcdesktop/MONGO_USERS_LIST');
+    const adminDb      = db.getSiblingDB('admin');
+    adminDb.auth(rootUser, rootPass);
+    const targetDbs    = targetDbList.split(',');
+    for (targetDbStr of targetDbs) {
+      const targetDb   = db.getSiblingDB(targetDbStr);
+      const customRoles = adminDb.getRoles({rolesInfo:1, showBuiltinRoles:false}).map(r=>r.role).filter(Boolean);
+      usersStr.trim().split(';').map(s=>s.split(':')).forEach(user => {
+        const [username, rolesStr, password] = user;
+        if (!rolesStr || !password) return;
+        const userDoc = { user: username, pwd: password,
+          roles: rolesStr.split(',').map(role =>
+            customRoles.includes(role) ? {role, db:'admin'} : role) };
+        try { targetDb.createUser(userDoc); }
+        catch(err) { if (!err.message.toLowerCase().includes('duplicate')) throw err; }
+      });
+    }
+---
+# Secret that combines the two BWS-managed passwords with static config values.
+# The BWS operator writes MONGO_ROOT_PASSWORD and MONGO_PASSWORD into
+# abcdesktop-mongodb-secret; we reference those via an initContainer that
+# constructs a merged Secret — however, to keep the manifest simple we instead
+# define the static fields here and mount them alongside the BWS secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb-static-config
+  namespace: abcdesktop
+data:
+  MONGO_ROOT_USERNAME: "root"
+  MONGO_USERNAME: "pyos"
+  MONGO_USERS_LIST: "pyos:readWrite:MANAGED_BY_BWS"
+  MONGO_DBS_LIST: "image,fail2ban,loginHistory,applications,profiles,desktop"
+  # MONGODB_URL is the connection string for pyos; password comes from BWS secret.
+  MONGODB_URL: "******mongodb.abcdesktop.svc.cluster.local:27017/image"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-od
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: mongodb-od
+  template:
+    metadata:
+      labels:
+        run: mongodb-od
+        type: database
+    spec:
+      securityContext:
+        runAsNonRoot: false  # mongo:4.4 requires root
+      containers:
+        - name: mongodb
+          image: mongo:4.4
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: mongodb-static-config
+                  key: MONGO_ROOT_USERNAME
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: abcdesktop-mongodb-secret
+                  key: MONGO_ROOT_PASSWORD
+          volumeMounts:
+            - name: mongodb-scripts
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+            - name: data
+              mountPath: /data/db
+      volumes:
+        - name: mongodb-scripts
+          configMap:
+            name: configmap-mongodb-scripts
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: mongodb
+spec:
+  selector:
+    run: mongodb-od
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+---
+# ── Memcached ─────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memcached-od
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: memcached
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: memcached-od
+  template:
+    metadata:
+      labels:
+        run: memcached-od
+        type: database
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: memcached
+          image: memcached:alpine
+          resources:
+            requests:
+              cpu: 50m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: memcached
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: memcached
+spec:
+  selector:
+    run: memcached-od
+  ports:
+    - protocol: TCP
+      port: 11211
+      targetPort: 11211
+---
+# ── pyos (orchestrator) ───────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pyos-od
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: pyos
+  annotations:
+    secret.reloader.stakater.com/reload: "abcdesktop-jwt-keys,abcdesktop-mongodb-secret,abcdesktop-config"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: pyos-od
+  template:
+    metadata:
+      labels:
+        run: pyos-od
+    spec:
+      serviceAccountName: pyos-serviceaccount
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 4001
+        runAsGroup: 4001
+      containers:
+        - name: pyos
+          image: ghcr.io/abcdesktopio/pyos:4.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 2048Mi
+          livenessProbe:
+            httpGet:
+              path: /API/healthz
+              port: 8000
+            failureThreshold: 3
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /API/healthz
+              port: 8000
+            failureThreshold: 10
+            periodSeconds: 10
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MONGODB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: mongodb-static-config
+                  key: MONGODB_URL
+            - name: OAUTHLIB_RELAX_TOKEN_SCOPE
+              value: "1"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: jwtsigningkeys
+              mountPath: /config.signing
+              readOnly: true
+            - name: jwtusersigningkeys
+              mountPath: /config.usersigning
+              readOnly: true
+            - name: jwtpayloadkeys
+              mountPath: /config.payload
+              readOnly: true
+            - name: od-config
+              mountPath: /var/pyos/od.config
+              subPath: od.config
+              readOnly: true
+            - name: passwd-tmpl
+              mountPath: /var/pyos/passwd
+              subPath: passwd
+              readOnly: true
+            - name: group-tmpl
+              mountPath: /var/pyos/group
+              subPath: group
+              readOnly: true
+            - name: shadow-tmpl
+              mountPath: /var/pyos/shadow
+              subPath: shadow
+              readOnly: true
+            - name: gshadow-tmpl
+              mountPath: /var/pyos/gshadow
+              subPath: gshadow
+              readOnly: true
+      volumes:
+        - name: jwtsigningkeys
+          secret:
+            secretName: abcdesktop-jwt-keys
+            items:
+              - key: abcdesktop_jwt_desktop_signing_private_key.pem
+                path: abcdesktop_jwt_desktop_signing_private_key.pem
+              - key: abcdesktop_jwt_desktop_signing_public_key.pem
+                path: abcdesktop_jwt_desktop_signing_public_key.pem
+        - name: jwtusersigningkeys
+          secret:
+            secretName: abcdesktop-jwt-keys
+            items:
+              - key: abcdesktop_jwt_user_signing_private_key.pem
+                path: abcdesktop_jwt_user_signing_private_key.pem
+              - key: abcdesktop_jwt_user_signing_public_key.pem
+                path: abcdesktop_jwt_user_signing_public_key.pem
+        - name: jwtpayloadkeys
+          secret:
+            secretName: abcdesktop-jwt-keys
+            items:
+              - key: abcdesktop_jwt_desktop_payload_private_key.pem
+                path: abcdesktop_jwt_desktop_payload_private_key.pem
+              - key: abcdesktop_jwt_desktop_payload_public_key.pem
+                path: abcdesktop_jwt_desktop_payload_public_key.pem
+        - name: od-config
+          configMap:
+            name: abcdesktop-config
+        - name: passwd-tmpl
+          configMap:
+            name: abcdesktop-passwd-templatefile
+        - name: group-tmpl
+          configMap:
+            name: abcdesktop-group-templatefile
+        - name: shadow-tmpl
+          configMap:
+            name: abcdesktop-shadow-templatefile
+        - name: gshadow-tmpl
+          configMap:
+            name: abcdesktop-gshadow-templatefile
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pyos
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: pyos
+spec:
+  selector:
+    run: pyos-od
+  ports:
+    - port: 8000
+      protocol: TCP
+      targetPort: 8000
+---
+# ── Router (nginx-based API gateway) ─────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: router-od
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: router
+  annotations:
+    secret.reloader.stakater.com/reload: "abcdesktop-jwt-keys"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: router-od
+  template:
+    metadata:
+      labels:
+        run: router-od
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101  # nginx www-data
+      containers:
+        - name: nginx-router
+          image: ghcr.io/abcdesktopio/route:4.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            failureThreshold: 3
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            failureThreshold: 5
+            periodSeconds: 5
+          env:
+            - name: JWT_DESKTOP_PAYLOAD_PRIVATE_KEY
+              value: "/config.payload/abcdesktop_jwt_desktop_payload_private_key.pem"
+            - name: JWT_DESKTOP_SIGNING_PUBLIC_KEY
+              value: "/config.signing/abcdesktop_jwt_desktop_signing_public_key.pem"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: jwtsigningkeys
+              mountPath: /config.signing
+              readOnly: true
+            - name: jwtpayloadkeys
+              mountPath: /config.payload
+              readOnly: true
+      volumes:
+        - name: jwtsigningkeys
+          secret:
+            secretName: abcdesktop-jwt-keys
+            items:
+              - key: abcdesktop_jwt_desktop_signing_private_key.pem
+                path: abcdesktop_jwt_desktop_signing_private_key.pem
+              - key: abcdesktop_jwt_desktop_signing_public_key.pem
+                path: abcdesktop_jwt_desktop_signing_public_key.pem
+        - name: jwtpayloadkeys
+          secret:
+            secretName: abcdesktop-jwt-keys
+            items:
+              - key: abcdesktop_jwt_desktop_payload_private_key.pem
+                path: abcdesktop_jwt_desktop_payload_private_key.pem
+              - key: abcdesktop_jwt_desktop_payload_public_key.pem
+                path: abcdesktop_jwt_desktop_payload_public_key.pem
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-router
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: router
+spec:
+  selector:
+    run: router-od
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+# ── Frontend nginx ────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-od
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: nginx-od
+  template:
+    metadata:
+      labels:
+        run: nginx-od
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+      containers:
+        - name: nginx
+          image: ghcr.io/abcdesktopio/oc.nginx:4.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            failureThreshold: 3
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+            failureThreshold: 5
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: website
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: nginx
+spec:
+  selector:
+    run: nginx-od
+  ports:
+    - protocol: TCP
+      port: 80
+      name: http
+---
+# ── Speedtest (librespeed) ────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: speedtest-od
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: speedtest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: speedtest-od
+  template:
+    metadata:
+      labels:
+        run: speedtest-od
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: speedtest
+          image: ghcr.io/librespeed/speedtest:master-alpine
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: speedtest
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: speedtest
+spec:
+  selector:
+    run: speedtest-od
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+# ── Console (admin UI) ────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: console-od
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: console
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: console-od
+  template:
+    metadata:
+      labels:
+        run: console-od
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: console
+          image: ghcr.io/abcdesktopio/console:4.0
+          ports:
+            - containerPort: 80
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          resources:
+            requests:
+              cpu: 50m
+              memory: 16Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: console
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: console
+spec:
+  selector:
+    run: console-od
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 80
+---
+# ── Desktop endpoint (headless service for user X11 pods) ─────────────────────
+# pyos creates individual pod entries here as user desktop pods start.
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: desktop
+  namespace: abcdesktop
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: desktop
+  namespace: abcdesktop
+  labels:
+    abcdesktop/role: desktop
+spec:
+  clusterIP: None
+  selector:
+    type: x11server

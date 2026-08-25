@@ -1,0 +1,28 @@
+---
+# abcdesktop — cloud-native desktopless VDI service.
+# https://github.com/abcdesktopio
+#
+# Prerequisites before enabling:
+#   1. Generate RSA key pairs (see bw-secret.yaml comments) and store in BWS.
+#   2. Create Authentik OIDC provider + application for abcdesktop and store
+#      client_id / client_secret in BWS.
+#   3. Add a Cloudflare DNS CNAME for abcdesktop.chronobyte.net pointing to
+#      the Cloudflare Tunnel.
+#   4. Replace all REPLACE_ME placeholders in bw-secret.yaml with real UUIDs.
+#   5. Update the client_id / client_secret placeholders in config.yaml.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: abcdesktop
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 5m
+  prune: true
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./k3s/manifests/abcdesktop
+  targetNamespace: abcdesktop

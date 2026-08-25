@@ -72,6 +72,33 @@ spec:
       # Increase priority threshold to reduce noise in a homelab
       priority: WARNING
 
+      # Custom rules to suppress known-noisy alerts from abcdesktop user pods.
+      # abcdesktop runs graphical application containers (X11, PulseAudio) that
+      # legitimately spawn shells and write to /tmp by design.
+      customRules:
+        abcdesktop_rules.yaml: |-
+          - macro: abcdesktop_pod
+            condition: k8s.ns.name = "abcdesktop"
+
+          # Suppress "shell spawned in a container" for the abcdesktop namespace.
+          # abcdesktop intentionally runs interactive shells inside user desktop pods.
+          - rule: Terminal shell in container
+            desc: >
+              Overrides the default rule — abcdesktop intentionally runs
+              interactive shells inside user desktop pods.
+            condition: >
+              evt.type = execve and evt.dir = < and
+              container and
+              shell_procs and
+              not abcdesktop_pod
+            output: >
+              A shell was spawned in a container with an attached terminal
+              (user=%user.name %container.info shell=%proc.name parent=%proc.pname
+              cmdline=%proc.cmdline pid=%proc.pid terminal=%proc.tty
+              container_id=%container.id image=%container.image.repository)
+            priority: NOTICE
+            tags: [container, shell, mitre_execution]
+
     # Enrich events with Kubernetes pod/namespace/deployment metadata
     collectors:
       enabled: true

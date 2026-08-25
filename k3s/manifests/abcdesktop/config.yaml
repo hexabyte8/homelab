@@ -1,0 +1,81 @@
+# ConfigMap — abcdesktop-config
+#
+# This is the main od.config for abcdesktop pyos.
+# Key customisations vs. upstream defaults:
+#   - default_host_url points to the public Cloudflare Tunnel hostname
+#   - authmanagers.external wired to Authentik OIDC (OAuth 2.0 PKCE flow)
+#   - Anonymous (implicit) auth disabled — login requires Authentik
+#   - OpenLDAP test provider removed; Authentik is the only auth source
+#
+# After editing this file, Flux will reconcile the ConfigMap and the
+# `reloader` annotation on the pyos Deployment triggers a rolling restart.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: abcdesktop-config
+  namespace: abcdesktop
+  annotations:
+    secret.reloader.stakater.com/reload: "abcdesktop-config"
+data:
+  od.config: |
+    [global]
+
+    default_host_url : 'https://abcdesktop.chronobyte.net'
+    websocketrouting: 'http_origin'
+
+    server.socket_host: '0.0.0.0'
+    server.socket_port: 8000
+
+    jwt_token_user : {
+      'exp': 360,
+      'jwtuserprivatekeyfile': '/config.usersigning/abcdesktop_jwt_user_signing_private_key.pem',
+      'jwtuserpublickeyfile' : '/config.usersigning/abcdesktop_jwt_user_signing_public_key.pem' }
+
+    jwt_token_desktop : {
+      'exp': 420,
+      'jwtdesktopprivatekeyfile':     '/config.signing/abcdesktop_jwt_desktop_signing_private_key.pem',
+      'jwtdesktoppublickeyfile' :     '/config.signing/abcdesktop_jwt_desktop_signing_public_key.pem',
+      'payloaddesktoppublickeyfile' : '/config.payload/abcdesktop_jwt_desktop_payload_public_key.pem' }
+
+    controllers: {
+      'ManagerController': { 'permitip': [ '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', 'fd00::/8', '169.254.0.0/16', '127.0.0.0/8' ] },
+      'StoreController':   { 'wrapped_key': {} },
+      'ComposerController' : { 'requestsallowed' : { 'getdesktopdescription': False } },
+      'DesktopController' :  { 'requestsallowed' : { 'dns': False }, 'permitip': [ '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', 'fd00::/8', '169.254.0.0/16', '127.0.0.0/8' ] } }
+
+    # AUTH — Authentik as the sole OIDC provider.
+    # Prerequisites:
+    #   1. In Authentik, create an OAuth2/OIDC Provider named "abcdesktop"
+    #      with the redirect URI:
+    #        https://abcdesktop.chronobyte.net/API/auth/oauth?manager=external&provider=authentik
+    #   2. Create an Application backed by that provider.
+    #   3. Copy the Client ID and Client Secret into BWS and reference them
+    #      from abcdesktop-oidc-secret (see bw-secret.yaml).
+    authmanagers: {
+      'external': {
+        'providers': {
+          'authentik': {
+            'displayname': 'Authentik',
+            'icon': 'img/auth/openid_icon.svg',
+            'enabled': True,
+            'client_id': 'REPLACE_ME_CLIENT_ID',
+            'client_secret': 'REPLACE_ME_CLIENT_SECRET',
+            'scope': 'openid profile email',
+            'dialog_url': 'https://authentik.chronobyte.net/application/o/authorize/?client_id={client_id}&redirect_uri={callback_url}&response_type=code&scope={scope}',
+            'auth_url': 'https://authentik.chronobyte.net/application/o/token/?code={code}&grant_type=authorization_code&redirect_uri={callback_url}&client_id={client_id}&client_secret={client_secret}',
+            'userinfo_url': 'https://authentik.chronobyte.net/application/o/userinfo/?access_token={access_token}',
+            'callback_url': 'https://abcdesktop.chronobyte.net/API/auth/oauth?manager=external&provider=authentik'
+          }
+        }
+      },
+      'metaexplicit': {},
+      'explicit': { 'show_domains': True, 'providers': {} },
+      'implicit': { 'providers': {} }
+    }
+
+    OAUTHLIB_INSECURE_TRANSPORT: False
+    OAUTHLIB_RELAX_TOKEN_SCOPE: True
+
+    fail2ban : { 'enable' : False }
+
+    # memcached / MongoDB resolve automatically via in-cluster DNS
