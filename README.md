@@ -4,7 +4,7 @@ A GitOps-driven homelab built around a small **k3s Kubernetes cluster on Proxmox
 
 **DISCLAIMER** - This is a personal homelab, not a product or template. The architecture, conventions, and configuration choices are specific to my needs and preferences. If you're looking for a copy-paste solution, this isn't it, but if you want to learn how to wire up these technologies in a real-world context, this repo is meant to be readable evidence that it can be done.
 
-**AI DISCLAIMER** - This repo was bootstrapped with the help of generative AI, but every line of code and prose has been reviewed and edited by me. If you see something that looks like it was written by a bot, it probably was but I take responsibility for all of it.
+**AI DISCLAIMER** - This repo was bootstrapped with the help of generative AI,.
 
 ---
 
