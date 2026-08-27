@@ -21,3 +21,7 @@ spec:
       tailscaleContainer:
         securityContext:
           allowPrivilegeEscalation: false
+          capabilities:
+            add:
+              - NET_ADMIN
+              - NET_RAW
