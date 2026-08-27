@@ -28,18 +28,18 @@ The runner is only allowed to reach MCP proxy tags on `tcp:443` (`tag:k8s-operat
 
 ## In-repo pieces
 
-| File | Purpose |
-|---|---|
+| File                                        | Purpose                                                                                                                                                                                                                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `.github/workflows/copilot-setup-steps.yml` | Runs before every Copilot session. Fast-fails if `BW_ACCESS_TOKEN` is missing in the `copilot` environment, verifies Bitwarden returned the Tailscale OAuth values, joins the runner to the tailnet as `tag:copilot`, enables MagicDNS, and validates MCP DNS resolution. |
-| `opentofu/tailscale/acl.tf` | Declares `tag:copilot` as a tagOwner and grants `tag:copilot → {tag:k8s-operator, tag:k8s-operator-proxy, tag:k8s}:443`. |
+| `opentofu/tailscale/acl.tf`                 | Declares `tag:copilot` as a tagOwner and grants `tag:copilot → {tag:k8s-operator, tag:k8s-operator-proxy, tag:k8s}:443`.                                                                                                                                                  |
 
 ### Bitwarden items reused
 
 The workflow reuses the same Bitwarden items as `ansible-k3s.yml`:
 
-| Bitwarden item ID | Env var |
-|---|---|
-| `<bws-uuid-tailscale-oauth-client-id>` | `TAILSCALE_OAUTH_CLIENT_ID` |
+| Bitwarden item ID                          | Env var                         |
+| ------------------------------------------ | ------------------------------- |
+| `<bws-uuid-tailscale-oauth-client-id>`     | `TAILSCALE_OAUTH_CLIENT_ID`     |
 | `<bws-uuid-tailscale-oauth-client-secret>` | `TAILSCALE_OAUTH_CLIENT_SECRET` |
 
 ---
@@ -57,7 +57,6 @@ These steps cannot be expressed in code and must be done manually:
    `copilot-setup-steps.yml` only see secrets from the repository's `copilot`
    environment. Create the environment (Settings → Environments → New
    environment → `copilot`) and add:
-
    - `BW_ACCESS_TOKEN` - same Bitwarden machine account access token used by
      the other workflows.
 
@@ -86,34 +85,9 @@ These steps cannot be expressed in code and must be done manually:
    agent ships with an egress firewall. If the `Setup Tailscale` step fails
    with a network error, relax the firewall (Settings → Copilot → Coding
    agent → Firewall) to allow:
-
    - `login.tailscale.com`
    - `controlplane.tailscale.com`
    - `*.tailscale.com` (DERP relays)
-
----
-
-## Validating
-
-After merging to `main`:
-
-1. Run `Copilot Setup Steps` manually from the **Actions** tab. The workflow
-should pass these setup checks in order:
-- `Validate copilot environment secret`
-- `Load secrets from Bitwarden`
-- `Validate Bitwarden secret mapping`
-- `Setup Tailscale`
-- `Enable MagicDNS`
-- `Wait for DNS to be available`
-- `Validate MCP DNS resolution`
-2. The DNS validation step should resolve:
-- `mcp-kubernetes.daggertooth-scala.ts.net`
-- `actual-mcp.daggertooth-scala.ts.net`
-3. Start a Copilot task that needs cluster access (e.g. "list all pods in
-`jellyfin` namespace"). The setup steps logs appear in the session
-transcript.
-4. After the session, the Tailscale admin UI should show the `tag:copilot`
-node as expired/offline (the action logs out at end of job).
 
 ---
 
@@ -125,6 +99,3 @@ node as expired/offline (the action logs out at end of job).
   Tightening that is out of scope for this change but would make the
   `tag:copilot → {tag:k8s-operator, tag:k8s-operator-proxy, tag:k8s}:443`
   grant the only path available.
-- Consider provisioning a dedicated Tailscale OAuth client scoped solely to
-  `tag:copilot` (and storing new Bitwarden item IDs) if you want to remove
-  the shared blast radius with `ansible-k3s.yml` et al.
