@@ -5,8 +5,11 @@ My GitOps-driven homelab infrastructure built around a small **k3s Kubernetes cl
 **REPO DISCLAIMER** - This is a personal lab. The architecture, conventions, and configuration choices are specific to my needs and preferences. This is not a copy/paste solution, but can be used as a reference for your own learning, or as a starting point for your own gitops journey.
 
 **AI DISCLAIMER** - This repo was bootstrapped with the help of generative AI, a vast majority of the existing documentation content was written by AI.
-This lab started in a private repo, and was made public to allow colleague to reference the cloudflare tunnel architecture to see how to manage applications without exposing ports to the public internet.
+
+This lab started in a private repo, and was made public to allow colleagues to reference the cloudflare tunnel architecture to see how to manage applications without exposing ports to the public internet.
+
 Over time I'll be doing some docs maintenance and refactoring by hand to correct or clarify AI generated documentation, as they may have minor inaccuracies, or expire quickly as the lab evolves.
+
 I also leverage AI to assist with new deployments or config changes, you will see Copilot in the PR author in those cases for transparency.
 
 ---
