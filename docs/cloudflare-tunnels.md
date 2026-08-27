@@ -17,14 +17,14 @@ This document covers deploying and configuring Cloudflare Tunnels (`cloudflared`
 
 Both solutions expose homelab services to the public internet without inbound ports, but they serve different purposes:
 
-| Feature | Cloudflare Tunnel | Tailscale Funnel |
-|---|---|---|
-| **Custom domain** | Yes (`myapp.example.com`) | No (`.ts.net` only) |
-| **DDoS / WAF** | Yes (Cloudflare edge) | No |
-| **Cloudflare Access policies** | Yes | No |
-| **TLS** | Cloudflare-terminated (or pass-through) | Tailscale-terminated |
-| **DNS requirement** | Domain on Cloudflare | None |
-| **Use case** | Public-facing services | Quick personal/team access |
+| Feature                        | Cloudflare Tunnel                       | Tailscale Funnel           |
+| ------------------------------ | --------------------------------------- | -------------------------- |
+| **Custom domain**              | Yes (`myapp.example.com`)               | No (`.ts.net` only)        |
+| **DDoS / WAF**                 | Yes (Cloudflare edge)                   | No                         |
+| **Cloudflare Access policies** | Yes                                     | No                         |
+| **TLS**                        | Cloudflare-terminated (or pass-through) | Tailscale-terminated       |
+| **DNS requirement**            | Domain on Cloudflare                    | None                       |
+| **Use case**                   | Public-facing services                  | Quick personal/team access |
 
 The current cluster uses **Tailscale Funnel** for the Authentik UI and similar services. Cloudflare Tunnel is the preferred option when you need a proper public domain, WAF protection, or Cloudflare Access.
 
@@ -50,68 +50,6 @@ graph TD
 ```
 
 Direct routing is useful for services that do not need Traefik middleware (e.g. raw TCP, gRPC). Routing via Traefik is **recommended** for HTTP services because it gives you consistent middleware (ForwardAuth, TLS redirects, rate limiting) without duplicating configuration in the Cloudflare dashboard.
-
----
-
-## Prerequisites
-
-1. **Cloudflare account** with the `example.com` domain managed by Cloudflare DNS.
-2. **A tunnel created** in the Cloudflare dashboard:
-   - Go to **Zero Trust → Networks → Tunnels → Create a tunnel**.
-   - Choose **Cloudflared** connector type, give it a name (e.g. `homelab`).
-   - Copy the **tunnel token** shown on the configuration page - you will need it in the next step.
-3. **kubectl access** to the cluster.
-
----
-
-## Initial Setup: Applying the Tunnel Token
-
-The `cloudflared-tunnel-credentials` Secret committed to git (`k3s/manifests/cloudflared/secret.yaml`) contains a placeholder value:
-
-```yaml
-stringData:
-  tunnel-token: "REPLACE_ME"
-```
-
-**Never replace this placeholder in git.** Instead, apply the real token directly to the cluster using `kubectl patch` - this avoids field manager conflicts with Flux's Server-Side Apply:
-
-```bash
-# Base64-encode your token, then patch the secret
-kubectl patch secret cloudflared-tunnel-credentials \
-  -n cloudflared \
-  --type='merge' \
-  -p '{"data":{"tunnel-token":"'$(echo -n '<YOUR_TOKEN_FROM_CLOUDFLARE_DASHBOARD>' | base64 -w0)'"}}'
-```
-
-> **Why `kubectl patch` instead of `kubectl apply`?** Flux uses Server-Side Apply (SSA) and tracks field ownership. Using `kubectl apply` can cause field manager conflicts. `kubectl patch --type=merge` updates only the specified fields without taking ownership of the whole object. The secret also carries `kustomize.toolkit.fluxcd.io/reconcile: disabled`, which prevents Flux from ever overwriting your real token with the `REPLACE_ME` placeholder.
-
-> **Important:** The `cloudflared` deployment will crash-loop (`CrashLoopBackOff`) until a valid token is present in the secret. Apply the token **before** or immediately after the first Flux reconcile.
-
-To find your token again at any time: **Zero Trust → Networks → Tunnels → your tunnel → Configure → Overview tab**.
-
----
-
-## Deploying cloudflared via Flux
-
-### Flux Kustomization
-
-`cloudflared` is deployed and managed by Flux via `k3s/flux/apps/cloudflared.yaml`. The secret `cloudflared-tunnel-credentials` carries the annotation `kustomize.toolkit.fluxcd.io/reconcile: disabled`, which prevents Flux from overwriting the real tunnel token with the `REPLACE_ME` placeholder on every reconcile.
-
-### Verifying the deployment
-
-```bash
-# Check pods are running (should see 2 replicas)
-kubectl get pods -n cloudflared
-
-# Check logs for successful tunnel connection
-kubectl logs -n cloudflared -l app=cloudflared --tail=50
-
-# Expected log lines indicating a healthy tunnel:
-# INF Connection <uuid> registered connIndex=0 ...
-# INF Connection <uuid> registered connIndex=1 ...
-```
-
-Confirm in the Cloudflare dashboard: **Zero Trust → Networks → Tunnels** - the tunnel status should show **Healthy** once at least one `cloudflared` pod connects.
 
 ---
 
@@ -238,6 +176,7 @@ There are two ways to add authentication to a Cloudflare-tunnelled service. Choo
 ### Approach A: Traefik ForwardAuth (Recommended for internal auth)
 
 **Traffic flow:**
+
 ```
 User → Cloudflare Edge → cloudflared → Traefik → authentik-forward-auth middleware → Service
 ```
@@ -324,6 +263,7 @@ ForwardAuth requires an Authentik **Proxy Provider** and an **Application** entr
 ### Approach B: Cloudflare Access with Authentik as OIDC Provider (Recommended for public services)
 
 **Traffic flow:**
+
 ```
 User → Cloudflare Edge → Cloudflare Access (OIDC login via Authentik) → cloudflared → Traefik → Service
 ```
@@ -331,6 +271,7 @@ User → Cloudflare Edge → Cloudflare Access (OIDC login via Authentik) → cl
 With Cloudflare Access, authentication happens at the Cloudflare edge - unauthenticated traffic never reaches the cluster at all. Authentik acts as the OIDC identity provider.
 
 This approach is preferable for:
+
 - Services exposed to the public internet where you want Cloudflare as the first line of defence.
 - Cases where you cannot or do not want ForwardAuth middleware on every Ingress.
 
@@ -445,105 +386,3 @@ Alternatively, add an ingress entry in `opentofu/cloudflare-tunnel.tf` that poin
   service  = "http://authentik-server.authentik.svc.cluster.local:80"
 },
 ```
-
-> **Important:** Do **not** apply a Cloudflare Access policy to `authentik.example.com`. Authentik is the identity provider - gating it behind itself would create an unresolvable authentication loop.
-
----
-
-## Troubleshooting
-
-### Tunnel not connecting / pods crash-looping
-
-```bash
-# Check pod status
-kubectl get pods -n cloudflared
-
-# Check logs for auth errors
-kubectl logs -n cloudflared -l app=cloudflared --tail=100
-```
-
-Common causes:
-- `failed to authenticate tunnel`: the `tunnel-token` secret value is wrong or still `REPLACE_ME`. Re-apply the correct token (see [Initial Setup](#initial-setup-applying-the-tunnel-token)).
-- `context canceled` / repeated reconnect attempts: transient network issue or Cloudflare edge problem. Usually self-resolves; check tunnel status at [dash.cloudflare.com](https://dash.cloudflare.com) → Zero Trust → Networks → Tunnels.
-
-### Tunnel not connecting - QUIC / UDP blocked
-
-Symptoms: cloudflared logs show repeated messages like `failed to dial to edge with quic: timeout` but the pods are running.
-
-`cloudflared` defaults to QUIC (UDP 7844) for the outbound tunnel connection. Many home routers or ISPs block outbound UDP on non-standard ports. Fix by forcing HTTP/2 (TCP 443) in the configmap:
-
-```yaml
-# k3s/manifests/cloudflared/configmap.yaml
-data:
-  config.yaml: |
-    protocol: http2
-    metrics: 0.0.0.0:2000
-    no-autoupdate: true
-```
-
-The `protocol: http2` setting is already applied in this cluster's configmap. If you ever redeploy from scratch, ensure this key is present.
-
-### 502 Bad Gateway / 503 Service Unavailable
-
-The service URL in `opentofu/cloudflare-tunnel.tf` (the `service` field of the ingress entry) is wrong or the upstream is not ready.
-
-```bash
-# Verify Traefik is running and the service URL resolves
-kubectl get svc -n kube-system traefik
-
-# Check Traefik logs for routing errors
-kubectl logs -n kube-system -l app.kubernetes.io/name=traefik --tail=100
-
-# Check the Ingress has an address assigned
-kubectl get ingress -n myapp
-```
-
-Confirm the service URL in `opentofu/cloudflare-tunnel.tf` exactly matches `http://traefik.kube-system.svc.cluster.local:80` (note the port - Traefik's ClusterIP listens on 80 for HTTP).
-
-### Authentik redirect loop or 400 on callback
-
-Symptoms: browser loops between `myapp.example.com` and the Authentik login page without ever authenticating, or you see a `400 Bad Request` on `/outpost.goauthentik.io/callback` after a successful login.
-
-Causes:
-
-- **Missing `cloudflare-https-scheme` middleware**: `cloudflared` connects to Traefik over `http://`, so Traefik sets `X-Forwarded-Proto: http`. Authentik then builds the OIDC callback URL with `http://`, which it rejects. **Always chain `kube-system-cloudflare-https-scheme@kubernetescrd` before the ForwardAuth middleware** (see ingress example above).
-- **External Host mismatch**: the Proxy Provider's **External Host** in Authentik is `http://...` but the site is accessed over `https://...`, or the domain is wrong. Correct it in **Applications → Providers → your provider → External Host**. Must be the exact `https://` URL users visit.
-- **Cookie domain mismatch**: if Authentik and the app are on different domains (e.g. `daggertooth-scala.ts.net` vs `example.com`), the ForwardAuth session cookie cannot be shared. Move Authentik to a `example.com` subdomain (see [Exposing Authentik Itself](#exposing-authentik-itself-via-cloudflare-tunnel)).
-- **Outpost not updated**: after creating the Proxy Provider and Application, the embedded outpost must have the application assigned (Step 7-8 in [Approach A](#approach-a-traefik-forwardauth-recommended-for-internal-auth)).
-
-### CORS errors
-
-If a service returns CORS errors when accessed via `myapp.example.com`:
-
-- Ensure the application's allowed origins include `https://myapp.example.com`.
-- In the Cloudflare dashboard, check the tunnel's public hostname **Additional application settings → HTTP Settings** for any headers that might conflict.
-
-### Cloudflare Access loop (Approach B)
-
-If Cloudflare Access redirects infinitely:
-- Verify the OIDC callback URL in the Authentik provider matches exactly: `https://<team-name>.cloudflareaccess.com/cdn-cgi/access/callback`.
-- Confirm `authentik.daggertooth-scala.ts.net` (or `authentik.example.com`) is reachable from your browser - Cloudflare Access will redirect there for login.
-- Check Authentik's system logs under **System → System Tasks** for OIDC-related errors.
-
----
-
-## Reference
-
-| Resource | Value |
-|---|---|
-| Cloudflare Zero Trust | <https://one.dash.cloudflare.com> |
-| Tunnel config path | Zero Trust → Networks → Tunnels |
-| cloudflared namespace | `cloudflared` |
-| Tunnel token secret | `cloudflared-tunnel-credentials` (key: `tunnel-token`) |
-| cloudflared image | `cloudflare/cloudflared:2025.1.0` |
-| Traefik ClusterIP | `traefik.kube-system.svc.cluster.local:80` |
-| Authentik server ClusterIP | `authentik-server.authentik.svc.cluster.local:80` |
-| ForwardAuth middleware ref | `authentik-authentik-forward-auth@kubernetescrd` |
-| ForwardAuth URL | `http://authentik-server.authentik.svc.cluster.local/outpost.goauthentik.io/auth/traefik` |
-
-**See also:**
-
-- [authentik.md](authentik.md) - full Authentik deployment and ForwardAuth reference
-- [gitops-flux.md](gitops-flux.md) - secrets patching pattern, Flux Kustomization structure
-- [tailscale-operator.md](tailscale-operator.md) - Tailscale Funnel (alternative public exposure)
-- [new-service.md](new-service.md) - end-to-end guide for adding a new service
