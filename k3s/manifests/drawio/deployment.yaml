@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drawio
+  namespace: drawio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drawio
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: drawio
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: drawio
+          image: jgraph/drawio:31.4.1
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            # drawio is stateless: diagrams live client-side (browser) or in the
+            # user's Google Drive/OneDrive/etc. No server-side persistence.
+            - name: DRAWIO_SELF_CONTAINED
+              value: "1"
+            # Disable Google/OneDrive/Dropbox integrations by default; users
+            # save via "Device" (browser storage) or export to file.
+            - name: DRAWIO_GOOGLE_CLIENT_ID
+              value: ""
+            - name: DRAWIO_MSGRAPH_CLIENT_ID
+              value: ""
+            - name: DRAWIO_DROPBOX_APP_KEY
+              value: ""
+            - name: DRAWIO_GITHUB_CLIENT_ID
+              value: ""
+            - name: DRAWIO_GITLAB_CLIENT_ID
+              value: ""
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          volumeMounts:
+            # Tomcat needs a writable work/temp dir even in read-only-root setups.
+            - name: tomcat-work
+              mountPath: /usr/local/tomcat/work
+            - name: tomcat-temp
+              mountPath: /usr/local/tomcat/temp
+      volumes:
+        - name: tomcat-work
+          emptyDir: {}
+        - name: tomcat-temp
+          emptyDir: {}

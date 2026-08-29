@@ -34,6 +34,7 @@ resources:
   - adguard.yaml
   - calibre-web.yaml
   - dashy.yaml
+  - drawio.yaml
   - fail2ban.yaml
   - jellyfin.yaml
   - mealie.yaml

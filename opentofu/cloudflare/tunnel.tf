@@ -66,6 +66,10 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "homelab" {
         hostname = "mealie.${var.cloudflare_zone_name}"
         service  = "http://traefik.kube-system.svc.cluster.local:80"
       },
+      {
+        hostname = "drawio.${var.cloudflare_zone_name}"
+        service  = "http://traefik.kube-system.svc.cluster.local:80"
+      },
       # Catch-all: reject unmatched hostnames
       {
         service = "http_status:404"
@@ -164,6 +168,15 @@ resource "cloudflare_dns_record" "chatto" {
 resource "cloudflare_dns_record" "mealie" {
   zone_id = var.cloudflare_zone_id
   name    = "mealie"
+  content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"
+  type    = "CNAME"
+  ttl     = 1
+  proxied = true
+}
+
+resource "cloudflare_dns_record" "drawio" {
+  zone_id = var.cloudflare_zone_id
+  name    = "drawio"
   content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"
   type    = "CNAME"
   ttl     = 1
