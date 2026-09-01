@@ -53,6 +53,7 @@ jobs:
             9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
             cfa6860a-116e-4893-9b23-b48e0176f8cd > GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
             1f5eb6e8-6c44-4cec-9a9d-b49b0173d913 > ACTUAL_OPENID_CLIENT_SECRET
+            1390f895-1b91-4882-a5f9-b4b800f14c7e > FORGEJO_OIDC_CLIENT_SECRET
 
       # Tailscale is needed for proxmox (API + SSH over MagicDNS) and authentik
       # (Authentik runs on the K3s cluster on Proxmox; its Cloudflare tunnel
@@ -133,6 +134,7 @@ jobs:
           TF_VAR_grafana_client_secret: ${{ env.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET }}
           TF_VAR_actual_client_secret: ${{ env.ACTUAL_OPENID_CLIENT_SECRET }}
           TF_VAR_mealie_client_secret: ${{ env.MEALIE_OIDC_CLIENT_SECRET }}
+          TF_VAR_forgejo_client_secret: ${{ env.FORGEJO_OIDC_CLIENT_SECRET }}
           TF_VAR_proxmox_host: "chronobyte"
           TF_VAR_public_ip: ${{ env.PUBLIC_IP }}
           TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
@@ -185,6 +187,7 @@ jobs:
           TF_VAR_grafana_client_secret: ${{ env.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET }}
           TF_VAR_actual_client_secret: ${{ env.ACTUAL_OPENID_CLIENT_SECRET }}
           TF_VAR_mealie_client_secret: ${{ env.MEALIE_OIDC_CLIENT_SECRET }}
+          TF_VAR_forgejo_client_secret: ${{ env.FORGEJO_OIDC_CLIENT_SECRET }}
           TF_VAR_proxmox_host: "chronobyte"
           TF_VAR_public_ip: ${{ env.PUBLIC_IP }}
           TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
@@ -201,10 +204,12 @@ jobs:
           ACTUAL_CLIENT_ID=$(tofu output -raw actual_oauth2_client_id)
           GRAFANA_CLIENT_ID=$(tofu output -raw grafana_oauth2_client_id)
           MEALIE_CLIENT_ID=$(tofu output -raw mealie_oauth2_client_id)
+          FORGEJO_CLIENT_ID=$(tofu output -raw forgejo_oauth2_client_id)
 
           echo "::add-mask::$ACTUAL_CLIENT_ID"
           echo "::add-mask::$GRAFANA_CLIENT_ID"
           echo "::add-mask::$MEALIE_CLIENT_ID"
+          echo "::add-mask::$FORGEJO_CLIENT_ID"
 
           curl -sSLo /tmp/bws.zip \
             "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.1.0/bws-x86_64-unknown-linux-gnu-2.1.0.zip"
@@ -219,6 +224,10 @@ jobs:
           # TODO: uncomment once BWS entry is created and UUID is known:
           # bws secret edit <uuid> --value "$MEALIE_CLIENT_ID"
           echo "[SKIP] MEALIE OIDC_CLIENT_ID — BWS UUID not yet set (see k3s/manifests/mealie/bw-secret.yaml)"
+
+          # ab243288 = FORGEJO_OIDC_CLIENT_ID in forgejo bw-secret.yaml
+          bws secret edit ab243288-4bd3-4e3e-bdbd-b4b800f0fef4 --value "$FORGEJO_CLIENT_ID"
+          echo "[OK] FORGEJO_OIDC_CLIENT_ID synced to BWS"
 
           # cfa6860b = GF_AUTH_GENERIC_OAUTH_CLIENT_ID in monitoring bw-secret
           # (update if a grafana client_id BWS entry exists)
