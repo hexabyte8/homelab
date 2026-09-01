@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gitea
-  namespace: gitea
+  name: forgejo
+  namespace: forgejo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gitea
+      app: forgejo
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: gitea
+        app: forgejo
       annotations:
         # Reloader: restart pod when the OIDC secret is rotated so the
         # postStart hook re-registers the OAuth2 source with the new credentials.
-        secret.reloader.stakater.com/reload: "gitea-oidc-secret"
-        configmap.reloader.stakater.com/reload: "gitea-config"
+        secret.reloader.stakater.com/reload: "forgejo-oidc-secret"
+        configmap.reloader.stakater.com/reload: "forgejo-config"
     spec:
       enableServiceLinks: false
       automountServiceAccountToken: false
@@ -30,24 +30,23 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: gitea
-          image: gitea/gitea:1.22.6
+        - name: forgejo
+          image: codeberg.org/forgejo/forgejo:10
           ports:
             - name: http
               containerPort: 3000
           envFrom:
             - configMapRef:
-                name: gitea-config
+                name: forgejo-config
             - secretRef:
-                name: gitea-oidc-secret
+                name: forgejo-oidc-secret
           volumeMounts:
             - name: data
               mountPath: /data
           # postStart registers Authentik as the OIDC auth source on first boot
           # (and on every pod restart after secret rotation). The loop is
-          # bounded to 5 minutes (60 × 5 s). `|| true` keeps the hook
-          # non-fatal when the source already exists; stderr is preserved so
-          # real errors remain visible in pod logs.
+          # bounded to 5 minutes (60 × 5 s). stderr is preserved so real
+          # errors remain visible in pod logs.
           lifecycle:
             postStart:
               exec:
@@ -58,16 +57,16 @@ spec:
                     i=0
                     until curl -sf http://localhost:3000/api/healthz; do
                       i=$((i+1))
-                      [ "$i" -ge 60 ] && echo "WARN: Gitea did not become healthy in time; skipping OAuth2 registration" && exit 0
+                      [ "$i" -ge 60 ] && echo "WARN: Forgejo did not become healthy in time; skipping OAuth2 registration" && exit 0
                       sleep 5
                     done
-                    gitea admin auth add-oauth \
+                    forgejo admin auth add-oauth \
                       --name "Authentik" \
                       --provider openidConnect \
-                      --key "${GITEA_OIDC_CLIENT_ID}" \
-                      --secret "${GITEA_OIDC_CLIENT_SECRET}" \
-                      --auto-discover-url "https://authentik.chronobyte.net/application/o/gitea/.well-known/openid-configuration" \
-                      --scopes "openid email profile" || echo "WARN: gitea admin auth add-oauth exited non-zero (source may already exist)"
+                      --key "${FORGEJO_OIDC_CLIENT_ID}" \
+                      --secret "${FORGEJO_OIDC_CLIENT_SECRET}" \
+                      --auto-discover-url "https://authentik.chronobyte.net/application/o/forgejo/.well-known/openid-configuration" \
+                      --scopes "openid email profile" || echo "WARN: forgejo admin auth add-oauth exited non-zero (source may already exist)"
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
@@ -97,4 +96,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: gitea-data
+            claimName: forgejo-data

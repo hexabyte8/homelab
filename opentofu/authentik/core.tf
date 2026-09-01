@@ -275,18 +275,18 @@ output "mealie_oauth2_client_id" {
   value       = authentik_provider_oauth2.mealie.client_id
 }
 
-# ---------- OAuth2/OIDC provider — Gitea ----------
+# ---------- OAuth2/OIDC provider — Forgejo ----------
 #
-# Gitea uses OpenID Connect for authentication. After `tofu apply`, the
+# Forgejo uses OpenID Connect for authentication. After `tofu apply`, the
 # opentofu-reusable.yml workflow writes the generated client_secret to BWS.
-# The sm-operator then syncs it into the `gitea-oidc-secret` k8s Secret,
-# which the postStart lifecycle hook in the Gitea pod uses to register
-# Authentik as an OAuth2 auth source via `gitea admin auth add-oauth`.
+# The sm-operator then syncs it into the `forgejo-oidc-secret` k8s Secret,
+# which the postStart lifecycle hook in the Forgejo pod uses to register
+# Authentik as an OAuth2 auth source via `forgejo admin auth add-oauth`.
 
-resource "authentik_provider_oauth2" "gitea" {
-  name               = "Gitea"
-  client_id          = "gitea"
-  client_secret      = var.gitea_client_secret
+resource "authentik_provider_oauth2" "forgejo" {
+  name               = "Forgejo"
+  client_id          = "forgejo"
+  client_secret      = var.forgejo_client_secret
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id
   signing_key        = data.authentik_certificate_key_pair.default.id
@@ -303,16 +303,16 @@ resource "authentik_provider_oauth2" "gitea" {
   refresh_token_validity     = "days=30"
 }
 
-resource "authentik_application" "gitea" {
-  name              = "Gitea"
-  slug              = "gitea"
-  protocol_provider = authentik_provider_oauth2.gitea.id
+resource "authentik_application" "forgejo" {
+  name              = "Forgejo"
+  slug              = "forgejo"
+  protocol_provider = authentik_provider_oauth2.forgejo.id
   meta_launch_url   = "https://git.${var.cloudflare_zone_name}"
-  meta_description  = "Gitea self-hosted Git service (public, OIDC via Authentik)."
+  meta_description  = "Forgejo self-hosted Git service (public, OIDC via Authentik)."
   open_in_new_tab   = false
 }
 
-output "gitea_oauth2_client_id" {
-  description = "Authentik OAuth2 client_id for Gitea."
-  value       = authentik_provider_oauth2.gitea.client_id
+output "forgejo_oauth2_client_id" {
+  description = "Authentik OAuth2 client_id for Forgejo."
+  value       = authentik_provider_oauth2.forgejo.client_id
 }

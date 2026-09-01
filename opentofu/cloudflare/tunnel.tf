@@ -187,7 +187,7 @@ resource "cloudflare_dns_record" "drawio" {
   proxied = true
 }
 
-resource "cloudflare_dns_record" "gitea" {
+resource "cloudflare_dns_record" "forgejo" {
   zone_id = var.cloudflare_zone_id
   name    = "git"
   content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"

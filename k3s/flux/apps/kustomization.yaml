@@ -36,7 +36,7 @@ resources:
   - dashy.yaml
   - drawio.yaml
   - fail2ban.yaml
-  - gitea.yaml
+  - forgejo.yaml
   - jellyfin.yaml
   - mealie.yaml
   - mcp-kubernetes.yaml

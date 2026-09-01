@@ -34,8 +34,8 @@ variable "cloudflare_zone_name" {
   type        = string
 }
 
-variable "gitea_client_secret" {
-  description = "OAuth2 client secret for the Gitea provider. Rotated weekly by the secrets-rotation workflow and stored in BWS."
+variable "forgejo_client_secret" {
+  description = "OAuth2 client secret for the Forgejo provider. Rotated weekly by the secrets-rotation workflow and stored in BWS."
   type        = string
   sensitive   = true
   default     = ""

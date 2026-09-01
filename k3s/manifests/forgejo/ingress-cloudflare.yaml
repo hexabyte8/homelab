@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: gitea-cloudflare
-  namespace: gitea
+  name: forgejo-cloudflare
+  namespace: forgejo
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
 spec:
@@ -15,10 +15,10 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: gitea
+                name: forgejo
                 port:
                   number: 3000
   tls:
     - hosts:
         - git.chronobyte.net
-      secretName: gitea-cloudflare-tls
+      secretName: forgejo-cloudflare-tls

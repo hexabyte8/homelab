@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: gitea-config
-  namespace: gitea
+  name: forgejo-config
+  namespace: forgejo
 data:
   # Server
   GITEA__server__DOMAIN: "git.chronobyte.net"
@@ -17,7 +17,7 @@ data:
   GITEA__service__DEFAULT_KEEP_EMAIL_PRIVATE: "true"
   # Database — SQLite, stored on the persistent volume
   GITEA__database__DB_TYPE: "sqlite3"
-  GITEA__database__PATH: "/data/gitea/gitea.db"
+  GITEA__database__PATH: "/data/forgejo/forgejo.db"
   # Logging
   GITEA__log__MODE: "console"
   GITEA__log__LEVEL: "info"
@@ -25,4 +25,4 @@ data:
   GITEA__mailer__ENABLED: "true"
   GITEA__mailer__SMTP_ADDR: "stalwart.stalwart.svc.cluster.local"
   GITEA__mailer__SMTP_PORT: "587"
-  GITEA__mailer__FROM: "gitea <noreply@chronobyte.net>"
+  GITEA__mailer__FROM: "forgejo <noreply@chronobyte.net>"
