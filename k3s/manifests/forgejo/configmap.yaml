@@ -13,8 +13,13 @@ data:
   GITEA__security__INSTALL_LOCK: "true"
   # Service — disable self-registration; all users must authenticate via Authentik
   GITEA__service__DISABLE_REGISTRATION: "true"
+  GITEA__service__ALLOW_ONLY_EXTERNAL_REGISTRATION: "true"
+  GITEA__service__ENABLE_INTERNAL_SIGNIN: "false"
   GITEA__service__REQUIRE_SIGNIN_VIEW: "true"
   GITEA__service__DEFAULT_KEEP_EMAIL_PRIVATE: "true"
+  # OAuth2 client — create/link accounts from Authentik OIDC identities
+  GITEA__oauth2_client__ENABLE_AUTO_REGISTRATION: "true"
+  GITEA__oauth2_client__ACCOUNT_LINKING: "auto"
   # Database — SQLite, stored on the persistent volume.
   # Forgejo's image creates /data/gitea/ by default; using that path avoids
   # the need for an init container to pre-create the directory.
