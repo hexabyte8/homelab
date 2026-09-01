@@ -82,11 +82,16 @@ spec:
                       [ "$i" -ge 60 ] && echo "WARN: Forgejo auth CLI did not become ready in time; skipping OAuth2 registration" && cat /tmp/forgejo-auth-list.err && exit 0
                       sleep 5
                     done
-                    if grep -q "Authentik" /tmp/forgejo-auth-sources; then
+                    AUTHENTIK_AUTH_ID="$(awk '$0 ~ /Authentik/ {print $1; exit}' /tmp/forgejo-auth-sources)"
+                    if [ -n "${AUTHENTIK_AUTH_ID}" ]; then
                       ${FORGEJO_CLI} admin auth update-oauth \
+                        --id "${AUTHENTIK_AUTH_ID}" \
                         --name "Authentik" \
+                        --provider openidConnect \
                         --key "${FORGEJO_OIDC_CLIENT_ID}" \
-                        --secret "${FORGEJO_OIDC_CLIENT_SECRET}" || echo "WARN: forgejo admin auth update-oauth exited non-zero"
+                        --secret "${FORGEJO_OIDC_CLIENT_SECRET}" \
+                        --auto-discover-url "https://authentik.chronobyte.net/application/o/forgejo/.well-known/openid-configuration" \
+                        --scopes "openid email profile" || echo "WARN: forgejo admin auth update-oauth exited non-zero"
                     else
                       ${FORGEJO_CLI} admin auth add-oauth \
                         --name "Authentik" \
