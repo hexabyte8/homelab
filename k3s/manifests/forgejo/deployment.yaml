@@ -73,9 +73,10 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
-            runAsUser: 1000
-            runAsGroup: 1000
-            runAsNonRoot: true
+            # s6-overlay (Forgejo's init system) must start as root and drops
+            # to uid/gid 1000 (git user) internally. runAsUser/runAsNonRoot
+            # here prevented s6-svscan from opening its lock file. The pod-
+            # level fsGroup: 1000 keeps the data PVC accessible.
             capabilities:
               drop:
                 - ALL
