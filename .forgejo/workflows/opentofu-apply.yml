@@ -1,4 +1,5 @@
 # Forgejo Actions mirror of .github/workflows/opentofu-apply.yml
+# Required Forgejo secret: BW_ACCESS_TOKEN
 name: OpenTofu Apply
 
 on:

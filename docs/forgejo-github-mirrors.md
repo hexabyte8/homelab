@@ -153,34 +153,14 @@ That gives you a **Forgejo → GitHub** push mirror, which is the inverse of the
 
 ## 5. Required Forgejo Secrets for Actions Workflows
 
-When using Forgejo as a CI runner, configure these secrets at the organization or repository level in Forgejo under **Settings → Secrets**:
+When using Forgejo as a CI runner, configure only these Forgejo secrets under **Settings → Secrets**:
 
 ```text
-TAILSCALE_OAUTH_CLIENT_ID
-TAILSCALE_OAUTH_CLIENT_SECRET
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
-ADMIN_EMAIL
-AUTHENTIK_API_TOKEN
-CLOUDFLARE_ACCOUNT_ID
-CLOUDFLARE_API_TOKEN
-CLOUDFLARE_ZONE_ID
-CLOUDFLARE_ZONE_NAME
-DEFAULT_VM_PASSWORD
-PEER_PUBLIC_IP
-PM_API_TOKEN_ID
-PM_API_TOKEN_SECRET
-PUBLIC_IP
-BWS_ACCESS_TOKEN
-CLOUDFLARE_TUNNEL_TOKEN
-AUTHENTIK_SMTP_PASSWORD
-MINECRAFT_RCON_PASSWORD
-GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
-ACTUAL_OPENID_CLIENT_SECRET
-FORGEJO_OIDC_CLIENT_SECRET
+BW_ACCESS_TOKEN
+BWS_ACCESS_TOKEN   # only required by .forgejo/workflows/secrets-rotation.yml
 ```
 
-These values should match the same secret values already stored in Bitwarden.
+All other workflow secrets are loaded at runtime from Bitwarden Secrets Manager via `bitwarden/sm-action@v2`, using the same BWS secret UUID mappings as the GitHub Actions workflows in `.github/workflows/`.
 
 ### Where to add org-level secrets in Forgejo
 
@@ -190,9 +170,7 @@ If a workflow is repo-specific, repo-level secrets also work.
 
 ### Compatibility note
 
-The Forgejo OpenTofu mirrors preserve the reusable-workflow secret interface from GitHub Actions. If you keep that interface unchanged, also define `BW_ACCESS_TOKEN` for compatibility, even though the Forgejo mirrors read most values directly from `secrets.*` instead of using `bitwarden/sm-action`.
-
----
+The Forgejo server configmap already sets `DEFAULT_ACTIONS_URL = https://github.com`, so third-party actions such as `bitwarden/sm-action@v2` resolve automatically in Forgejo Actions.
 
 ## 6. Keeping Mirrors in Sync with Workflows
 

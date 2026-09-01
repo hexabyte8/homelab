@@ -33,3 +33,10 @@ data:
   GITEA__mailer__SMTP_ADDR: "stalwart.stalwart.svc.cluster.local"
   GITEA__mailer__SMTP_PORT: "587"
   GITEA__mailer__FROM: "forgejo <noreply@chronobyte.net>"
+  # Actions — enable Forgejo Actions and resolve third-party actions (e.g.
+  # bitwarden/sm-action, tailscale/github-action) directly from GitHub.
+  # This means only BW_ACCESS_TOKEN needs to be stored as a Forgejo secret;
+  # all other secrets are loaded at runtime via bitwarden/sm-action, exactly
+  # as the equivalent GitHub Actions workflows do.
+  GITEA__actions__ENABLED: "true"
+  GITEA__actions__DEFAULT_ACTIONS_URL: "https://github.com"

@@ -1,4 +1,5 @@
 # Forgejo Actions mirror of .github/workflows/k3s-post-reboot.yml
+# Required Forgejo secret: BW_ACCESS_TOKEN
 name: Post-Reboot Cluster Restore
 
 on:
@@ -20,15 +21,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      # Required Forgejo secrets:
-      #   CLOUDFLARE_TUNNEL_TOKEN
-      #   TAILSCALE_OAUTH_CLIENT_ID
-      #   TAILSCALE_OAUTH_CLIENT_SECRET
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            3289b15b-f52c-45aa-8b9f-b41600f5e14f > CLOUDFLARE_TUNNEL_TOKEN
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
       - name: Setup Tailscale
         uses: tailscale/github-action@v4
         with:
-          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
           tags: tag:ci
           version: 1.68.1
 
@@ -74,4 +79,4 @@ jobs:
           cd ansible
           ansible-playbook playbooks/post_reboot_restore.yml
         env:
-          CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+          CLOUDFLARE_TUNNEL_TOKEN: ${{ env.CLOUDFLARE_TUNNEL_TOKEN }}

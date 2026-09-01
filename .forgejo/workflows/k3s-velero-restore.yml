@@ -1,9 +1,5 @@
 # Forgejo Actions mirror of .github/workflows/k3s-velero-restore.yml
-# Required Forgejo secrets:
-#   TAILSCALE_OAUTH_CLIENT_ID
-#   TAILSCALE_OAUTH_CLIENT_SECRET
-#   AWS_ACCESS_KEY_ID
-#   AWS_SECRET_ACCESS_KEY
+# Required Forgejo secret: BW_ACCESS_TOKEN
 name: k3s - Velero Cluster Restore
 
 on:
@@ -48,11 +44,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+            efb9a246-29d5-423e-98c4-b40f00cc81a6 > AWS_ACCESS_KEY_ID
+            735bb5f9-8a0e-427d-9f55-b40f00cc9c43 > AWS_SECRET_ACCESS_KEY
       - name: Setup Tailscale
         uses: tailscale/github-action@v4
         with:
-          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
           tags: tag:ci
           version: 1.68.1
 
@@ -90,23 +95,23 @@ jobs:
 
       - name: Verify Velero is running
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
         run: |
           kubectl -n velero get pods
           velero version
 
       - name: List available backups
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
         run: velero backup get
 
       - name: Resolve backup name
         id: resolve-backup
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
         run: |
           if [ -n "${{ inputs.backup_name }}" ]; then
             BACKUP_NAME="${{ inputs.backup_name }}"
@@ -134,8 +139,8 @@ jobs:
       - name: Dry run restore
         if: inputs.dry_run == true
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
         run: |
           velero restore create \
             --from-backup "${{ steps.resolve-backup.outputs.backup_name }}" \
@@ -145,8 +150,8 @@ jobs:
       - name: Create restore (all namespaces)
         if: inputs.dry_run != true && inputs.restore_namespaces == ''
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
         run: |
           velero restore create "restore-${{ github.run_id }}" \
             --from-backup "${{ steps.resolve-backup.outputs.backup_name }}"
@@ -154,8 +159,8 @@ jobs:
       - name: Create restore (selected namespaces)
         if: inputs.dry_run != true && inputs.restore_namespaces != ''
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
         run: |
           velero restore create "restore-${{ github.run_id }}" \
             --from-backup "${{ steps.resolve-backup.outputs.backup_name }}" \
@@ -164,16 +169,16 @@ jobs:
       - name: Wait for restore to complete
         if: inputs.dry_run != true
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
         run: |
           velero restore wait "restore-${{ github.run_id }}" --timeout "${{ inputs.wait_timeout }}"
 
       - name: Get restore details
         if: inputs.dry_run != true
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
         run: |
           velero restore describe "restore-${{ github.run_id }}" --details
 

@@ -1,4 +1,5 @@
 # Forgejo Actions mirror of .github/workflows/backup-run.yml
+# Required Forgejo secret: BW_ACCESS_TOKEN
 name: Run Backup Now
 
 on:
@@ -30,16 +31,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      # Required Forgejo secrets:
-      #   AWS_ACCESS_KEY_ID
-      #   AWS_SECRET_ACCESS_KEY
-      #   TAILSCALE_OAUTH_CLIENT_ID
-      #   TAILSCALE_OAUTH_CLIENT_SECRET
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            efb9a246-29d5-423e-98c4-b40f00cc81a6 > AWS_ACCESS_KEY_ID
+            735bb5f9-8a0e-427d-9f55-b40f00cc9c43 > AWS_SECRET_ACCESS_KEY
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
       - name: Setup Tailscale
         uses: tailscale/github-action@v4
         with:
-          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
           tags: tag:ci
           version: 1.68.1
 
@@ -133,6 +138,6 @@ jobs:
           fi
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
