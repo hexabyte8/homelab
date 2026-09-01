@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgejo
+  namespace: forgejo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: forgejo
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: forgejo
+      annotations:
+        # Reloader: restart pod when the OIDC secret is rotated so the
+        # postStart hook re-registers the OAuth2 source with the new credentials.
+        secret.reloader.stakater.com/reload: "forgejo-oidc-secret"
+        configmap.reloader.stakater.com/reload: "forgejo-config"
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: forgejo
+          image: codeberg.org/forgejo/forgejo:10
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: forgejo-config
+            - secretRef:
+                name: forgejo-oidc-secret
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          # postStart registers Authentik as the OIDC auth source on first boot and
+          # updates it on every subsequent pod restart (e.g. after secret rotation),
+          # ensuring credentials are always current. The loop is bounded to 5 minutes.
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    i=0
+                    until curl -sf http://localhost:3000/api/healthz; do
+                      i=$((i+1))
+                      [ "$i" -ge 60 ] && echo "WARN: Forgejo did not become healthy in time; skipping OAuth2 registration" && exit 0
+                      sleep 5
+                    done
+                    if forgejo admin auth list 2>/dev/null | grep -q "Authentik"; then
+                      forgejo admin auth update-oauth \
+                        --name "Authentik" \
+                        --key "${FORGEJO_OIDC_CLIENT_ID}" \
+                        --secret "${FORGEJO_OIDC_CLIENT_SECRET}" || echo "WARN: forgejo admin auth update-oauth exited non-zero"
+                    else
+                      forgejo admin auth add-oauth \
+                        --name "Authentik" \
+                        --provider openidConnect \
+                        --key "${FORGEJO_OIDC_CLIENT_ID}" \
+                        --secret "${FORGEJO_OIDC_CLIENT_SECRET}" \
+                        --auto-discover-url "https://authentik.chronobyte.net/application/o/forgejo/.well-known/openid-configuration" \
+                        --scopes "openid email profile" || echo "WARN: forgejo admin auth add-oauth exited non-zero"
+                    fi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /api/healthz
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/healthz
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: forgejo-data

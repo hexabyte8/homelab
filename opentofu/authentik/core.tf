@@ -274,3 +274,45 @@ output "mealie_oauth2_client_id" {
   description = "Authentik OAuth2 client_id for Mealie."
   value       = authentik_provider_oauth2.mealie.client_id
 }
+
+# ---------- OAuth2/OIDC provider — Forgejo ----------
+#
+# Forgejo uses OpenID Connect for authentication. After `tofu apply`, the
+# opentofu-reusable.yml workflow writes the generated client_secret to BWS.
+# The sm-operator then syncs it into the `forgejo-oidc-secret` k8s Secret,
+# which the postStart lifecycle hook in the Forgejo pod uses to register
+# Authentik as an OAuth2 auth source via `forgejo admin auth add-oauth`.
+
+resource "authentik_provider_oauth2" "forgejo" {
+  name               = "Forgejo"
+  client_id          = "forgejo"
+  client_secret      = var.forgejo_client_secret
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+  signing_key        = data.authentik_certificate_key_pair.default.id
+  property_mappings  = data.authentik_property_mapping_provider_scope.oidc_standard.ids
+  allowed_redirect_uris = [
+    {
+      matching_mode = "strict"
+      url           = "https://git.${var.cloudflare_zone_name}/user/oauth2/Authentik/callback"
+    }
+  ]
+  sub_mode                   = "hashed_user_id"
+  include_claims_in_id_token = true
+  access_token_validity      = "hours=1"
+  refresh_token_validity     = "days=30"
+}
+
+resource "authentik_application" "forgejo" {
+  name              = "Forgejo"
+  slug              = "forgejo"
+  protocol_provider = authentik_provider_oauth2.forgejo.id
+  meta_launch_url   = "https://git.${var.cloudflare_zone_name}"
+  meta_description  = "Forgejo self-hosted Git service (public, OIDC via Authentik)."
+  open_in_new_tab   = false
+}
+
+output "forgejo_oauth2_client_id" {
+  description = "Authentik OAuth2 client_id for Forgejo."
+  value       = authentik_provider_oauth2.forgejo.client_id
+}

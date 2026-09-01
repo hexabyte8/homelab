@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-config
+  namespace: forgejo
+data:
+  # Server
+  GITEA__server__DOMAIN: "git.chronobyte.net"
+  GITEA__server__ROOT_URL: "https://git.chronobyte.net/"
+  GITEA__server__HTTP_PORT: "3000"
+  GITEA__server__DISABLE_SSH: "true"
+  # Security — INSTALL_LOCK prevents the setup wizard from appearing after first run
+  GITEA__security__INSTALL_LOCK: "true"
+  # Service — disable self-registration; all users must authenticate via Authentik
+  GITEA__service__DISABLE_REGISTRATION: "true"
+  GITEA__service__REQUIRE_SIGNIN_VIEW: "true"
+  GITEA__service__DEFAULT_KEEP_EMAIL_PRIVATE: "true"
+  # Database — SQLite, stored on the persistent volume.
+  # Forgejo's image creates /data/gitea/ by default; using that path avoids
+  # the need for an init container to pre-create the directory.
+  GITEA__database__DB_TYPE: "sqlite3"
+  GITEA__database__PATH: "/data/gitea/gitea.db"
+  # Logging
+  GITEA__log__MODE: "console"
+  GITEA__log__LEVEL: "info"
+  # Mailer — relay through Stalwart
+  GITEA__mailer__ENABLED: "true"
+  GITEA__mailer__SMTP_ADDR: "stalwart.stalwart.svc.cluster.local"
+  GITEA__mailer__SMTP_PORT: "587"
+  GITEA__mailer__FROM: "forgejo <noreply@chronobyte.net>"
