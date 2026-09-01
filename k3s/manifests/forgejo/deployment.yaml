@@ -75,11 +75,12 @@ spec:
                   - /bin/sh
                   - -c
                   - |
+                    set -eu
                     FORGEJO_CLI="/usr/local/bin/gitea --config /data/gitea/conf/app.ini --work-path /data/gitea"
                     i=0
                     until ${FORGEJO_CLI} admin auth list >/tmp/forgejo-auth-sources 2>/tmp/forgejo-auth-list.err; do
                       i=$((i+1))
-                      [ "$i" -ge 60 ] && echo "WARN: Forgejo auth CLI did not become ready in time; skipping OAuth2 registration" && cat /tmp/forgejo-auth-list.err && exit 0
+                      [ "$i" -ge 60 ] && echo "ERROR: Forgejo auth CLI did not become ready in time; aborting startup" && cat /tmp/forgejo-auth-list.err && exit 1
                       sleep 5
                     done
                     AUTHENTIK_AUTH_ID="$(awk '$0 ~ /Authentik/ {print $1; exit}' /tmp/forgejo-auth-sources)"
@@ -91,7 +92,7 @@ spec:
                         --key "${FORGEJO_OIDC_CLIENT_ID}" \
                         --secret "${FORGEJO_OIDC_CLIENT_SECRET}" \
                         --auto-discover-url "https://authentik.chronobyte.net/application/o/forgejo/.well-known/openid-configuration" \
-                        --scopes "openid email profile" || echo "WARN: forgejo admin auth update-oauth exited non-zero"
+                        --scopes "openid email profile"
                     else
                       ${FORGEJO_CLI} admin auth add-oauth \
                         --name "Authentik" \
@@ -99,7 +100,7 @@ spec:
                         --key "${FORGEJO_OIDC_CLIENT_ID}" \
                         --secret "${FORGEJO_OIDC_CLIENT_SECRET}" \
                         --auto-discover-url "https://authentik.chronobyte.net/application/o/forgejo/.well-known/openid-configuration" \
-                        --scopes "openid email profile" || echo "WARN: forgejo admin auth add-oauth exited non-zero"
+                        --scopes "openid email profile"
                     fi
           securityContext:
             allowPrivilegeEscalation: false
