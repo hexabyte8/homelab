@@ -77,7 +77,9 @@ spec:
                   - |
                     set -eu
                     forgejo_cli() {
-                      /usr/local/bin/gitea --config /data/gitea/conf/app.ini --work-path /data/gitea "$@"
+                      # postStart hook runs as root; Forgejo refuses root — use su-exec
+                      # to drop to the git user (uid/gid 1000) before calling the CLI.
+                      /sbin/su-exec git /usr/local/bin/gitea --config /data/gitea/conf/app.ini --work-path /data/gitea "$@"
                     }
                     i=0
                     until forgejo_cli admin auth list --vertical-bars >/tmp/forgejo-auth-sources 2>/tmp/forgejo-auth-list.err; do
