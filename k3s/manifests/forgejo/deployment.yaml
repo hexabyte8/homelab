@@ -75,19 +75,20 @@ spec:
                   - /bin/sh
                   - -c
                   - |
+                    FORGEJO_CLI="/usr/local/bin/gitea --config /data/gitea/conf/app.ini --work-path /data/gitea"
                     i=0
-                    until curl -sf http://localhost:3000/api/healthz; do
+                    until ${FORGEJO_CLI} admin auth list >/tmp/forgejo-auth-sources 2>/tmp/forgejo-auth-list.err; do
                       i=$((i+1))
-                      [ "$i" -ge 60 ] && echo "WARN: Forgejo did not become healthy in time; skipping OAuth2 registration" && exit 0
+                      [ "$i" -ge 60 ] && echo "WARN: Forgejo auth CLI did not become ready in time; skipping OAuth2 registration" && cat /tmp/forgejo-auth-list.err && exit 0
                       sleep 5
                     done
-                    if forgejo admin auth list 2>/dev/null | grep -q "Authentik"; then
-                      forgejo admin auth update-oauth \
+                    if grep -q "Authentik" /tmp/forgejo-auth-sources; then
+                      ${FORGEJO_CLI} admin auth update-oauth \
                         --name "Authentik" \
                         --key "${FORGEJO_OIDC_CLIENT_ID}" \
                         --secret "${FORGEJO_OIDC_CLIENT_SECRET}" || echo "WARN: forgejo admin auth update-oauth exited non-zero"
                     else
-                      forgejo admin auth add-oauth \
+                      ${FORGEJO_CLI} admin auth add-oauth \
                         --name "Authentik" \
                         --provider openidConnect \
                         --key "${FORGEJO_OIDC_CLIENT_ID}" \
