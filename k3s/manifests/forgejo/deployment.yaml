@@ -78,12 +78,12 @@ spec:
                     set -eu
                     FORGEJO_CLI="/usr/local/bin/gitea --config /data/gitea/conf/app.ini --work-path /data/gitea"
                     i=0
-                    until ${FORGEJO_CLI} admin auth list >/tmp/forgejo-auth-sources 2>/tmp/forgejo-auth-list.err; do
+                    until ${FORGEJO_CLI} admin auth list --vertical-bars >/tmp/forgejo-auth-sources 2>/tmp/forgejo-auth-list.err; do
                       i=$((i+1))
                       [ "$i" -ge 60 ] && echo "ERROR: Forgejo auth CLI did not become ready in time; aborting startup" && cat /tmp/forgejo-auth-list.err && exit 1
                       sleep 5
                     done
-                    AUTHENTIK_AUTH_ID="$(awk '$0 ~ /Authentik/ {print $1; exit}' /tmp/forgejo-auth-sources)"
+                    AUTHENTIK_AUTH_ID="$(awk -F'|' '$2 ~ /^[[:space:]]*Authentik[[:space:]]*$/ {gsub(/[[:space:]]/, "", $1); print $1; exit}' /tmp/forgejo-auth-sources)"
                     if [ -n "${AUTHENTIK_AUTH_ID}" ]; then
                       ${FORGEJO_CLI} admin auth update-oauth \
                         --id "${AUTHENTIK_AUTH_ID}" \
