@@ -73,13 +73,20 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
-            # s6-overlay (Forgejo's init system) must start as root and drops
-            # to uid/gid 1000 (git user) internally. runAsUser/runAsNonRoot
-            # here prevented s6-svscan from opening its lock file. The pod-
-            # level fsGroup: 1000 keeps the data PVC accessible.
+            # s6-overlay starts as root and uses su-exec to drop to uid/gid
+            # 1000 (git user). It needs CHOWN + FOWNER to fix up ownership and
+            # permissions on /app and /data, and SETUID + SETGID + DAC_OVERRIDE
+            # for su-exec / setgroups(). Dropping ALL without adding these back
+            # causes the container to crash before Forgejo can start.
             capabilities:
               drop:
                 - ALL
+              add:
+                - CHOWN
+                - FOWNER
+                - SETUID
+                - SETGID
+                - DAC_OVERRIDE
           resources:
             requests:
               cpu: 100m
