@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea
+  namespace: gitea
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitea
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: gitea
+      annotations:
+        # Reloader: restart pod when the OIDC secret is rotated so the
+        # postStart hook re-registers the OAuth2 source with the new credentials.
+        secret.reloader.stakater.com/reload: "gitea-oidc-secret"
+        configmap.reloader.stakater.com/reload: "gitea-config"
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: gitea
+          image: gitea/gitea:1.22.6
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: gitea-config
+            - secretRef:
+                name: gitea-oidc-secret
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          # postStart registers Authentik as the OIDC auth source on first boot
+          # (and on every pod restart after secret rotation). The `|| true`
+          # makes it a no-op when the source already exists.
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    until curl -sf http://localhost:3000/api/healthz; do sleep 5; done
+                    gitea admin auth add-oauth \
+                      --name "Authentik" \
+                      --provider openidConnect \
+                      --key "${GITEA_OIDC_CLIENT_ID}" \
+                      --secret "${GITEA_OIDC_CLIENT_SECRET}" \
+                      --auto-discover-url "https://authentik.chronobyte.net/application/o/gitea/.well-known/openid-configuration" \
+                      --scopes "openid email profile" 2>/dev/null || true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /api/healthz
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/healthz
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gitea-data

@@ -1,0 +1,22 @@
+---
+# Gitea — self-hosted Git service.
+# Deployed as plain Kubernetes manifests (no Helm chart needed).
+# Authenticates via Authentik OIDC (native OAuth2, no ForwardAuth needed).
+# The postStart lifecycle hook in deployment.yaml registers Authentik as an
+# OAuth2 source using `gitea admin auth add-oauth` on first boot.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gitea
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 5m
+  prune: true
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./k3s/manifests/gitea
+  targetNamespace: gitea
