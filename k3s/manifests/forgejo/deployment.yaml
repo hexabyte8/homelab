@@ -80,7 +80,7 @@ spec:
                     i=0
                     until ${FORGEJO_CLI} admin auth list --vertical-bars >/tmp/forgejo-auth-sources 2>/tmp/forgejo-auth-list.err; do
                       i=$((i+1))
-                      [ "$i" -ge 60 ] && echo "ERROR: Forgejo auth CLI did not become ready in time; aborting startup" && cat /tmp/forgejo-auth-list.err && exit 1
+                      [ "$i" -ge 60 ] && echo "ERROR: Forgejo auth CLI did not become ready in time; aborting startup" >&2 && cat /tmp/forgejo-auth-list.err >&2 && exit 1
                       sleep 5
                     done
                     AUTHENTIK_AUTH_ID="$(awk -F'|' '$2 ~ /^[[:space:]]*Authentik[[:space:]]*$/ {gsub(/[[:space:]]/, "", $1); print $1; exit}' /tmp/forgejo-auth-sources)"
@@ -91,7 +91,7 @@ spec:
                         --key "${FORGEJO_OIDC_CLIENT_ID}" \
                         --secret "${FORGEJO_OIDC_CLIENT_SECRET}" \
                         --auto-discover-url "https://authentik.chronobyte.net/application/o/forgejo/.well-known/openid-configuration" \
-                        --scopes "openid email profile"
+                        --scopes "openid email profile" 2>/tmp/forgejo-auth-setup.err || { echo "ERROR: forgejo admin auth update-oauth failed" >&2; cat /tmp/forgejo-auth-setup.err >&2; exit 1; }
                     else
                       ${FORGEJO_CLI} admin auth add-oauth \
                         --name "Authentik" \
@@ -99,7 +99,7 @@ spec:
                         --key "${FORGEJO_OIDC_CLIENT_ID}" \
                         --secret "${FORGEJO_OIDC_CLIENT_SECRET}" \
                         --auto-discover-url "https://authentik.chronobyte.net/application/o/forgejo/.well-known/openid-configuration" \
-                        --scopes "openid email profile"
+                        --scopes "openid email profile" 2>/tmp/forgejo-auth-setup.err || { echo "ERROR: forgejo admin auth add-oauth failed" >&2; cat /tmp/forgejo-auth-setup.err >&2; exit 1; }
                     fi
           securityContext:
             allowPrivilegeEscalation: false
