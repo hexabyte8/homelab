@@ -1,0 +1,232 @@
+# Forgejo Actions mirror of .github/workflows/opentofu-reusable.yml
+# Required Forgejo secrets:
+#   BW_ACCESS_TOKEN               # preserved for reusable-workflow compatibility / BWS sync step
+#   ADMIN_EMAIL
+#   AUTHENTIK_API_TOKEN
+#   AWS_ACCESS_KEY_ID
+#   AWS_SECRET_ACCESS_KEY
+#   CLOUDFLARE_ACCOUNT_ID
+#   CLOUDFLARE_API_TOKEN
+#   CLOUDFLARE_ZONE_ID
+#   CLOUDFLARE_ZONE_NAME
+#   DEFAULT_VM_PASSWORD
+#   PEER_PUBLIC_IP
+#   PM_API_TOKEN_ID
+#   PM_API_TOKEN_SECRET
+#   PUBLIC_IP
+#   TAILSCALE_OAUTH_CLIENT_ID
+#   TAILSCALE_OAUTH_CLIENT_SECRET
+#   GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
+#   ACTUAL_OPENID_CLIENT_SECRET
+#   MEALIE_OIDC_CLIENT_SECRET
+#   FORGEJO_OIDC_CLIENT_SECRET
+name: OpenTofu Stack (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      stack:
+        description: 'Stack to operate on (cloudflare, tailscale, aws, proxmox, authentik)'
+        type: string
+        required: true
+      action:
+        description: 'Action to run (plan or apply)'
+        type: string
+        required: true
+    secrets:
+      BW_ACCESS_TOKEN:
+        required: true
+
+jobs:
+  opentofu:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.action == 'apply' && 'production' || '' }}
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+
+    env:
+      AWS_DEFAULT_REGION: us-east-1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Tailscale is needed for proxmox (API + SSH over MagicDNS) and authentik
+      # (Authentik runs on the K3s cluster on Proxmox; its Cloudflare tunnel
+      # backend is unreachable when the node is down).
+      - name: Setup Tailscale
+        if: inputs.stack == 'proxmox' || inputs.stack == 'authentik'
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+          version: 1.68.1
+
+      - name: Enable MagicDNS
+        if: inputs.stack == 'proxmox' || inputs.stack == 'authentik'
+        run: sudo tailscale set --accept-dns=true | cat
+
+      - name: Wait for Proxmox DNS
+        if: inputs.stack == 'proxmox'
+        run: |
+          echo "Waiting for chronobyte.daggertooth-scala.ts.net to resolve..."
+          for i in $(seq 1 60); do
+            if getent hosts chronobyte.daggertooth-scala.ts.net; then
+              echo "DNS resolved successfully"
+              break
+            fi
+            echo "Attempt $i/60 failed, retrying in 5s..."
+            sleep 5
+          done
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v2
+        with:
+          tofu_wrapper: false
+
+      - name: Setup tflint
+        uses: terraform-linters/setup-tflint@v6
+
+      - name: tflint init
+        run: tflint --init
+        working-directory: ./opentofu/${{ inputs.stack }}
+        env:
+          # Unset GITHUB_TOKEN to force PGP verification instead of sigstore attestation,
+          # which panics with a nil pointer in some tflint versions (tflint#2591).
+          GITHUB_TOKEN: ""
+
+      - name: tflint
+        run: tflint --no-color
+        working-directory: ./opentofu/${{ inputs.stack }}
+        env:
+          GITHUB_TOKEN: ""
+
+      - name: OpenTofu Init
+        run: tofu init -no-color
+        working-directory: ./opentofu/${{ inputs.stack }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: OpenTofu Plan
+        if: inputs.action == 'plan'
+        id: plan
+        run: |
+          tofu plan -no-color -out=tfplan 2>&1 | tee plan.txt
+          echo "exitcode=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        working-directory: ./opentofu/${{ inputs.stack }}
+        continue-on-error: true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_admin_email: ${{ secrets.ADMIN_EMAIL }}
+          TF_VAR_authentik_api_token: ${{ secrets.AUTHENTIK_API_TOKEN }}
+          TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_cloudflare_zone_name: ${{ secrets.CLOUDFLARE_ZONE_NAME }}
+          TF_VAR_default_vm_password: ${{ secrets.DEFAULT_VM_PASSWORD }}
+          TF_VAR_grafana_client_secret: ${{ secrets.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET }}
+          TF_VAR_actual_client_secret: ${{ secrets.ACTUAL_OPENID_CLIENT_SECRET }}
+          TF_VAR_mealie_client_secret: ${{ secrets.MEALIE_OIDC_CLIENT_SECRET }}
+          TF_VAR_forgejo_client_secret: ${{ secrets.FORGEJO_OIDC_CLIENT_SECRET }}
+          TF_VAR_proxmox_host: "chronobyte"
+          TF_VAR_public_ip: ${{ secrets.PUBLIC_IP }}
+          TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
+
+      - name: Comment Plan on PR
+        uses: actions/github-script@v9
+        if: inputs.action == 'plan' && github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('./opentofu/${{ inputs.stack }}/plan.txt', 'utf8');
+            const truncatedPlan = plan.length > 65000 ? plan.substring(0, 65000) + '\n... (truncated)' : plan;
+            const output = `#### OpenTofu Plan — \`${{ inputs.stack }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`hcl
+            ${truncatedPlan}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Fail if Plan Failed
+        if: inputs.action == 'plan' && steps.plan.outputs.exitcode != '0'
+        run: exit 1
+
+      - name: OpenTofu Apply
+        if: inputs.action == 'apply'
+        run: tofu apply -auto-approve -no-color
+        working-directory: ./opentofu/${{ inputs.stack }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_admin_email: ${{ secrets.ADMIN_EMAIL }}
+          TF_VAR_authentik_api_token: ${{ secrets.AUTHENTIK_API_TOKEN }}
+          TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_cloudflare_zone_name: ${{ secrets.CLOUDFLARE_ZONE_NAME }}
+          TF_VAR_default_vm_password: ${{ secrets.DEFAULT_VM_PASSWORD }}
+          TF_VAR_grafana_client_secret: ${{ secrets.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET }}
+          TF_VAR_actual_client_secret: ${{ secrets.ACTUAL_OPENID_CLIENT_SECRET }}
+          TF_VAR_mealie_client_secret: ${{ secrets.MEALIE_OIDC_CLIENT_SECRET }}
+          TF_VAR_forgejo_client_secret: ${{ secrets.FORGEJO_OIDC_CLIENT_SECRET }}
+          TF_VAR_proxmox_host: "chronobyte"
+          TF_VAR_public_ip: ${{ secrets.PUBLIC_IP }}
+          TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
+
+      - name: Sync Authentik client IDs to BWS
+        if: inputs.action == 'apply' && inputs.stack == 'authentik'
+        working-directory: ./opentofu/${{ inputs.stack }}
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          # Read client IDs from tofu state (deterministic but confirm from state)
+          ACTUAL_CLIENT_ID=$(tofu output -raw actual_oauth2_client_id)
+          GRAFANA_CLIENT_ID=$(tofu output -raw grafana_oauth2_client_id)
+          MEALIE_CLIENT_ID=$(tofu output -raw mealie_oauth2_client_id)
+          FORGEJO_CLIENT_ID=$(tofu output -raw forgejo_oauth2_client_id)
+
+          echo "::add-mask::$ACTUAL_CLIENT_ID"
+          echo "::add-mask::$GRAFANA_CLIENT_ID"
+          echo "::add-mask::$MEALIE_CLIENT_ID"
+          echo "::add-mask::$FORGEJO_CLIENT_ID"
+
+          curl -sSLo /tmp/bws.zip \
+            "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.1.0/bws-x86_64-unknown-linux-gnu-2.1.0.zip"
+          echo "ba8233c3a4aee5d43e3c73bbd04d99e9bc5aba13bbbfd06d89b073abe732b860  /tmp/bws.zip" | sha256sum -c -
+          unzip -q /tmp/bws.zip bws -d /tmp && chmod +x /tmp/bws && sudo mv /tmp/bws /usr/local/bin/bws
+
+          # b5410954 = ACTUAL_OPENID_CLIENT_ID in bw-secret.yaml
+          bws secret edit b5410954-5339-4a93-9c78-b49b0173a58b --value "$ACTUAL_CLIENT_ID"
+          echo "[OK] ACTUAL_OPENID_CLIENT_ID synced to BWS"
+
+          # REPLACE_ME_MEALIE_OIDC_CLIENT_ID_UUID = OIDC_CLIENT_ID in mealie bw-secret.yaml
+          # TODO: uncomment once BWS entry is created and UUID is known:
+          # bws secret edit <uuid> --value "$MEALIE_CLIENT_ID"
+          echo "[SKIP] MEALIE OIDC_CLIENT_ID — BWS UUID not yet set (see k3s/manifests/mealie/bw-secret.yaml)"
+
+          # ab243288 = FORGEJO_OIDC_CLIENT_ID in forgejo bw-secret.yaml
+          bws secret edit ab243288-4bd3-4e3e-bdbd-b4b800f0fef4 --value "$FORGEJO_CLIENT_ID"
+          echo "[OK] FORGEJO_OIDC_CLIENT_ID synced to BWS"
+
+          # cfa6860b = GF_AUTH_GENERIC_OAUTH_CLIENT_ID in monitoring bw-secret
+          # (update if a grafana client_id BWS entry exists)
+          echo "[OK] Grafana client_id: $GRAFANA_CLIENT_ID (update BWS entry manually if needed)"

@@ -1,0 +1,67 @@
+# Forgejo Actions mirror of .github/workflows/opentofu-apply.yml
+name: OpenTofu Apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'opentofu/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      stacks: ${{ steps.changed.outputs.stacks }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed stacks
+        id: changed
+        run: |
+          ALL_STACKS='["cloudflare","tailscale","aws","proxmox","authentik"]'
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "stacks=${ALL_STACKS}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+
+          STACKS=$(echo "$CHANGED" \
+            | grep "^opentofu/" \
+            | cut -d/ -f2 \
+            | sort -u \
+            | grep -E "^(cloudflare|tailscale|aws|proxmox|authentik)$" \
+            | jq -cR -s 'split("\n") | map(select(length > 0))')
+
+          if [ -z "$STACKS" ] || [ "$STACKS" = "[]" ]; then
+            echo "No stack directories changed."
+            STACKS="[]"
+          fi
+
+          echo "stacks=${STACKS}" >> $GITHUB_OUTPUT
+
+  apply:
+    needs: detect
+    if: needs.detect.outputs.stacks != '[]'
+    strategy:
+      matrix:
+        stack: ${{ fromJson(needs.detect.outputs.stacks) }}
+      fail-fast: false
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    uses: ./.forgejo/workflows/opentofu-reusable.yml
+    with:
+      stack: ${{ matrix.stack }}
+      action: apply
+    secrets:
+      BW_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
