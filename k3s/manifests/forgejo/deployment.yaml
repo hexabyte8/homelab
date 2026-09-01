@@ -88,7 +88,6 @@ spec:
                       ${FORGEJO_CLI} admin auth update-oauth \
                         --id "${AUTHENTIK_AUTH_ID}" \
                         --name "Authentik" \
-                        --provider openidConnect \
                         --key "${FORGEJO_OIDC_CLIENT_ID}" \
                         --secret "${FORGEJO_OIDC_CLIENT_SECRET}" \
                         --auto-discover-url "https://authentik.chronobyte.net/application/o/forgejo/.well-known/openid-configuration" \
