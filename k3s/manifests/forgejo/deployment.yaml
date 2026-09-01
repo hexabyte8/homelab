@@ -43,10 +43,9 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
-          # postStart registers Authentik as the OIDC auth source on first boot
-          # (and on every pod restart after secret rotation). The loop is
-          # bounded to 5 minutes (60 × 5 s). stderr is preserved so real
-          # errors remain visible in pod logs.
+          # postStart registers Authentik as the OIDC auth source on first boot and
+          # updates it on every subsequent pod restart (e.g. after secret rotation),
+          # ensuring credentials are always current. The loop is bounded to 5 minutes.
           lifecycle:
             postStart:
               exec:
@@ -60,13 +59,20 @@ spec:
                       [ "$i" -ge 60 ] && echo "WARN: Forgejo did not become healthy in time; skipping OAuth2 registration" && exit 0
                       sleep 5
                     done
-                    forgejo admin auth add-oauth \
-                      --name "Authentik" \
-                      --provider openidConnect \
-                      --key "${FORGEJO_OIDC_CLIENT_ID}" \
-                      --secret "${FORGEJO_OIDC_CLIENT_SECRET}" \
-                      --auto-discover-url "https://authentik.chronobyte.net/application/o/forgejo/.well-known/openid-configuration" \
-                      --scopes "openid email profile" || echo "WARN: forgejo admin auth add-oauth exited non-zero (source may already exist)"
+                    if forgejo admin auth list 2>/dev/null | grep -q "Authentik"; then
+                      forgejo admin auth update-oauth \
+                        --name "Authentik" \
+                        --key "${FORGEJO_OIDC_CLIENT_ID}" \
+                        --secret "${FORGEJO_OIDC_CLIENT_SECRET}" || echo "WARN: forgejo admin auth update-oauth exited non-zero"
+                    else
+                      forgejo admin auth add-oauth \
+                        --name "Authentik" \
+                        --provider openidConnect \
+                        --key "${FORGEJO_OIDC_CLIENT_ID}" \
+                        --secret "${FORGEJO_OIDC_CLIENT_SECRET}" \
+                        --auto-discover-url "https://authentik.chronobyte.net/application/o/forgejo/.well-known/openid-configuration" \
+                        --scopes "openid email profile" || echo "WARN: forgejo admin auth add-oauth exited non-zero"
+                    fi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false

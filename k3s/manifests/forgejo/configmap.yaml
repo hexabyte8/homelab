@@ -15,9 +15,11 @@ data:
   GITEA__service__DISABLE_REGISTRATION: "true"
   GITEA__service__REQUIRE_SIGNIN_VIEW: "true"
   GITEA__service__DEFAULT_KEEP_EMAIL_PRIVATE: "true"
-  # Database — SQLite, stored on the persistent volume
+  # Database — SQLite, stored on the persistent volume.
+  # Forgejo's image creates /data/gitea/ by default; using that path avoids
+  # the need for an init container to pre-create the directory.
   GITEA__database__DB_TYPE: "sqlite3"
-  GITEA__database__PATH: "/data/forgejo/forgejo.db"
+  GITEA__database__PATH: "/data/gitea/gitea.db"
   # Logging
   GITEA__log__MODE: "console"
   GITEA__log__LEVEL: "info"
