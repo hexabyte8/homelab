@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: register
-          image: code.forgejo.org/forgejo/runner:3
+          image: data.forgejo.org/forgejo/runner:12
           command:
             - sh
             - -c
@@ -52,7 +52,7 @@ spec:
               mountPath: /data
       containers:
         - name: runner
-          image: code.forgejo.org/forgejo/runner:3
+          image: data.forgejo.org/forgejo/runner:12
           command:
             - act_runner
             - daemon
