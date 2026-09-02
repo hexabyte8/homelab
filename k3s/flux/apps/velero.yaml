@@ -3,9 +3,9 @@
 # Uses AWS S3 (or compatible) as the backup storage location.
 # Credentials injected from velero-s3-credentials Secret (synced via BWS).
 #
-# ⚠ Before merging: set the correct S3 bucket name in the `bucket` field below
-#   (search for REPLACE_ME_BUCKET). The HelmRelease will fail reconciliation
-#   until a valid bucket name is provided.
+# The bucket and dedicated IAM credentials are managed by opentofu/aws. After
+# the AWS stack applies, CI writes the generated credentials file to BWS and
+# the sm-operator syncs it into the velero-s3-credentials Secret.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -42,21 +42,15 @@ spec:
       secretContents: {}
 
     # ── Backup Storage Location ───────────────────────────────────────────────
-    # Replace REPLACE_ME values with your actual S3 bucket name and region.
     configuration:
+      # Longhorn is not an AWS block-volume provider, so back up mounted PVC
+      # contents through the Velero node agent rather than EC2 snapshots.
+      defaultVolumesToFsBackup: true
       backupStorageLocation:
         - name: default
           provider: aws
-          bucket: REPLACE_ME_BUCKET
+          bucket: homelab-gameserver-backups-amp-velero
           default: true
-          config:
-            region: us-east-1
-            # Uncomment and set if using an S3-compatible endpoint (e.g. MinIO):
-            # s3Url: https://s3.example.com
-            # s3ForcePathStyle: "true"
-      volumeSnapshotLocation:
-        - name: default
-          provider: aws
           config:
             region: us-east-1
 
@@ -77,9 +71,11 @@ spec:
           ttl: 720h   # 30 days retention
           includedNamespaces:
             - "*"
+          excludedNamespaces:
+            - velero
           storageLocation: default
-          volumeSnapshotLocations:
-            - default
+          snapshotVolumes: false
+          defaultVolumesToFsBackup: true
 
     # ── Resources ─────────────────────────────────────────────────────────────
     resources:

@@ -192,6 +192,29 @@ jobs:
           TF_VAR_public_ip: ${{ env.PUBLIC_IP }}
           TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
 
+      - name: Sync Velero credentials to BWS
+        if: inputs.action == 'apply' && inputs.stack == 'aws'
+        working-directory: ./opentofu/${{ inputs.stack }}
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          VELERO_CREDENTIALS=$(tofu output -raw velero_credentials_file)
+          VELERO_ACCESS_KEY_ID=$(printf '%s\n' "$VELERO_CREDENTIALS" | sed -n 's/^aws_access_key_id=//p')
+          VELERO_SECRET_ACCESS_KEY=$(printf '%s\n' "$VELERO_CREDENTIALS" | sed -n 's/^aws_secret_access_key=//p')
+
+          echo "::add-mask::$VELERO_ACCESS_KEY_ID"
+          echo "::add-mask::$VELERO_SECRET_ACCESS_KEY"
+
+          curl -sSLo /tmp/bws.zip \
+            "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.1.0/bws-x86_64-unknown-linux-gnu-2.1.0.zip"
+          echo "ba8233c3a4aee5d43e3c73bbd04d99e9bc5aba13bbbfd06d89b073abe732b860  /tmp/bws.zip" | sha256sum -c -
+          unzip -q /tmp/bws.zip bws -d /tmp && chmod +x /tmp/bws && sudo mv /tmp/bws /usr/local/bin/bws
+
+          bws secret edit ef64b78c-a531-4910-9b89-b4b10013bbf1 --value "$VELERO_CREDENTIALS"
+          echo "[OK] Velero S3 credentials synced to BWS"
+
       - name: Sync Authentik client IDs to BWS
         if: inputs.action == 'apply' && inputs.stack == 'authentik'
         working-directory: ./opentofu/${{ inputs.stack }}
