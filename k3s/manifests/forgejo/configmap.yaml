@@ -8,7 +8,17 @@ data:
   GITEA__server__DOMAIN: "git.chronobyte.net"
   GITEA__server__ROOT_URL: "https://git.chronobyte.net/"
   GITEA__server__HTTP_PORT: "3000"
-  GITEA__server__DISABLE_SSH: "true"
+  # SSH — use Forgejo's built-in SSH server (no OpenSSH daemon in the image).
+  # SSH_LISTEN_PORT is the port the server binds to inside the container
+  # (unprivileged, since the process runs as uid 1000). SSH_PORT/SSH_DOMAIN
+  # are what's advertised in clone URLs, and point at the Tailscale-exposed
+  # LoadBalancer service (see service-ssh-tailscale.yaml) so users clone over
+  # the tailnet rather than the public Cloudflare tunnel.
+  GITEA__server__DISABLE_SSH: "false"
+  GITEA__server__START_SSH_SERVER: "true"
+  GITEA__server__SSH_LISTEN_PORT: "2222"
+  GITEA__server__SSH_PORT: "22"
+  GITEA__server__SSH_DOMAIN: "git-ssh.daggertooth-scala.ts.net"
   # Security — INSTALL_LOCK prevents the setup wizard from appearing after first run
   GITEA__security__INSTALL_LOCK: "true"
   # Service — disable self-registration; all users must authenticate via Authentik
