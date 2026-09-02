@@ -1,0 +1,199 @@
+name: k3s - Velero Cluster Restore
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_host:
+        description: 'k3s server hostname'
+        required: true
+        type: string
+        default: 'k3s-server'
+      backup_name:
+        description: 'Specific Velero backup name to restore. Leave empty to use the latest completed daily-full-* backup.'
+        required: false
+        type: string
+        default: ''
+      restore_namespaces:
+        description: 'Comma-separated namespaces to restore. Leave empty to restore all namespaces.'
+        required: false
+        type: string
+        default: ''
+      wait_timeout:
+        description: 'How long to wait for restore completion'
+        required: false
+        type: string
+        default: '30m'
+      dry_run:
+        description: 'If true, show what would be restored without creating a restore'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  velero-restore:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    env:
+      KUBECONFIG: /tmp/k3s.yaml
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+            efb9a246-29d5-423e-98c4-b40f00cc81a6 > AWS_ACCESS_KEY_ID
+            735bb5f9-8a0e-427d-9f55-b40f00cc9c43 > AWS_SECRET_ACCESS_KEY
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+          version: 1.68.1
+
+      - name: Enable MagicDNS
+        run: sudo tailscale set --accept-dns=true | cat
+
+      - name: Wait for DNS to be available
+        run: sleep 10
+
+      - name: Setup SSH known hosts
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan ${{ inputs.target_host }}.daggertooth-scala.ts.net >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Get kubeconfig from k3s server
+        run: |
+          set -o pipefail
+          ssh ubuntu@${{ inputs.target_host }}.daggertooth-scala.ts.net \
+            "sudo cat /etc/rancher/k3s/k3s.yaml" \
+            | sed 's|server: https://127\.0\.0\.1:6443|server: https://${{ inputs.target_host }}.daggertooth-scala.ts.net:6443|' \
+            > "$KUBECONFIG"
+          chmod 600 "$KUBECONFIG"
+
+      - name: Install velero CLI
+        run: |
+          set -eu
+          VELERO_VERSION=v1.15.2
+          curl -fsSL -o velero.tar.gz \
+            "https://github.com/vmware-tanzu/velero/releases/download/${VELERO_VERSION}/velero-${VELERO_VERSION}-linux-amd64.tar.gz"
+          tar -xzf velero.tar.gz
+          sudo install "velero-${VELERO_VERSION}-linux-amd64/velero" /usr/local/bin/velero
+          rm -rf velero.tar.gz "velero-${VELERO_VERSION}-linux-amd64"
+          velero version --client-only
+
+      - name: Verify Velero is running
+        env:
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          kubectl -n velero get pods
+          velero version
+
+      - name: List available backups
+        env:
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        run: velero backup get
+
+      - name: Resolve backup name
+        id: resolve-backup
+        env:
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          if [ -n "${{ inputs.backup_name }}" ]; then
+            BACKUP_NAME="${{ inputs.backup_name }}"
+          else
+            BACKUP_NAME=$(velero backup get -o json | jq -r '
+              [
+                .items[]
+                | select(.status.phase == "Completed")
+                | select(.metadata.name | startswith("daily-full-"))
+              ]
+              | sort_by(.status.completionTimestamp // .metadata.creationTimestamp)
+              | last
+              | .metadata.name // empty
+            ')
+          fi
+
+          if [ -z "$BACKUP_NAME" ]; then
+            echo "::error::No completed daily-full-* Velero backup could be resolved."
+            exit 1
+          fi
+
+          echo "Using backup: $BACKUP_NAME"
+          echo "backup_name=$BACKUP_NAME" >> $GITHUB_OUTPUT
+
+      - name: Dry run restore
+        if: inputs.dry_run == true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          velero restore create \
+            --from-backup "${{ steps.resolve-backup.outputs.backup_name }}" \
+            --dry-run
+          echo "Dry run completed; no restore was created."
+
+      - name: Create restore (all namespaces)
+        if: inputs.dry_run != true && inputs.restore_namespaces == ''
+        env:
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          velero restore create "restore-${{ github.run_id }}" \
+            --from-backup "${{ steps.resolve-backup.outputs.backup_name }}"
+
+      - name: Create restore (selected namespaces)
+        if: inputs.dry_run != true && inputs.restore_namespaces != ''
+        env:
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          velero restore create "restore-${{ github.run_id }}" \
+            --from-backup "${{ steps.resolve-backup.outputs.backup_name }}" \
+            --include-namespaces "${{ inputs.restore_namespaces }}"
+
+      - name: Wait for restore to complete
+        if: inputs.dry_run != true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          velero restore wait "restore-${{ github.run_id }}" --timeout "${{ inputs.wait_timeout }}"
+
+      - name: Get restore details
+        if: inputs.dry_run != true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          velero restore describe "restore-${{ github.run_id }}" --details
+
+      - name: Post-restore health check
+        if: inputs.dry_run != true
+        run: |
+          kubectl get nodes
+          echo
+          echo "Non-running pods:"
+          kubectl get pods -A | { grep -v Running | grep -v Completed || true; }
+
+      - name: Post-restore instructions
+        if: inputs.dry_run != true
+        run: |
+          echo "Restore completed from backup: ${{ steps.resolve-backup.outputs.backup_name }}"
+          echo "Next operator actions:"
+          echo "  1. Run k3s-patch-secrets → target=bw-auth-token to re-seed the sm-operator token."
+          echo "  2. Wait ~5 minutes for the sm-operator to sync BitwardenSecrets back into the cluster."
+          echo "  3. Run OpenTofu Apply for authentik if user accounts, providers, or flows need reprovisioning."
+          echo "  4. Verify the Velero backup storage location is healthy before returning the cluster to service."

@@ -1,0 +1,24 @@
+# Forgejo runner workload.
+# Before merging, replace REPLACE_ME_FORGEJO_RUNNER_TOKEN_UUID in
+# k3s/manifests/forgejo-runner/bw-secret.yaml after creating a runner token in
+# Forgejo Admin > Actions > Runners:
+# https://git.chronobyte.net/admin/actions/runners
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: forgejo-runner
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 5m
+  prune: true
+  wait: false
+  dependsOn:
+    - name: forgejo
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./k3s/manifests/forgejo-runner
+  targetNamespace: forgejo

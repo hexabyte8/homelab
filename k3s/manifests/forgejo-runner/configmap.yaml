@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-runner-config
+  namespace: forgejo
+data:
+  FORGEJO_INSTANCE_URL: "https://git.chronobyte.net"
+  config.yaml: |
+    log:
+      level: info
+    runner:
+      file: /data/.runner
+      capacity: 3
+      labels:
+        - ubuntu-latest:docker://node:20-bookworm
+        - ubuntu-22.04:docker://node:20-bookworm
+      timeout: 3h
+    cache:
+      enabled: true
+      dir: /data/cache
+    container:
+      network: bridge
+      privileged: false
+      valid_volumes:
+        - /data/cache
+    host:
+      workdir_parent: /data/workspace

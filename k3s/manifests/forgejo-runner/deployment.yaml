@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgejo-runner
+  namespace: forgejo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: forgejo-runner
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: forgejo-runner
+      annotations:
+        secret.reloader.stakater.com/reload: "forgejo-runner-token"
+        configmap.reloader.stakater.com/reload: "forgejo-runner-config"
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: register
+          image: code.forgejo.org/forgejo/runner:3
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              mkdir -p /data/cache /data/workspace
+              if [ -f /data/.runner ]; then
+                echo "Runner already registered; skipping registration."
+                exit 0
+              fi
+              act_runner register \
+                --instance "${FORGEJO_INSTANCE_URL}" \
+                --token "${FORGEJO_RUNNER_TOKEN}" \
+                --name k3s-runner \
+                --no-interactive
+          envFrom:
+            - configMapRef:
+                name: forgejo-runner-config
+            - secretRef:
+                name: forgejo-runner-token
+          volumeMounts:
+            - name: runner-data
+              mountPath: /data
+      containers:
+        - name: runner
+          image: code.forgejo.org/forgejo/runner:3
+          command:
+            - act_runner
+            - daemon
+            - --config
+            - /config/config.yaml
+          env:
+            - name: DOCKER_HOST
+              value: tcp://localhost:2376
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          volumeMounts:
+            - name: runner-data
+              mountPath: /data
+            - name: runner-config
+              mountPath: /config/config.yaml
+              subPath: config.yaml
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+        - name: docker
+          image: docker:27-dind
+          securityContext:
+            privileged: true
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          args:
+            - --host=tcp://0.0.0.0:2376
+            - --host=unix:///var/run/docker.sock
+            - --data-root=/data/cache
+          volumeMounts:
+            - name: runner-data
+              mountPath: /data/cache
+              subPath: cache
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+      volumes:
+        - name: runner-data
+          persistentVolumeClaim:
+            claimName: forgejo-runner-data
+        - name: runner-config
+          configMap:
+            name: forgejo-runner-config
