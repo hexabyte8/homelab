@@ -1,0 +1,22 @@
+# Exposes Forgejo's built-in SSH server over the tailnet as
+# git-ssh.daggertooth-scala.ts.net. Traefik/Cloudflare ingress only carries
+# HTTP(S), so SSH (a raw TCP protocol) needs its own LoadBalancer service
+# backed by the Tailscale operator, mirroring the AdGuard DNS pattern.
+apiVersion: v1
+kind: Service
+metadata:
+  name: forgejo-ssh
+  namespace: forgejo
+  annotations:
+    tailscale.com/hostname: "git-ssh"
+    tailscale.com/proxy-class: "prod"
+spec:
+  type: LoadBalancer
+  loadBalancerClass: tailscale
+  selector:
+    app: forgejo
+  ports:
+    - name: ssh
+      port: 22
+      targetPort: 2222
+      protocol: TCP
