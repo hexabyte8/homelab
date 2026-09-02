@@ -40,6 +40,26 @@ velero backup get
 
 ---
 
+## How Backup Storage Is Provisioned
+
+The `opentofu/aws` stack provisions the complete Velero storage path:
+
+- a dedicated `homelab-gameserver-backups-amp-velero` S3 bucket
+- S3 versioning, AES-256 server-side encryption, and public-access blocking
+- a dedicated `homelab-velero` IAM user restricted to that bucket
+- an IAM access key exposed only as a sensitive OpenTofu output
+
+After an AWS stack apply, the reusable workflow writes the generated AWS
+credentials file to the existing Velero BWS entry. The sm-operator then syncs
+that value into the `velero-s3-credentials` Kubernetes Secret. No manual bucket
+or IAM credential setup is required.
+
+Velero runs `daily-full` at **02:00 UTC**, retains backups for 30 days, and uses
+its node agent to copy Longhorn PVC contents into S3. Longhorn volumes use
+filesystem backup rather than AWS EBS snapshots.
+
+---
+
 ## Method A — GitHub Actions (Recommended)
 
 The easiest and safest recovery path is the dedicated GitHub Actions workflow:
