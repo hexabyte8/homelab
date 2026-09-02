@@ -4,7 +4,11 @@ metadata:
   name: forgejo-runner
   namespace: forgejo
 spec:
-  replicas: 1
+  # Scaled to 0 while Forgejo Actions is disabled globally
+  # (GITEA__actions__ENABLED=false). Forgejo is currently a mirror /
+  # emergency backup, so no runner is needed. Scale back to 1 alongside
+  # re-enabling Actions in the forgejo configmap.
+  replicas: 0
   selector:
     matchLabels:
       app: forgejo-runner
