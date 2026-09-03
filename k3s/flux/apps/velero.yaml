@@ -118,8 +118,13 @@ spec:
         memory: 512Mi
 
     # ── Node agent (for volume backups via restic/kopia) ─────────────────────
+    # deployNodeAgent is the chart's actual toggle for the node-agent
+    # DaemonSet — it's a top-level value, not nodeAgent.enabled. The
+    # nodeAgent.enabled key below isn't part of this chart's schema at all,
+    # so it was silently ignored and no DaemonSet was ever created despite
+    # defaultVolumesToFsBackup: true requiring it to back up PVC contents.
+    deployNodeAgent: true
     nodeAgent:
-      enabled: true
       podVolumePath: /var/lib/kubelet/pods
       resources:
         requests:
