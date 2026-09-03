@@ -37,7 +37,7 @@ spec:
                 echo "Runner already registered; skipping registration."
                 exit 0
               fi
-              act_runner register \
+              forgejo-runner register \
                 --instance "${FORGEJO_INSTANCE_URL}" \
                 --token "${FORGEJO_RUNNER_TOKEN}" \
                 --name k3s-runner \
@@ -54,7 +54,7 @@ spec:
         - name: runner
           image: data.forgejo.org/forgejo/runner:12
           command:
-            - act_runner
+            - forgejo-runner
             - daemon
             - --config
             - /config/config.yaml
