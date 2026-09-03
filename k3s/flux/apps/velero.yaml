@@ -75,6 +75,15 @@ spec:
           default: true
           config:
             region: us-east-1
+      # The chart's default volumeSnapshotLocation value is a one-item list
+      # with every field unset (name/provider/credential all null), which
+      # still gets rendered into a real VolumeSnapshotLocation object unless
+      # explicitly overridden — causing a hard schema-validation failure
+      # ("spec.provider: Invalid value: null"). We don't use native volume
+      # snapshots here (Longhorn isn't an AWS block-snapshot provider; PVC
+      # contents are backed up via the node agent's fs-backup instead), so
+      # disable it outright.
+      volumeSnapshotLocation: []
 
     # ── Init containers (plugin download) ────────────────────────────────────
     initContainers:
