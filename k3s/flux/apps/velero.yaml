@@ -15,8 +15,11 @@ spec:
   interval: 30m
   releaseName: velero
   targetNamespace: velero
-  dependsOn:
-    - name: velero-config
+  # velero-config is a Kustomization, not a HelmRelease — HelmRelease
+  # dependsOn only supports HelmRelease-kind dependencies, so referencing it
+  # here silently fails forever ("dependency ... not found") and blocks this
+  # HelmRelease from ever installing. Remediation.retries below handles
+  # transient CRD/secret readiness instead (same pattern as longhorn-config).
   install:
     createNamespace: true
     remediation:
