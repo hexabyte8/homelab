@@ -40,11 +40,14 @@ spec:
     # Chart default (docker.io/bitnami/kubectl) 404s: Bitnami moved its free
     # images to bitnamilegacy in Aug 2025 and dropped versioned tags like
     # ":1.34" from docker.io/bitnami. Point at the official kubectl image
-    # instead; leaving tag unset makes the chart pin it to the cluster's
-    # Kubernetes version automatically.
+    # instead. The chart's auto-tag-from-cluster-version logic only produces
+    # a bare "1.34" (no patch, no "v" prefix), which doesn't exist on
+    # registry.k8s.io either — that registry only publishes full "vX.Y.Z"
+    # tags — so the tag must be pinned explicitly to match the server version.
     kubectl:
       image:
         repository: registry.k8s.io/kubectl
+        tag: v1.34.5
 
     # ── Credentials ──────────────────────────────────────────────────────────
     # velero-s3-credentials Secret is synced by the sm-operator from BWS.
