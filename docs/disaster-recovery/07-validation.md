@@ -218,6 +218,29 @@ FAIL - bucket not found:** Run `tofu apply` to recreate the bucket
 
 ---
 
+## 7.9.1 Velero Backup Health
+
+> If you performed [Phase 8: Velero Restore](./08-velero-restore.md), verify it here that
+> the restore succeeded and the schedule is still healthy going forward.
+
+```bash
+# BackupStorageLocation must be Available
+velero backup-location get
+
+# Schedule must be Enabled and not paused
+velero schedule get
+
+# If you ran a restore, confirm it completed without errors
+velero restore get
+velero restore describe <restore-name> --details
+```
+
+PASS: BSL `Available`, schedule `Enabled`, restore phase `Completed` with no `PartiallyFailed`/`Failed` entries
+FAIL - BSL not `Available`:** Check the `velero-s3-credentials` Secret exists and matches the `daggertooth-cluster-backups` bucket
+FAIL - restore `PartiallyFailed`:** Run `velero restore describe <restore-name> --details` and re-check the excluded/failed items — often safe to ignore for resources intentionally excluded (e.g. `kube-system`)
+
+---
+
 ## 7.10 cert-manager
 
 ```bash

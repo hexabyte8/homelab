@@ -5,6 +5,9 @@
 >
 > A reader with access to the Bitwarden vault and minimal technical knowledge can follow
 > this guide end-to-end and restore the entire homelab stack.
+>
+> **In an active emergency?** Skip straight to the [Master Recovery Checklist](./checklist.md)
+> for the bare-minimum, tick-the-box version of everything below.
 
 ---
 
@@ -45,18 +48,23 @@ be recreated automatically. This is why recovery is possible from zero.
 
 Follow these phases in order. Each phase links to a dedicated document with full details.
 
+> **Note on numbering:** Phase 8 (Velero Restore) is optional but strongly recommended, and
+> runs **between Phase 6 and Phase 7** — after secrets are seeded, before final validation.
+> Its number reflects when it was added to this guide, not its position in the sequence.
+
 | # | Phase | Time | Description |
 |---|-------|------|-------------|
 | 0 | [Prerequisites](./00-prerequisites.md) | 15 min | Verify Bitwarden vault and gather all credentials |
 | 1 | [External Services](./01-external-services.md) | 10 min | Confirm GitHub, AWS S3, Cloudflare, Tailscale are intact |
 | 2 | [Proxmox Rebuild](./02-proxmox-rebuild.md) | 30-45 min | Install Proxmox VE, configure network, create VM template |
-| 3 | [OpenTofu Apply](./03-opentofu-apply.md) | 15 min | Provision all 4 VMs, DNS records, S3 bucket, Tailscale keys |
+| 3 | [OpenTofu Apply](./03-opentofu-apply.md) | 15 min | Provision all 4 VMs, DNS records, S3 buckets, Tailscale keys |
 | 4 | [k3s Cluster](./04-k3s-cluster.md) | 20 min | Deploy Kubernetes control plane and worker nodes |
 | 5 | [Flux Bootstrap](./05-flux-bootstrap.md) | 15 min | Install Flux CD and trigger GitOps reconcile |
 | 6 | [Secrets Restore](./06-secrets-restore.md) | 10 min | Apply secrets that cannot be stored in git |
-| 7 | [Validation](./07-validation.md) | 15 min | Verify all services are healthy |
+| 8 | [Velero Restore](./08-velero-restore.md) | 20-40 min | Restore application data and namespace state from S3 (recommended) |
+| 7 | [Validation](./07-validation.md) | 15 min | Verify all services — and restored data — are healthy |
 
-**Total estimated time: 2-3 hours** (assuming Proxmox installs cleanly and VMs boot without issues)
+**Total estimated time: 2.5-3.5 hours** (assuming Proxmox installs cleanly, VMs boot without issues, and Velero restore is performed)
 
 ---
 
@@ -68,6 +76,7 @@ Because critical state lives outside the physical server:
 |------|----------|-------|
 | All Kubernetes manifests | GitHub (`hexabyte8/homelab`) | Everything needed to redeploy every service |
 | OpenTofu infrastructure state | AWS S3 (`chronobyte-homelab-tf-state`) | Tracks all created VMs, DNS records, S3 buckets |
+| Cluster application data & PVC contents | AWS S3 (`daggertooth-cluster-backups`) | Velero daily backups, 30-day retention - see [Phase 8](./08-velero-restore.md) |
 | Game server backups | AWS S3 | Versioned, AES-256 encrypted, 90-day retention |
 | All credentials and secrets | Bitwarden | Single source of truth for all passwords and keys |
 
