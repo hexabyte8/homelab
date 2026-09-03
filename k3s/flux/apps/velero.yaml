@@ -71,7 +71,7 @@ spec:
       backupStorageLocation:
         - name: default
           provider: aws
-          bucket: homelab-gameserver-backups-amp-velero
+          bucket: daggertooth-cluster-backups
           default: true
           config:
             region: us-east-1

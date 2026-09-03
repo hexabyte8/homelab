@@ -71,7 +71,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "gameserver_backups" {
 # Dedicated Velero bucket. Keeping cluster backups separate avoids the game
 # server lifecycle policy archiving active Velero objects to Glacier.
 resource "aws_s3_bucket" "velero_backups" {
-  bucket = "${var.s3_backup_bucket_name}-velero"
+  bucket = "daggertooth-cluster-backups"
 
   tags = {
     Name        = "Velero Cluster Backups"
