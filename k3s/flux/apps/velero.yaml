@@ -36,6 +36,16 @@ spec:
         name: vmware-tanzu
         namespace: flux-system
   values:
+    # ── kubectl image (used by CRD upgrade/cleanup hook jobs) ─────────────────
+    # Chart default (docker.io/bitnami/kubectl) 404s: Bitnami moved its free
+    # images to bitnamilegacy in Aug 2025 and dropped versioned tags like
+    # ":1.34" from docker.io/bitnami. Point at the official kubectl image
+    # instead; leaving tag unset makes the chart pin it to the cluster's
+    # Kubernetes version automatically.
+    kubectl:
+      image:
+        repository: registry.k8s.io/kubectl
+
     # ── Credentials ──────────────────────────────────────────────────────────
     # velero-s3-credentials Secret is synced by the sm-operator from BWS.
     # The Velero chart mounts it as a file at /credentials/cloud.
