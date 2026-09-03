@@ -31,7 +31,9 @@ Not familiar with OpenTofu? See the [OpenTofu technology guide](./technologies/o
 | Tailscale ACL policy | Mesh policy: `tag:server`, `tag:ci`, `tag:k8s-operator` |
 | Cloudflare DNS A records | Root, traefik, auth, ptero, homestead, files |
 | Cloudflare SRV record | `_minecraft._tcp.homestead` |
-| AWS S3 bucket | Versioned, AES-256 encrypted, lifecycle rules |
+| AWS S3 bucket (game server backups) | Versioned, AES-256 encrypted, lifecycle rules |
+| AWS S3 bucket (`daggertooth-cluster-backups`) | Velero cluster/app backups - versioned, AES-256 encrypted |
+| AWS IAM user (`homelab-velero`) + access key | Scoped to the Velero backup bucket only |
 
 ---
 

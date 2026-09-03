@@ -83,6 +83,7 @@ nav:
     - Copilot Cloud Agent: copilot-cloud-agent.md
   - Disaster Recovery:
     - Overview: disaster-recovery/index.md
+    - Master Recovery Checklist: disaster-recovery/checklist.md
     - Phase 0 — Prerequisites: disaster-recovery/00-prerequisites.md
     - Phase 1 — External Services: disaster-recovery/01-external-services.md
     - Phase 2 — Proxmox Rebuild: disaster-recovery/02-proxmox-rebuild.md
@@ -90,6 +91,7 @@ nav:
     - Phase 4 — k3s Cluster: disaster-recovery/04-k3s-cluster.md
     - Phase 5 — Flux Bootstrap: disaster-recovery/05-flux-bootstrap.md
     - Phase 6 — Secrets Restore: disaster-recovery/06-secrets-restore.md
+    - Phase 8 — Velero Restore: disaster-recovery/08-velero-restore.md
     - Phase 7 — Validation: disaster-recovery/07-validation.md
     - Technology Reference:
       - Proxmox VE: disaster-recovery/technologies/proxmox.md

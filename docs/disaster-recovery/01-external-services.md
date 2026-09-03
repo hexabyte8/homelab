@@ -129,19 +129,22 @@ You will need to create a new one:
 
 ## 1.5 AWS S3
 
-AWS S3 stores game server backups. The bucket is created by OpenTofu, so this step just
-confirms AWS access is still working.
+AWS S3 stores game server backups **and** Velero cluster/application backups (two separate
+buckets). Both buckets are created by OpenTofu, so this step just confirms AWS access is
+still working.
 
 **What to check:**
 
 1. Log in to [console.aws.amazon.com](https://console.aws.amazon.com)
-2. Navigate to **S3** and confirm the backup bucket exists
+2. Navigate to **S3** and confirm both buckets exist:
+   - the game server backup bucket
+   - `daggertooth-cluster-backups` (Velero cluster backups)
 3. If you have the AWS CLI:
    ```bash
    aws s3 ls --region us-east-1
    ```
 
-**If the bucket is missing:** OpenTofu will recreate it in Phase 3. Existing backup objects
+**If a bucket is missing:** OpenTofu will recreate it in Phase 3. Existing backup objects
 are stored inside the bucket - if the bucket was deleted, those backups may be gone unless
 AWS versioning saved them.
 

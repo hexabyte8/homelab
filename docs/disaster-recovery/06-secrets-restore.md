@@ -123,3 +123,15 @@ Before proceeding to Phase 7:
 - [ ] OpenTofu Apply completed  -  Authentik flows and OAuth providers provisioned
 - [ ] Non-operator secrets patched (`k3s-patch-secrets` → `all`)
 - [ ] (Optional) Game server services restored
+
+---
+
+## Proceed to Phase 8 (recommended) or Phase 7
+
+If you want your applications' actual data back (Longhorn PVC contents, existing
+Secrets/ConfigMaps, prior namespace state), continue to
+[Phase 8: Velero Restore](./08-velero-restore.md) now, then finish with
+[Phase 7: Validation](./07-validation.md).
+
+If you are intentionally starting every application fresh with no prior data, you can
+skip straight to [Phase 7: Validation](./07-validation.md).

@@ -42,9 +42,14 @@ following items exists.
 
 | Secret | Where Used | Notes |
 |--------|-----------|-------|
-| `AWS_ACCESS_KEY_ID` | S3 state backend + S3 backup access | IAM user credential |
-| `AWS_SECRET_ACCESS_KEY` | S3 state backend + S3 backup access | IAM user credential |
+| `AWS_ACCESS_KEY_ID` | S3 state backend + S3 backup access | IAM user credential (admin/CI, used by OpenTofu) |
+| `AWS_SECRET_ACCESS_KEY` | S3 state backend + S3 backup access | IAM user credential (admin/CI, used by OpenTofu) |
 | `S3_BACKUP_BUCKET_NAME` | OpenTofu + backup scripts | Name of the game server backup bucket |
+
+> **Velero's S3 bucket (`daggertooth-cluster-backups`) and its IAM user/access key are
+> provisioned automatically by `opentofu/aws` (Phase 3) and synced into the cluster as
+> the `velero-s3-credentials` Secret during Phase 6/8** — no separate manual credential
+> gathering is required for it here.
 
 ### Tailscale
 

@@ -6,9 +6,19 @@
 
 ---
 
-## When to Use This
+## When to Use This in the Recovery Sequence
 
-After a new physical machine is provisioned and the k3s cluster is deployed (Phase 4), use Velero to restore the cluster state from S3 instead of waiting for Flux to rebuild everything from scratch.
+> **Run this phase after [Phase 6: Secrets Restore](./06-secrets-restore.md) and before
+> [Phase 7: Validation](./07-validation.md).** Velero itself is deployed by Flux (Phase 5)
+> and needs the `velero-s3-credentials` Secret synced by the sm-operator (Phase 6) before
+> it can talk to S3 — restoring any earlier is not possible. Running the final validation
+> checklist (Phase 7) after this phase means you validate the cluster *with your real data
+> back in it*, not an empty freshly-bootstrapped one.
+
+Use Velero to restore the cluster's workload state and volume data from S3 instead of
+starting every application from a blank slate. This phase is what actually brings back
+your application data (Longhorn PVC contents, Secrets, ConfigMaps) — Flux alone only
+recreates the *desired manifests*, not the runtime state or data that lived inside them.
 
 This is especially useful when you need to recover:
 
@@ -44,7 +54,7 @@ velero backup get
 
 The `opentofu/aws` stack provisions the complete Velero storage path:
 
-- a dedicated `homelab-gameserver-backups-amp-velero` S3 bucket
+- a dedicated `daggertooth-cluster-backups` S3 bucket
 - S3 versioning, AES-256 server-side encryption, and public-access blocking
 - a dedicated `homelab-velero` IAM user restricted to that bucket
 - an IAM access key exposed only as a sensitive OpenTofu output
@@ -54,7 +64,7 @@ credentials file to the existing Velero BWS entry. The sm-operator then syncs
 that value into the `velero-s3-credentials` Kubernetes Secret. No manual bucket
 or IAM credential setup is required.
 
-Velero runs `daily-full` at **02:00 UTC**, retains backups for 30 days, and uses
+Velero runs the `velero-daily-full` schedule at **02:00 UTC**, retains backups for 30 days, and uses
 its node agent to copy Longhorn PVC contents into S3. Longhorn volumes use
 filesystem backup rather than AWS EBS snapshots.
 
@@ -69,7 +79,7 @@ The easiest and safest recovery path is the dedicated GitHub Actions workflow:
 ### Recommended input values
 
 - **target_host:** `k3s-server`
-- **backup_name:** leave empty to auto-select the latest completed `daily-full-*` backup
+- **backup_name:** leave empty to auto-select the latest completed `velero-daily-full-*` backup
 - **restore_namespaces:** leave empty to restore everything
 - **wait_timeout:** `30m` is a good default
 - **dry_run:** set to **true first**
@@ -183,7 +193,7 @@ velero schedule get
 velero backup get
 ```
 
-You want to see recent successful `daily-full-*` backups.
+You want to see recent successful `velero-daily-full-*` backups.
 
 ### Check the backup storage location
 
@@ -202,3 +212,9 @@ Run a periodic dry-run restore from the workflow or CLI to confirm the cluster c
 ## Summary
 
 Use Velero after the base platform is rebuilt but before spending time manually recovering app state. Flux restores what the cluster **should** look like; Velero restores the data and namespace resources needed to get back to the last good operational state quickly.
+
+---
+
+## Proceed to Phase 7: Validation
+
+Once the restore is confirmed healthy, continue to [Phase 7: Validation](./07-validation.md) to run the final end-to-end health checks against the fully restored cluster.
