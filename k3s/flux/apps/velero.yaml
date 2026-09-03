@@ -39,14 +39,17 @@ spec:
     # ── kubectl image (used by CRD upgrade/cleanup hook jobs) ─────────────────
     # Chart default (docker.io/bitnami/kubectl) 404s: Bitnami moved its free
     # images to bitnamilegacy in Aug 2025 and dropped versioned tags like
-    # ":1.34" from docker.io/bitnami. Point at the official kubectl image
-    # instead. The chart's auto-tag-from-cluster-version logic only produces
-    # a bare "1.34" (no patch, no "v" prefix), which doesn't exist on
-    # registry.k8s.io either — that registry only publishes full "vX.Y.Z"
-    # tags — so the tag must be pinned explicitly to match the server version.
+    # ":1.34" from docker.io/bitnami. registry.k8s.io/kubectl was tried next,
+    # but it's distroless and lacks /bin/sh, which this hook job's entrypoint
+    # requires — pods crash with "stat /bin/sh: no such file or directory".
+    # rancher/kubectl is alpine-based (has a shell), actively maintained, and
+    # a natural fit alongside k3s/Rancher tooling already used in this
+    # cluster. Tag is pinned explicitly since the chart's auto-tag-from-
+    # cluster-version logic renders a bare "1.34" that doesn't match either
+    # registry's tagging scheme.
     kubectl:
       image:
-        repository: registry.k8s.io/kubectl
+        repository: rancher/kubectl
         tag: v1.34.5
 
     # ── Credentials ──────────────────────────────────────────────────────────
