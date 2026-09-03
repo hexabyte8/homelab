@@ -125,7 +125,12 @@ spec:
     # defaultVolumesToFsBackup: true requiring it to back up PVC contents.
     deployNodeAgent: true
     nodeAgent:
-      podVolumePath: /var/lib/kubelet/pods
+      # k3s stores kubelet state under its own data dir, not the vanilla
+      # /var/lib/kubelet used by stock kubeadm/kubelet clusters. Pointing
+      # at the wrong path made every node-agent pod crash-loop with
+      # "unexpected directory structure for host-pods volume".
+      podVolumePath: /var/lib/rancher/k3s/agent/kubelet/pods
+      pluginVolumePath: /var/lib/rancher/k3s/agent/kubelet/plugins
       resources:
         requests:
           cpu: 50m
