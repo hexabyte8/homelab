@@ -37,9 +37,9 @@ resource "tailscale_acl" "as_json" {
             "ip":  ["tcp:443"],
           },
           {
-            # tcp:22 is required for Forgejo's SSH server, exposed via the
-            # git-ssh LoadBalancer Service (tagged tag:k8s by the Tailscale
-            # operator), so members can `git clone ssh://...`.
+            // tcp:22 is required for Forgejo's SSH server, exposed via the
+            // git-ssh LoadBalancer Service (tagged tag:k8s by the Tailscale
+            // operator), so members can `git clone ssh://...`.
             "src": ["autogroup:member"],
             "dst": ["tag:k8s"],
             "ip":  ["tcp:22", "tcp:80", "tcp:443"],
