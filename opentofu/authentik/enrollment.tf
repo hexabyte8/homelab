@@ -3,7 +3,8 @@
 # How it works:
 #   1. An admin creates an invitation in the Authentik UI (Directory → Tokens
 #      and App passwords → Invitations) bound to the
-#      `default-invitation-enrollment` flow.
+#      `default-invitation-enrollment` flow. Leave "Single use" UNCHECKED
+#      (see warning below) and rely on the invitation's expiry instead.
 #   2. The invitation produces a one-time link of the form
 #        https://authentik.daggertooth-scala.ts.net/if/flow/default-invitation-enrollment/?itoken=<uuid>
 #   3. Recipient opens it, fills in username/name/email/password, and is
@@ -12,6 +13,19 @@
 # The invitation-stage `continue_flow_without_invitation = false` is what
 # enforces "you must have an invite to enrol" — bare visits to the flow URL
 # without `?itoken=` get a denied screen.
+#
+# WARNING — do not mark invitations as "Single use": Authentik's invitation
+# stage consumes (deletes) a single-use invitation the moment the flow is
+# *planned* (i.e. on the first GET of the link), not after the recipient
+# actually completes the username/password form. Email clients, chat apps,
+# and browsers frequently issue a link-preview/prefetch request before the
+# recipient ever opens the link themselves, which silently burns a
+# single-use invite and leaves the real recipient with a "denied"/invalid
+# invite screen and no account created. This is a known upstream bug
+# (goauthentik/authentik#12770) that was marked "not planned" to fix. Until
+# upstream addresses it, invitations created through this flow must be
+# left as multi-use (the non-single-use default) and should instead be
+# constrained via a short expiry set at creation time.
 
 # ---------- Prompts ----------
 
