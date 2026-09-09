@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backstitch
+  namespace: backstitch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backstitch
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: backstitch
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backstitch-sync-server
+          image: ghcr.io/inkandswitch/backstitch-sync-server:latest
+          imagePullPolicy: Always
+          args:
+            - "--data-dir"
+            - "/data"
+            - "--port"
+            - "3000"
+          env:
+            # Auth is enforced at the edge by Traefik's ForwardAuth middleware
+            # (Authentik), so the server itself runs without its own auth.
+            - name: AUTH
+              value: "none"
+          ports:
+            - name: http
+              containerPort: 3000
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: backstitch-data
