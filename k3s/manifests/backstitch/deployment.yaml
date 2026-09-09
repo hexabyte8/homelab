@@ -29,10 +29,14 @@ spec:
             - "--port"
             - "3000"
           env:
-            # Auth is enforced at the edge by Traefik's ForwardAuth middleware
-            # (Authentik), so the server itself runs without its own auth.
             - name: AUTH
-              value: "none"
+              value: "oidc"
+            - name: OIDC_ISSUER
+              value: "https://authentik.chronobyte.net/application/o/backstitch/"
+            - name: OIDC_CLIENT_ID
+              value: "backstitch"
+            - name: OIDC_REDIRECT_PORT
+              value: "58656"
           ports:
             - name: http
               containerPort: 3000
