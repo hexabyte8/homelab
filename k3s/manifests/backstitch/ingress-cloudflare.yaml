@@ -5,12 +5,8 @@ metadata:
   namespace: backstitch
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
-    # cloudflare-https-scheme MUST come first: cloudflared connects over http,
-    # so Traefik sees X-Forwarded-Proto: http. This middleware rewrites it to
-    # https before the Authentik ForwardAuth sub-request is made, preventing
-    # Authentik from building an http:// OIDC callback URL (which causes a 400).
     traefik.ingress.kubernetes.io/router.middlewares: >-
-      kube-system-cloudflare-https-scheme@kubernetescrd,authentik-authentik-forward-auth@kubernetescrd
+      kube-system-cloudflare-https-scheme@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
