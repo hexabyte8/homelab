@@ -151,6 +151,14 @@ resource "authentik_application" "backstitch" {
 # binding on every application, including Backstitch which has no deny
 # binding. This guarantees superadmin access to all apps regardless of any
 # other group-based bindings present now or added in the future.
+#
+# IMPORTANT: because policy_engine_mode defaults to "any" (OR), an
+# application with a *single* positive-only binding effectively becomes
+# allow-listed to just that binding's group — any other binding added later
+# must also positively allow every group that should retain access. Backstitch
+# is family&friends' whole reason for existing, so it needs its own explicit
+# ALLOW binding alongside the admins one below; otherwise the admins-only
+# ALLOW binding silently locks family&friends out (see backstitch_allow_admins).
 
 resource "authentik_policy_binding" "dashy_deny_family_and_friends" {
   target = authentik_application.dashy.uuid
@@ -239,6 +247,18 @@ resource "authentik_policy_binding" "drawio_allow_admins" {
 resource "authentik_policy_binding" "backstitch_allow_admins" {
   target = authentik_application.backstitch.uuid
   group  = data.authentik_group.admins.id
+  negate = false
+  order  = -1
+}
+
+# Backstitch has no deny binding for family&friends (unlike the apps above),
+# since family&friends are meant to have access. But policy_engine_mode
+# defaults to "any" (OR), so once *any* positive-only binding exists (the
+# admins ALLOW above), access is denied to everyone not covered by at least
+# one passing binding. This explicit ALLOW restores family&friends access.
+resource "authentik_policy_binding" "backstitch_allow_family_and_friends" {
+  target = authentik_application.backstitch.uuid
+  group  = authentik_group.family_and_friends.id
   negate = false
   order  = -1
 }
