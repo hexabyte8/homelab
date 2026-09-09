@@ -237,7 +237,11 @@ resource "authentik_provider_oauth2" "backstitch" {
   allowed_redirect_uris = [
     {
       matching_mode = "strict"
-      url           = "http://localhost:58656"
+      url           = "http://localhost:58656/auth/oidc/callback"
+    },
+    {
+      matching_mode = "strict"
+      url           = "http://localhost:58656/auth/oidc/logged_out"
     }
   ]
   sub_mode                   = "hashed_user_id"
