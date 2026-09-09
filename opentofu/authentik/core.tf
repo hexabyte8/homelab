@@ -139,6 +139,70 @@ resource "authentik_application" "backstitch" {
 # ---------- Policy bindings ----------
 #
 # Explicit group bindings restrict which groups can access each application.
+#
+# family&friends (invited external users) are limited to Backstitch and
+# Jellyfin (LDAP-scoped, see ldap.tf) only. Every other application gets a
+# negated group binding: the binding passes (allowing access) for anyone NOT
+# in family&friends, and fails (denying access) for members of
+# family&friends. With no other bindings on these apps, the default
+# policy_engine_mode ("any"/OR) means this single negated binding is the sole
+# gate.
+
+resource "authentik_policy_binding" "dashy_deny_family_and_friends" {
+  target = authentik_application.dashy.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "calibre_deny_family_and_friends" {
+  target = authentik_application.calibre.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "uptime_kuma_deny_family_and_friends" {
+  target = authentik_application.uptime_kuma.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "drawio_deny_family_and_friends" {
+  target = authentik_application.drawio.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "actual_deny_family_and_friends" {
+  target = authentik_application.actual.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "grafana_deny_family_and_friends" {
+  target = authentik_application.grafana.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "mealie_deny_family_and_friends" {
+  target = authentik_application.mealie.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "forgejo_deny_family_and_friends" {
+  target = authentik_application.forgejo.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
 
 # ---------- Embedded outpost ----------
 #
