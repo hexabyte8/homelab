@@ -80,6 +80,14 @@ resource "authentik_provider_proxy" "drawio" {
   invalidation_flow  = data.authentik_flow.default_invalidation.id
 }
 
+resource "authentik_provider_proxy" "backstitch" {
+  name               = "backstitch"
+  mode               = "forward_single"
+  external_host      = "https://back.${var.cloudflare_zone_name}"
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+}
+
 # ---------- Applications ----------
 
 resource "authentik_application" "dashy" {
@@ -118,10 +126,83 @@ resource "authentik_application" "drawio" {
   open_in_new_tab   = false
 }
 
+resource "authentik_application" "backstitch" {
+  name              = "Backstitch Sync Server"
+  slug              = "backstitch"
+  protocol_provider = authentik_provider_proxy.backstitch.id
+  meta_launch_url   = "https://back.${var.cloudflare_zone_name}"
+  meta_description  = "Backstitch Automerge sync server for the Godot version control plugin (public, ForwardAuth-protected)."
+  open_in_new_tab   = false
+}
+
 
 # ---------- Policy bindings ----------
 #
 # Explicit group bindings restrict which groups can access each application.
+#
+# family&friends (invited external users) are limited to Backstitch and
+# Jellyfin (LDAP-scoped, see ldap.tf) only. Every other application gets a
+# negated group binding: the binding passes (allowing access) for anyone NOT
+# in family&friends, and fails (denying access) for members of
+# family&friends. With no other bindings on these apps, the default
+# policy_engine_mode ("any"/OR) means this single negated binding is the sole
+# gate.
+
+resource "authentik_policy_binding" "dashy_deny_family_and_friends" {
+  target = authentik_application.dashy.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "calibre_deny_family_and_friends" {
+  target = authentik_application.calibre.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "uptime_kuma_deny_family_and_friends" {
+  target = authentik_application.uptime_kuma.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "drawio_deny_family_and_friends" {
+  target = authentik_application.drawio.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "actual_deny_family_and_friends" {
+  target = authentik_application.actual.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "grafana_deny_family_and_friends" {
+  target = authentik_application.grafana.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "mealie_deny_family_and_friends" {
+  target = authentik_application.mealie.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
+resource "authentik_policy_binding" "forgejo_deny_family_and_friends" {
+  target = authentik_application.forgejo.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
 
 # ---------- Embedded outpost ----------
 #
@@ -141,6 +222,7 @@ resource "authentik_outpost" "embedded" {
     authentik_provider_proxy.calibre.id,
     authentik_provider_proxy.uptime_kuma.id,
     authentik_provider_proxy.drawio.id,
+    authentik_provider_proxy.backstitch.id,
   ]
   config = jsonencode({
     authentik_host          = "https://authentik.${var.cloudflare_zone_name}"

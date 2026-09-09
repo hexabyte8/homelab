@@ -32,6 +32,7 @@ resources:
   - actual-mcp.yaml
   - actual-mcp-secondary.yaml
   - adguard.yaml
+  - backstitch.yaml
   - calibre-web.yaml
   - dashy.yaml
   - drawio.yaml
