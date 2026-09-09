@@ -39,6 +39,13 @@ data "authentik_certificate_key_pair" "default" {
   name = "authentik Self-signed Certificate"
 }
 
+# Built-in superuser group. Referenced below to explicitly grant superadmins
+# access to every application, independent of any other (e.g. negated
+# family&friends) policy bindings on the application.
+data "authentik_group" "admins" {
+  name = "authentik Admins"
+}
+
 # ---------- Groups ----------
 
 resource "authentik_group" "family_and_friends" {
@@ -139,6 +146,11 @@ resource "authentik_application" "backstitch" {
 # family&friends. With no other bindings on these apps, the default
 # policy_engine_mode ("any"/OR) means this single negated binding is the sole
 # gate.
+#
+# Superadmins (the built-in "authentik Admins" group) get an explicit ALLOW
+# binding on every application, including Backstitch which has no deny
+# binding. This guarantees superadmin access to all apps regardless of any
+# other group-based bindings present now or added in the future.
 
 resource "authentik_policy_binding" "dashy_deny_family_and_friends" {
   target = authentik_application.dashy.uuid
@@ -194,6 +206,69 @@ resource "authentik_policy_binding" "forgejo_deny_family_and_friends" {
   group  = authentik_group.family_and_friends.id
   negate = true
   order  = 0
+}
+
+resource "authentik_policy_binding" "dashy_allow_admins" {
+  target = authentik_application.dashy.uuid
+  group  = data.authentik_group.admins.id
+  negate = false
+  order  = -1
+}
+
+resource "authentik_policy_binding" "calibre_allow_admins" {
+  target = authentik_application.calibre.uuid
+  group  = data.authentik_group.admins.id
+  negate = false
+  order  = -1
+}
+
+resource "authentik_policy_binding" "uptime_kuma_allow_admins" {
+  target = authentik_application.uptime_kuma.uuid
+  group  = data.authentik_group.admins.id
+  negate = false
+  order  = -1
+}
+
+resource "authentik_policy_binding" "drawio_allow_admins" {
+  target = authentik_application.drawio.uuid
+  group  = data.authentik_group.admins.id
+  negate = false
+  order  = -1
+}
+
+resource "authentik_policy_binding" "backstitch_allow_admins" {
+  target = authentik_application.backstitch.uuid
+  group  = data.authentik_group.admins.id
+  negate = false
+  order  = -1
+}
+
+resource "authentik_policy_binding" "actual_allow_admins" {
+  target = authentik_application.actual.uuid
+  group  = data.authentik_group.admins.id
+  negate = false
+  order  = -1
+}
+
+resource "authentik_policy_binding" "grafana_allow_admins" {
+  target = authentik_application.grafana.uuid
+  group  = data.authentik_group.admins.id
+  negate = false
+  order  = -1
+}
+
+resource "authentik_policy_binding" "mealie_allow_admins" {
+  target = authentik_application.mealie.uuid
+  group  = data.authentik_group.admins.id
+  negate = false
+  order  = -1
+}
+
+resource "authentik_policy_binding" "forgejo_allow_admins" {
+  target = authentik_application.forgejo.uuid
+  group  = data.authentik_group.admins.id
+  negate = false
+  order  = -1
 }
 
 # ---------- Embedded outpost ----------
