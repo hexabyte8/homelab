@@ -43,6 +43,7 @@ resources:
   - mealie.yaml
   - mcp-kubernetes.yaml
   - ntfy.yaml
+  - opencode.yaml
   - radar.yaml
   - stalwart.yaml
   - uptime-kuma.yaml
