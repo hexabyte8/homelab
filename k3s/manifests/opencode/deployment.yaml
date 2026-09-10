@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opencode
+  namespace: opencode
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: opencode
+  template:
+    metadata:
+      labels:
+        app: opencode
+      annotations:
+        secret.reloader.stakater.com/reload: "opencode-secret"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: opencode
+          image: ghcr.io/anomalyco/opencode:1.18.30@sha256:412b37a894bb937a0d5d6a1860789b9fd7d34a109334bec98a3f6ecf812bb442
+          imagePullPolicy: IfNotPresent
+          args:
+            - web
+            - --hostname
+            - 0.0.0.0
+            - --port
+            - "4096"
+          workingDir: /workspace
+          ports:
+            - name: http
+              containerPort: 4096
+              protocol: TCP
+          env:
+            - name: HOME
+              value: /data
+            - name: XDG_DATA_HOME
+              value: /data/share
+            - name: XDG_CONFIG_HOME
+              value: /data/config
+            - name: XDG_CACHE_HOME
+              value: /data/cache
+            - name: XDG_STATE_HOME
+              value: /data/state
+            - name: OPENCODE_SERVER_USERNAME
+              value: opencode
+            - name: OPENCODE_SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: opencode-secret
+                  key: OPENCODE_SERVER_PASSWORD
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: workspace
+              mountPath: /workspace
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          readinessProbe:
+            tcpSocket:
+              port: 4096
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 4096
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: opencode-data
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: opencode-workspace
+        - name: tmp
+          emptyDir: {}
