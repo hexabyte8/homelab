@@ -1,0 +1,94 @@
+# Materializes the `long-haul-registry` imagePullSecret (type
+# kubernetes.io/dockerconfigjson) from the Opaque `long-haul-registry-source`
+# secret that the sm-operator syncs from Bitwarden (see bw-secret.yaml).
+#
+# This translation step exists because sm-operator's BitwardenSecret CRD can
+# only produce Opaque secrets, but kubelet ignores Opaque secrets for image
+# pulls — it requires the dockerconfigjson type specifically. Re-running on
+# a schedule (rather than only once) keeps `long-haul-registry` in sync if
+# the PAT is ever rotated in Bitwarden.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: long-haul-registry-sync
+  namespace: long-haul
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: long-haul-registry-sync
+  namespace: long-haul
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["long-haul-registry-source"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    # `create` cannot be scoped by resourceNames (the object doesn't exist
+    # yet when the request is authorized), so it's granted for the resource
+    # type within this namespace only; get/update/patch stay scoped to the
+    # one secret this job manages.
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["long-haul-registry"]
+    verbs: ["get", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: long-haul-registry-sync
+  namespace: long-haul
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: long-haul-registry-sync
+subjects:
+  - kind: ServiceAccount
+    name: long-haul-registry-sync
+    namespace: long-haul
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: long-haul-registry-sync
+  namespace: long-haul
+spec:
+  schedule: "*/30 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          serviceAccountName: long-haul-registry-sync
+          automountServiceAccountToken: true
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: sync
+              image: alpine/k8s:1.31.13
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  PASSWORD=$(kubectl get secret long-haul-registry-source -o jsonpath='{.data.password}' | base64 -d)
+                  kubectl create secret docker-registry long-haul-registry \
+                    --docker-server=git.chronobyte.net \
+                    --docker-username=hexabyte \
+                    --docker-password="${PASSWORD}" \
+                    --dry-run=client -o yaml | kubectl apply -f -

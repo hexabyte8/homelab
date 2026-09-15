@@ -22,6 +22,11 @@ spec:
     spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 15
+      # The container image is private in Forgejo's registry. long-haul-registry
+      # is a kubernetes.io/dockerconfigjson secret materialized from Bitwarden
+      # by registry-sync-cronjob.yaml (see bw-secret.yaml for the source).
+      imagePullSecrets:
+        - name: long-haul-registry
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
