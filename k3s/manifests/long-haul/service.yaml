@@ -1,0 +1,22 @@
+# Exposed on the LAN via MetalLB (game.chronobyte.net's DNS record must
+# point at whatever IP MetalLB assigns from default-pool — check with
+# `kubectl -n long-haul get svc long-haul-server`). This can't go through the
+# cloudflared tunnel: it's forced to http2/TCP only (QUIC/UDP is blocked on
+# this network — see k3s/manifests/cloudflared/configmap.yaml), so raw UDP
+# game traffic must stay on the LAN/tailnet.
+apiVersion: v1
+kind: Service
+metadata:
+  name: long-haul-server
+  namespace: long-haul
+  annotations:
+    metallb.universe.tf/address-pool: default-pool
+spec:
+  type: LoadBalancer
+  selector:
+    app: long-haul-server
+  ports:
+    - name: game
+      port: 7777
+      targetPort: game
+      protocol: UDP
