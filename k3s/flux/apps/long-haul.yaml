@@ -1,0 +1,21 @@
+# The Long Haul — dedicated Godot game server.
+# Image built/pushed by the-long-haul's own Forgejo Actions workflow to
+# git.chronobyte.net/hexabyte/the-long-haul. Bump the tag in
+# k3s/manifests/long-haul/deployment.yaml after cutting a new release if you
+# want to pin a specific version instead of tracking `latest`.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: long-haul
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 5m
+  prune: true
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./k3s/manifests/long-haul
+  targetNamespace: long-haul

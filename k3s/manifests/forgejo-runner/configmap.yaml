@@ -20,7 +20,13 @@ data:
       dir: /data/cache
     container:
       network: bridge
-      privileged: false
+      # Privileged so job containers can create user/mount namespaces —
+      # needed by rootless build tools like podman/buildah (used by the
+      # the-long-haul release workflow) to build OCI images without a
+      # docker socket. Job containers are still ephemeral, single-use, and
+      # only reachable by whoever can push workflow files to a repo this
+      # runner is registered against.
+      privileged: true
       valid_volumes:
         - /data/cache
     host:

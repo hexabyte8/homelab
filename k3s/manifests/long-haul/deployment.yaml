@@ -1,0 +1,79 @@
+# One Deployment/Service pair = one shared game session. Do not scale replicas.
+# Image is built and pushed by the-long-haul's Forgejo Actions workflow
+# (.forgejo/workflows/release.yml) to this repo's own container registry.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: long-haul-server
+  namespace: long-haul
+  labels:
+    app: long-haul-server
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: long-haul-server
+  template:
+    metadata:
+      labels:
+        app: long-haul-server
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 15
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: server
+          image: git.chronobyte.net/hexabyte/the-long-haul:latest
+          imagePullPolicy: Always
+          ports:
+            - name: game
+              containerPort: 7777
+              protocol: UDP
+          env:
+            - name: GAME_PORT
+              value: "7777"
+            - name: MAX_PLAYERS
+              value: "6"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 192Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          startupProbe:
+            exec:
+              command: [python3, /app/deploy/healthcheck.py]
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            exec:
+              command: [python3, /app/deploy/healthcheck.py]
+            periodSeconds: 3
+            timeoutSeconds: 2
+            failureThreshold: 2
+          livenessProbe:
+            exec:
+              command: [python3, /app/deploy/healthcheck.py]
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          volumeMounts:
+            - name: temporary
+              mountPath: /tmp
+      volumes:
+        - name: temporary
+          emptyDir:
+            sizeLimit: 128Mi

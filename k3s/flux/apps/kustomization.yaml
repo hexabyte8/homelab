@@ -40,6 +40,7 @@ resources:
   - forgejo.yaml
   - forgejo-runner.yaml
   - jellyfin.yaml
+  - long-haul.yaml
   - mealie.yaml
   - mcp-kubernetes.yaml
   - ntfy.yaml
