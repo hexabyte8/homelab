@@ -49,6 +49,22 @@ resource "cloudflare_dns_record" "resend_dmarc" {
   proxied = false
 }
 
+# game.chronobyte.net — the-long-haul dedicated game server (UDP 7777).
+# This can't go through the Cloudflare Tunnel/proxy: raw UDP game traffic
+# isn't supported by the tunnel (cloudflared here is forced to http2/TCP
+# only — see k3s/manifests/cloudflared/configmap.yaml) or by Cloudflare's
+# proxy in general. Instead this is a plain DNS-only A record pointing at
+# the homelab's public IP; the router forwards UDP 7777 to the in-cluster
+# MetalLB LoadBalancer IP for the long-haul-server Service.
+resource "cloudflare_dns_record" "long_haul_game" {
+  zone_id = var.cloudflare_zone_id
+  name    = "game"
+  content = var.public_ip
+  type    = "A"
+  ttl     = 1
+  proxied = false
+}
+
 # GitHub Pages domain verification
 resource "cloudflare_dns_record" "github_pages_challenge" {
   zone_id = var.cloudflare_zone_id
@@ -58,3 +74,4 @@ resource "cloudflare_dns_record" "github_pages_challenge" {
   ttl     = 1
   proxied = false
 }
+
