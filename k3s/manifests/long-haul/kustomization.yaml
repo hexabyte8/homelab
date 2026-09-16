@@ -4,5 +4,6 @@ resources:
   - namespace.yaml
   - bw-secret.yaml
   - registry-sync-cronjob.yaml
+  - pvc.yaml
   - deployment.yaml
   - service.yaml
