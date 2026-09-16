@@ -29,8 +29,8 @@ resources:
   - monitoring-manifests.yaml
   # Workloads
   - actual.yaml
-  - actual-mcp.yaml
-  - actual-mcp-secondary.yaml
+  # - actual-mcp.yaml
+  # - actual-mcp-secondary.yaml
   - adguard.yaml
 #  - backstitch.yaml
   - calibre-web.yaml
