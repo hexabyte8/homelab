@@ -31,6 +31,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 10001
         runAsGroup: 10001
+        fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -78,7 +79,12 @@ spec:
           volumeMounts:
             - name: temporary
               mountPath: /tmp
+            - name: data
+              mountPath: /data
       volumes:
         - name: temporary
           emptyDir:
             sizeLimit: 128Mi
+        - name: data
+          persistentVolumeClaim:
+            claimName: long-haul-data

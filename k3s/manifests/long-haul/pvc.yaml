@@ -1,0 +1,15 @@
+# Persists PlayerStats' generic key-value JSON file (src/core/player_stats.gd
+# in the-long-haul) across pod restarts/updates. Covered automatically by
+# Velero's daily-full backup (includedNamespaces: ["*"], no extra config).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: long-haul-data
+  namespace: long-haul
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
