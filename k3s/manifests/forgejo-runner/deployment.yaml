@@ -92,6 +92,9 @@ spec:
             - --host=tcp://0.0.0.0:2376
             - --host=unix:///var/run/docker.sock
             - --data-root=/data/cache
+            # Match the K3s/Flannel pod MTU. Docker's 1500-byte default causes
+            # TLS connections from job containers to blackhole on this path.
+            - --mtu=1450
           volumeMounts:
             - name: runner-data
               mountPath: /data/cache
