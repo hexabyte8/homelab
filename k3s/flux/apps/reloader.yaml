@@ -42,4 +42,4 @@ spec:
       # Namespaces containing Deployments with reloader annotations.
       # reloader's own namespace is always watched; list every additional
       # namespace that has `secret.reloader.stakater.com/reload` annotations.
-      namespaceSelector: "monitoring,mealie,forgejo,forgejo-runner"
+      namespaceSelector: "monitoring,mealie,forgejo,forgejo-runner,opencode"
