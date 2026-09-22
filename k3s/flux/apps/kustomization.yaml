@@ -44,11 +44,11 @@ resources:
   - mealie.yaml
 #  - mcp-kubernetes.yaml
   - ntfy.yaml
-  - opencode.yaml
-  - radar.yaml
+  # - opencode.yaml
+  # - radar.yaml
   - stalwart.yaml
   - uptime-kuma.yaml
-  - velero-config.yaml
-  - velero.yaml
+  # - velero-config.yaml
+  # - velero.yaml
   - loki.yaml
   - promtail.yaml
