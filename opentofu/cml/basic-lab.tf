@@ -8,12 +8,16 @@ resource "cml2_node" "node1" {
   lab_id         = cml2_lab.basic-lab.id
   label          = "alpine1"
   nodedefinition = "alpine"
+  x = 100
+  y = 100
 }
 
 resource "cml2_node" "vswitch1" {
   lab_id         = cml2_lab.basic-lab.id
   label          = "vSwitch1"
   nodedefinition = "iosvl2"
+  x = 200
+  y = 100
 }
 
 resource "cml2_link" "link1" {
