@@ -13,7 +13,7 @@ resource "cml2_node" "node1" {
 resource "cml2_node" "vswitch1" {
   lab_id         = cml2_lab.basic-lab.id
   label          = "vSwitch1"
-  nodedefinition = "IOSvL2"
+  nodedefinition = "iosvl2"
 }
 
 resource "cml2_link" "link1" {
