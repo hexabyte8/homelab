@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       stack:
-        description: 'Stack to operate on (cloudflare, tailscale, aws, proxmox, authentik)'
+        description: 'Stack to operate on (cloudflare, tailscale, aws, proxmox, authentik, cml)'
         type: string
         required: true
       action:
@@ -54,10 +54,10 @@ jobs:
             cfa6860a-116e-4893-9b23-b48e0176f8cd > GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
             1f5eb6e8-6c44-4cec-9a9d-b49b0173d913 > ACTUAL_OPENID_CLIENT_SECRET
             1390f895-1b91-4882-a5f9-b4b800f14c7e > FORGEJO_OIDC_CLIENT_SECRET
+            b6808950-6a75-4cb7-8ce6-b4d4017a66c8 > CML_CLOUD_USER
+            8ccae743-5f9e-4bf2-aef0-b4d4017a53be > CML_CLOUD_PASS
+            52c553fc-84b8-41a5-99c5-b4d4017a7568 > CML_CLOUD_URL
 
-      # Tailscale is needed for proxmox (API + SSH over MagicDNS) and authentik
-      # (Authentik runs on the K3s cluster on Proxmox; its Cloudflare tunnel
-      # backend is unreachable when the node is down).
       - name: Setup Tailscale
         if: inputs.stack == 'proxmox' || inputs.stack == 'authentik'
         uses: tailscale/github-action@v4
@@ -130,6 +130,9 @@ jobs:
           TF_VAR_cloudflare_account_id: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           TF_VAR_cloudflare_zone_id: ${{ env.CLOUDFLARE_ZONE_ID }}
           TF_VAR_cloudflare_zone_name: ${{ env.CLOUDFLARE_ZONE_NAME }}
+          TF_VAR_cml_cloud_user: ${{ env.CML_CLOUD_USER }}
+          TF_VAR_cml_cloud_pass: ${{ env.CML_CLOUD_PASS }}
+          TF_VAR_cml_cloud_url: ${{ env.CML_CLOUD_URL }}
           TF_VAR_default_vm_password: ${{ env.DEFAULT_VM_PASSWORD }}
           TF_VAR_grafana_client_secret: ${{ env.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET }}
           TF_VAR_actual_client_secret: ${{ env.ACTUAL_OPENID_CLIENT_SECRET }}
@@ -183,6 +186,9 @@ jobs:
           TF_VAR_cloudflare_account_id: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           TF_VAR_cloudflare_zone_id: ${{ env.CLOUDFLARE_ZONE_ID }}
           TF_VAR_cloudflare_zone_name: ${{ env.CLOUDFLARE_ZONE_NAME }}
+          TF_VAR_cml_cloud_user: ${{ env.CML_CLOUD_USER }}
+          TF_VAR_cml_cloud_pass: ${{ env.CML_CLOUD_PASS }}
+          TF_VAR_cml_cloud_url: ${{ env.CML_CLOUD_URL }}
           TF_VAR_default_vm_password: ${{ env.DEFAULT_VM_PASSWORD }}
           TF_VAR_grafana_client_secret: ${{ env.GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET }}
           TF_VAR_actual_client_secret: ${{ env.ACTUAL_OPENID_CLIENT_SECRET }}
@@ -191,67 +197,3 @@ jobs:
           TF_VAR_proxmox_host: "chronobyte"
           TF_VAR_public_ip: ${{ env.PUBLIC_IP }}
           TF_VAR_s3_backup_bucket_name: ${{ vars.S3_BACKUP_BUCKET_NAME }}
-
-      - name: Sync Velero credentials to BWS
-        if: inputs.action == 'apply' && inputs.stack == 'aws'
-        working-directory: ./opentofu/${{ inputs.stack }}
-        env:
-          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
-        run: |
-          VELERO_CREDENTIALS=$(tofu output -raw velero_credentials_file)
-          VELERO_ACCESS_KEY_ID=$(printf '%s\n' "$VELERO_CREDENTIALS" | sed -n 's/^aws_access_key_id=//p')
-          VELERO_SECRET_ACCESS_KEY=$(printf '%s\n' "$VELERO_CREDENTIALS" | sed -n 's/^aws_secret_access_key=//p')
-
-          echo "::add-mask::$VELERO_ACCESS_KEY_ID"
-          echo "::add-mask::$VELERO_SECRET_ACCESS_KEY"
-
-          curl -sSLo /tmp/bws.zip \
-            "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.1.0/bws-x86_64-unknown-linux-gnu-2.1.0.zip"
-          echo "ba8233c3a4aee5d43e3c73bbd04d99e9bc5aba13bbbfd06d89b073abe732b860  /tmp/bws.zip" | sha256sum -c -
-          unzip -q /tmp/bws.zip bws -d /tmp && chmod +x /tmp/bws && sudo mv /tmp/bws /usr/local/bin/bws
-
-          bws secret edit ef64b78c-a531-4910-9b89-b4b10013bbf1 --value "$VELERO_CREDENTIALS"
-          echo "[OK] Velero S3 credentials synced to BWS"
-
-      - name: Sync Authentik client IDs to BWS
-        if: inputs.action == 'apply' && inputs.stack == 'authentik'
-        working-directory: ./opentofu/${{ inputs.stack }}
-        env:
-          BWS_ACCESS_TOKEN: ${{ secrets.BW_ACCESS_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
-        run: |
-          # Read client IDs from tofu state (deterministic but confirm from state)
-          ACTUAL_CLIENT_ID=$(tofu output -raw actual_oauth2_client_id)
-          GRAFANA_CLIENT_ID=$(tofu output -raw grafana_oauth2_client_id)
-          MEALIE_CLIENT_ID=$(tofu output -raw mealie_oauth2_client_id)
-          FORGEJO_CLIENT_ID=$(tofu output -raw forgejo_oauth2_client_id)
-
-          echo "::add-mask::$ACTUAL_CLIENT_ID"
-          echo "::add-mask::$GRAFANA_CLIENT_ID"
-          echo "::add-mask::$MEALIE_CLIENT_ID"
-          echo "::add-mask::$FORGEJO_CLIENT_ID"
-
-          curl -sSLo /tmp/bws.zip \
-            "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.1.0/bws-x86_64-unknown-linux-gnu-2.1.0.zip"
-          echo "ba8233c3a4aee5d43e3c73bbd04d99e9bc5aba13bbbfd06d89b073abe732b860  /tmp/bws.zip" | sha256sum -c -
-          unzip -q /tmp/bws.zip bws -d /tmp && chmod +x /tmp/bws && sudo mv /tmp/bws /usr/local/bin/bws
-
-          # b5410954 = ACTUAL_OPENID_CLIENT_ID in bw-secret.yaml
-          bws secret edit b5410954-5339-4a93-9c78-b49b0173a58b --value "$ACTUAL_CLIENT_ID"
-          echo "[OK] ACTUAL_OPENID_CLIENT_ID synced to BWS"
-
-          # REPLACE_ME_MEALIE_OIDC_CLIENT_ID_UUID = OIDC_CLIENT_ID in mealie bw-secret.yaml
-          # TODO: uncomment once BWS entry is created and UUID is known:
-          # bws secret edit <uuid> --value "$MEALIE_CLIENT_ID"
-          echo "[SKIP] MEALIE OIDC_CLIENT_ID — BWS UUID not yet set (see k3s/manifests/mealie/bw-secret.yaml)"
-
-          # ab243288 = FORGEJO_OIDC_CLIENT_ID in forgejo bw-secret.yaml
-          bws secret edit ab243288-4bd3-4e3e-bdbd-b4b800f0fef4 --value "$FORGEJO_CLIENT_ID"
-          echo "[OK] FORGEJO_OIDC_CLIENT_ID synced to BWS"
-
-          # cfa6860b = GF_AUTH_GENERIC_OAUTH_CLIENT_ID in monitoring bw-secret
-          # (update if a grafana client_id BWS entry exists)
-          echo "[OK] Grafana client_id: $GRAFANA_CLIENT_ID (update BWS entry manually if needed)"
