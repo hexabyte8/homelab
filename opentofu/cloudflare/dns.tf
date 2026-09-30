@@ -64,6 +64,14 @@ resource "cloudflare_dns_record" "long_haul_game" {
   ttl     = 1
   proxied = false
 }
+resource "cloudflare_dns_record" "zomboid_server" {
+  zone_id = var.cloudflare_zone_id
+  name    = "zomb"
+  content = "75.134.106.76"
+  type    = "A"
+  ttl     = 1
+  proxied = false
+}
 
 # GitHub Pages domain verification
 resource "cloudflare_dns_record" "github_pages_challenge" {
