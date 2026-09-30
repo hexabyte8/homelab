@@ -17,7 +17,7 @@ resource "cml2_node" "node1" {
   label          = "alpine1"
   nodedefinition = "alpine"
   x = 100
-  y = 100
+  y = 0
 }
 
 resource "cml2_node" "node2" {
@@ -25,7 +25,7 @@ resource "cml2_node" "node2" {
   label          = "alpine2"
   nodedefinition = "alpine"
   x = 100
-  y = 300
+  y = 100
 }
 
 resource "cml2_node" "vswitch1" {
