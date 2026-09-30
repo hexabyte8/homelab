@@ -37,7 +37,7 @@ jobs:
             | grep "^opentofu/" \
             | cut -d/ -f2 \
             | sort -u \
-            | grep -E "^(cloudflare|tailscale|aws|proxmox|authentik)$" \
+            | grep -E "^(cloudflare|tailscale|aws|proxmox|authentik|cml)$" \
             | jq -cR -s 'split("\n") | map(select(length > 0))')
 
           if [ -z "$STACKS" ] || [ "$STACKS" = "[]" ]; then
