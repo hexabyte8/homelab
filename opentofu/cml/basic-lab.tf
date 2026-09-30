@@ -12,16 +12,30 @@ resource "cml2_node" "node1" {
   y = 100
 }
 
+resource "cml2_node" "node2" {
+  lab_id         = cml2_lab.basic-lab.id
+  label          = "alpine2"
+  nodedefinition = "alpine"
+  x = 100
+  y = 300
+}
+
 resource "cml2_node" "vswitch1" {
   lab_id         = cml2_lab.basic-lab.id
   label          = "vSwitch1"
   nodedefinition = "iosvl2"
-  x = 200
+  x = 300
   y = 100
 }
 
 resource "cml2_link" "link1" {
   lab_id = cml2_lab.basic-lab.id
   node_a = cml2_node.node1.id
+  node_b = cml2_node.vswitch1.id
+}
+
+resource "cml2_link" "link2" {
+  lab_id = cml2_lab.basic-lab.id
+  node_a = cml2_node.node2.id
   node_b = cml2_node.vswitch1.id
 }
