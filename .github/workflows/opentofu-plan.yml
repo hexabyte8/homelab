@@ -26,7 +26,7 @@ jobs:
       - name: Detect changed stacks
         id: changed
         run: |
-          ALL_STACKS='["cloudflare","tailscale","aws","proxmox","authentik"]'
+          ALL_STACKS='["cloudflare","tailscale","aws","proxmox","authentik","cml"]'
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "stacks=${ALL_STACKS}" >> $GITHUB_OUTPUT
