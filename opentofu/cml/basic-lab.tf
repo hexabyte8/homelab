@@ -61,6 +61,10 @@ resource "cml2_node" "vswitch1" {
      switchport access vlan 10
      no shutdown
     !
+    interface GigabitEthernet0/2
+     switchport mode access
+     switchport access vlan 10
+     no shutdown
     line con 0
      logging synchronous
     !
@@ -108,7 +112,7 @@ resource "cml2_node" "vrouter1" {
 resource "cml2_link" "link1" {
   lab_id = cml2_lab.basic-lab.id
   node_a = cml2_node.node1.id
-  node_b = cml2_node.external_connector1.id
+  node_b = cml2_node.vswitch1.id
 }
 
 resource "cml2_link" "link2" {
