@@ -9,13 +9,13 @@ resource "cml2_node" "external_connector1" {
   label          = "external_connector1"
   nodedefinition = "external_connector"
   x = 0
-  y = 200
+  y = 0
 }
 
 resource "cml2_node" "node1" {
   lab_id         = cml2_lab.basic-lab.id
-  label          = "alpine1"
-  nodedefinition = "alpine"
+  label          = "chronos1"
+  nodedefinition = "ubuntu"
   x = 100
   y = 0
 }
@@ -47,7 +47,7 @@ resource "cml2_node" "vrouter1" {
 resource "cml2_link" "link1" {
   lab_id = cml2_lab.basic-lab.id
   node_a = cml2_node.node1.id
-  node_b = cml2_node.vswitch1.id
+  node_b = cml2_node.external_connector1.id
 }
 
 resource "cml2_link" "link2" {
