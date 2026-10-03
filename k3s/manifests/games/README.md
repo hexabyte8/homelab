@@ -112,10 +112,12 @@ a `pz-mod-state` ConfigMap it creates on first run.
 
 Source: [hexabyte8/pz-mod-updater](https://github.com/hexabyte8/pz-mod-updater).
 Image is published to `ghcr.io/hexabyte8/pz-mod-updater` on every push to
-`main`. To see what it decided on its last run:
+`main`. To see what it decided on its last run, use
+`pz-mod-updater-logs.sh` in this directory:
 
 ```bash
-kubectl -n games logs job/$(kubectl -n games get jobs -l job-name --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}')
+./pz-mod-updater-logs.sh      # logs from the most recent completed run
+./pz-mod-updater-logs.sh -f   # wait for the next run (every 15m) and stream it live
 ```
 
 ### Connecting from outside the LAN
