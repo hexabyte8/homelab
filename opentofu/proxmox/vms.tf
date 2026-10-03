@@ -78,7 +78,11 @@ resource "proxmox_vm_qemu" "k3s-agent-1" {
   cicustom   = "vendor=local:snippets/main.yaml"
   ciupgrade  = true
   nameserver = "8.8.8.8"
-  ipconfig0  = "ip=192.168.1.175/24,gw=192.168.1.254"
+  # Matches the router's existing static DHCP reservation for this NIC's
+  # MAC (bc:24:11:42:36:11), which pointed at .242 while cloud-init kept
+  # assigning .175 — the mismatch showed up as the same MAC appearing
+  # under two IPs in the router's client list.
+  ipconfig0 = "ip=192.168.1.242/24,gw=192.168.1.254"
 
   serial {
     id = 0
