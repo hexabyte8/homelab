@@ -53,3 +53,8 @@ spec:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 runAsNonRoot: true
+                # distroless:nonroot's USER directive is the non-numeric
+                # "nonroot" name; kubelet can't verify runAsNonRoot against
+                # a non-numeric user without an explicit UID, so pin it
+                # to the image's actual nonroot UID (65532).
+                runAsUser: 65532
