@@ -28,16 +28,5 @@ spec:
   values:
     operatorConfig:
       hostname: k3s-tailscale-operator
-      # Avoid k3s-agent-1 which has broken ClusterIP DNS routing
-      # (MetalLB speaker crash-loops with NET_ADMIN on that node corrupts iptables).
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values:
-                      - k3s-agent-1
       securityContext:
         allowPrivilegeEscalation: false
