@@ -7,7 +7,7 @@ on:
         description: 'Comma-separated list of nodes to configure'
         required: true
         type: string
-        default: 'k3s-server,k3s-agent-1,k3s-agent-2'
+        default: 'k3s-server,k3s-agent-1'
 
 jobs:
   install-longhorn-prereqs:

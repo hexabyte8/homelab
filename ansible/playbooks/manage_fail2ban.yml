@@ -11,7 +11,6 @@
     f2b_nodes:
       - k3s-server
       - k3s-agent-1
-      - k3s-agent-2
     f2b_all_jails:
       - sshd
       - k3s-apiserver
