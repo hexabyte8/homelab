@@ -30,10 +30,15 @@ spec:
       # Do not replace local-path as the default StorageClass.
       # Switch this to true once existing PVCs are migrated.
       defaultClass: false
-      defaultClassReplicaCount: 2
+      # Single Longhorn-capable node (k3s-agent-1 only) post k3s-agent-2
+      # removal: a replica count >1 can never be satisfied since there's
+      # nowhere to place a second copy, leaving every volume perpetually
+      # "degraded". Reduced to 1 accordingly (single point of failure for
+      # cluster storage, accepted tradeoff of the single-worker topology).
+      defaultClassReplicaCount: 1
       defaultFsType: ext4
     defaultSettings:
-      defaultReplicaCount: 2
+      defaultReplicaCount: 1
       defaultDataPath: /var/lib/longhorn/
     csi:
       # k3s stores kubelet state under this path (not the default /var/lib/kubelet)
