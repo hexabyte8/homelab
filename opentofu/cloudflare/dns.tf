@@ -67,10 +67,32 @@ resource "cloudflare_dns_record" "long_haul_game" {
 resource "cloudflare_dns_record" "zomboid_server" {
   zone_id = var.cloudflare_zone_id
   name    = "zomb"
-  content = "75.134.106.76"
+  content = var.public_ip
   type    = "A"
   ttl     = 1
   proxied = false
+}
+
+# SRV record for the Project Zomboid server. Note: vanilla PZ clients do
+# NOT resolve SRV records when connecting (you must still enter
+# "zomb.chronobyte.net:16261" or the raw IP:port directly in the "Join by
+# IP" dialog) — this exists for discoverability/tooling and so the port
+# is documented in DNS, not because the game client will use it.
+resource "cloudflare_dns_record" "zomboid_server_srv" {
+  zone_id = var.cloudflare_zone_id
+  name    = "_pzserver._udp.zomb"
+  type    = "SRV"
+  ttl     = 1
+  proxied = false
+  data = {
+    service  = "_pzserver"
+    proto    = "_udp"
+    name     = "zomb"
+    priority = 10
+    weight   = 10
+    port     = 16261
+    target   = "zomb.${var.cloudflare_zone_name}"
+  }
 }
 
 # GitHub Pages domain verification

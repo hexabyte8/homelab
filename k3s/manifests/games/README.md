@@ -21,11 +21,14 @@ a single Project Zomboid dedicated server.
 - `SERVERNAME` is `homelab`; `ADMINPASSWORD`/`RCONPASSWORD` come from a
   Bitwarden-backed secret (`zomboid-bw-secret.yaml`) — see that file's
   comments for the single-key-per-`bwSecretId` sm-operator quirk.
-- Sized to fit actual cluster capacity: CPU request 2 / limit 4
-  (Burstable), memory request = limit = 8Gi (JVM `MIN_MEMORY=4096m` /
-  `MAX_MEMORY=6144m`). Each node only has ~4 allocatable CPU and
-  agents only ~11.7Gi allocatable memory total, so don't raise these
-  without checking free capacity first (`kubectl describe nodes`).
+- Sized at CPU request 4 / limit 6 (Burstable), memory request = limit =
+  16Gi (JVM `MIN_MEMORY=8192m` / `MAX_MEMORY=14336m`), per the requirement
+  to give the server 16GB of RAM. The cluster was consolidated to a
+  single worker (`k3s-agent-1`, resized to 8 cores / 25600Mi) specifically
+  to make room for this — the node now sits at ~90% CPU / ~97% memory
+  requested, so there's effectively no headroom left for other workloads.
+  Check free capacity first (`kubectl describe node k3s-agent-1`) before
+  raising these any further.
 
 ### Migrating an existing save (.zip) from another server
 
@@ -89,3 +92,36 @@ If you migrated a save that already has mods configured in its INI and
 want to manage that file directly instead of via env vars, add
 `SELF_MANAGED_MODS: "true"` so the entrypoint leaves `Mods`/
 `WorkshopItems` untouched.
+
+### Automatic mod updates (`pz-mod-updater`)
+
+`pz-mod-updater` (`pz-mod-updater-cronjob.yaml`, `pz-mod-updater-rbac.yaml`)
+is a small CronJob, running every 15 minutes, that:
+
+1. Reads the live `WORKSHOP_IDS` off the `zomboid` Deployment.
+2. Checks Steam's Workshop API for each mod's current version.
+3. If any mod updated, checks RCON player count — defers the restart if
+   anyone's online, otherwise patches `zomboid` with a rollout-restart
+   annotation (equivalent to `kubectl rollout restart deployment/zomboid`)
+   so the image re-downloads the updated mod(s) on the next boot.
+
+It reuses the same `zomboid-credentials` Bitwarden-synced secret for RCON
+auth (`ADMINPASSWORD` doubles as `RCONPASSWORD`, see
+`zomboid-bw-secret.yaml`'s comment) and persists last-seen mod versions in
+a `pz-mod-state` ConfigMap it creates on first run.
+
+Source: [hexabyte8/pz-mod-updater](https://github.com/hexabyte8/pz-mod-updater).
+Image is published to `ghcr.io/hexabyte8/pz-mod-updater` on every push to
+`main`. To see what it decided on its last run:
+
+```bash
+kubectl -n games logs job/$(kubectl -n games get jobs -l job-name --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}')
+```
+
+### Connecting from outside the LAN
+
+The `zomboid` Service is `type: LoadBalancer`, fronted by MetalLB —
+`kubectl -n games get svc zomboid` shows the assigned LAN IP. To let
+Internet clients connect, forward **UDP 16261 and 16262** on the router to
+that MetalLB IP. See the repo root `opentofu/cloudflare/dns.tf` for the
+public DNS/SRV record pointing at the home router's public IP.
