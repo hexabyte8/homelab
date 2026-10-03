@@ -64,10 +64,14 @@ resource "proxmox_vm_qemu" "k3s-agent-1" {
   os_type       = "cloud-init"
   agent         = 1
   agent_timeout = 180
-  memory        = 12288 # reduced from 16384 (actual usage ~6.7 GB)
-  scsihw        = "virtio-scsi-pci"
-  vm_state      = "running"
-  tags          = "k3s,kubernetes,infrastructure"
+  memory        = 25600 # bumped from 12288: sole remaining agent after
+  # k3s-agent-2 was decommissioned to free capacity for a 16Gi Zomboid pod.
+  # Host has 31845Mi total; control-plane keeps 4096Mi, leaving ~2.1Gi
+  # headroom for the hypervisor (consistent with the ~3Gi headroom it had
+  # with all 3 VMs running before this change).
+  scsihw   = "virtio-scsi-pci"
+  vm_state = "running"
+  tags     = "k3s,kubernetes,infrastructure"
 
   ciuser     = "ubuntu"
   cipassword = var.default_vm_password
@@ -81,7 +85,11 @@ resource "proxmox_vm_qemu" "k3s-agent-1" {
   }
 
   cpu {
-    cores   = 4
+    # Doubled from 4: the host only has 8 threads (4c/8t), and dropping
+    # k3s-agent-2 frees its 4 cores' worth of oversubscription budget.
+    # Total vCPU footprint stays the same as before (control-plane 4 +
+    # this VM 8 = 12, same ratio as the old 4+4+4).
+    cores   = 8
     sockets = 1
   }
 
