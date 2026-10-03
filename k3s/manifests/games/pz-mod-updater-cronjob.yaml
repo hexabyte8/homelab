@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pz-mod-updater
+  namespace: games
+spec:
+  # Every 15 minutes. Steam's API has no meaningful rate limit concern at
+  # this frequency, and a restart is only ever triggered when an actual
+  # mod update is detected and the server is empty.
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 300
+      backoffLimit: 1
+      template:
+        spec:
+          serviceAccountName: pz-mod-updater
+          restartPolicy: Never
+          automountServiceAccountToken: true
+          containers:
+            - name: pz-mod-updater
+              image: ghcr.io/hexabyte8/pz-mod-updater:latest
+              imagePullPolicy: Always
+              env:
+                - name: NAMESPACE
+                  value: "games"
+                - name: DEPLOYMENT
+                  value: "zomboid"
+                - name: CONTAINER_NAME
+                  value: "zomboid"
+                - name: RCON_HOST
+                  value: "zomboid-rcon.games.svc.cluster.local"
+                - name: RCON_PORT
+                  value: "27015"
+                - name: RCON_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: zomboid-credentials
+                      key: ADMINPASSWORD
+                - name: STATE_CONFIGMAP
+                  value: "pz-mod-state"
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 250m
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
