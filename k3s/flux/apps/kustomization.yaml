@@ -33,16 +33,16 @@ resources:
   # - actual-mcp-secondary.yaml
   - adguard.yaml
 #  - backstitch.yaml
-  - calibre-web.yaml
   - dashy.yaml
   - drawio.yaml
   - fail2ban.yaml
   - forgejo.yaml
   - forgejo-runner.yaml
-  - jellyfin.yaml
+  - games.yaml
 #  - long-haul.yaml
   - mealie.yaml
 #  - mcp-kubernetes.yaml
+  - media.yaml
   - ntfy.yaml
   # - opencode.yaml
   # - radar.yaml

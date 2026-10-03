@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: transmission
-  namespace: jellyfin
+  namespace: media
   annotations:
     tailscale.com/proxy-class: "prod"
 spec:
@@ -19,4 +19,4 @@ spec:
                   number: 9091
   tls:
     - hosts:
-        - jellyfin-transmission
+        - media-transmission

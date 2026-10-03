@@ -1,0 +1,10 @@
+---
+# `games` hosts dedicated game servers (Project Zomboid, and future Minecraft
+# / other Steam-based servers). Each server gets its own Deployment + PVC
+# under this shared namespace.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: games
+  labels:
+    app.kubernetes.io/part-of: games

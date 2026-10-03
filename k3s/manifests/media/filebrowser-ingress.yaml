@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: jellyfin
-  namespace: jellyfin
+  name: filebrowser
+  namespace: media
   annotations:
     tailscale.com/proxy-class: "prod"
 spec:
@@ -14,9 +14,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: jellyfin
+                name: filebrowser
                 port:
-                  number: 8096
+                  number: 80
   tls:
     - hosts:
-        - jellyfin
+        - media-files

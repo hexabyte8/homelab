@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: calibre-web
-  namespace: jellyfin
+  namespace: media
   annotations:
     tailscale.com/proxy-class: "prod"
 spec:

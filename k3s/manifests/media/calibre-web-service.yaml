@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: calibre-web
-  namespace: jellyfin
+  namespace: media
 spec:
   selector:
     app: calibre-web

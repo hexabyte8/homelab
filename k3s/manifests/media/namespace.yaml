@@ -1,0 +1,12 @@
+---
+# `media` hosts calibre-web, transmission, and filebrowser — the three apps
+# that previously shared the `jellyfin` namespace with Jellyfin itself.
+# Jellyfin (and its 350Gi video-library PVC) was decommissioned; these apps
+# were migrated here onto small, dedicated PVCs instead of the old shared
+# ReadWriteOnce media volume.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: media
+  labels:
+    app.kubernetes.io/part-of: media
