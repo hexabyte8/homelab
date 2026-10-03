@@ -91,11 +91,17 @@ spec:
             requests:
               cpu: "4"
               memory: 16Gi
-              ephemeral-storage: 2Gi
+              # SteamCMD downloads Workshop content outside the mounted
+              # /home/steam/Zomboid PVC path, onto the container's
+              # writable (ephemeral) layer. The migrated servertest save
+              # has 177 Workshop items, some 1GB+ each (vehicle packs),
+              # so this needs much more headroom than a vanilla/no-mod
+              # server. Node has ~300Gi free, so this is generous but safe.
+              ephemeral-storage: 15Gi
             limits:
               cpu: "6"
               memory: 16Gi
-              ephemeral-storage: 4Gi
+              ephemeral-storage: 25Gi
           # Startup can take several minutes (server install/update + world
           # load), so give it a generous startup window before liveness
           # checks kick in. The image has no `pgrep`/`ps`, so probe the RCON
