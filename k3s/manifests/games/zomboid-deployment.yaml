@@ -61,12 +61,12 @@ spec:
               value: "false"
             - name: SERVERPRESET
               value: "Apocalypse"
-            # Leaves ~2Gi of headroom under the pod's 10Gi memory limit for
+            # Leaves ~2Gi of headroom under the pod's 16Gi memory limit for
             # JVM/OS overhead outside the heap.
             - name: MIN_MEMORY
-              value: "4096m"
+              value: "8192m"
             - name: MAX_MEMORY
-              value: "6144m"
+              value: "14336m"
             - name: STEAMVAC
               value: "true"
           volumeMounts:
@@ -80,12 +80,12 @@ spec:
             allowPrivilegeEscalation: false
           resources:
             requests:
-              cpu: "2"
-              memory: 8Gi
+              cpu: "4"
+              memory: 16Gi
               ephemeral-storage: 2Gi
             limits:
-              cpu: "4"
-              memory: 8Gi
+              cpu: "6"
+              memory: 16Gi
               ephemeral-storage: 4Gi
           # Startup can take several minutes (server install/update + world
           # load), so give it a generous startup window before liveness
