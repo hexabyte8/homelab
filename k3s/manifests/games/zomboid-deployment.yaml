@@ -105,7 +105,11 @@ spec:
             tcpSocket:
               port: 27015
             periodSeconds: 10
-            failureThreshold: 60
+            # 180 * 10s = 30 minutes. A heavily-modded server (e.g. the
+            # migrated servertest save with 177 Workshop items) needs much
+            # longer than the original 10-minute budget to download mods
+            # via SteamCMD before RCON starts listening.
+            failureThreshold: 180
           livenessProbe:
             tcpSocket:
               port: 27015
