@@ -5,15 +5,10 @@ metadata:
 spec:
   statefulSet:
     pod:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values:
-                      - k3s-agent-1
+      # NOTE: previously pinned away from k3s-agent-1 to spread proxies across
+      # two workers. With the single-worker consolidation (k3s-agent-2
+      # removed), k3s-agent-1 is the only schedulable worker node, so this
+      # anti-affinity is removed to avoid permanently Pending proxy pods.
       tailscaleInitContainer:
         env:
           - name: TS_EXTRA_ARGS
