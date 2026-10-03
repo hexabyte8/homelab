@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: games-defaults
+  namespace: games
+spec:
+  limits:
+    - type: Container
+      # Default ephemeral-storage for any container that doesn't set its own.
+      # Pods with explicit resources (zomboid, future game servers) override these.
+      default:
+        ephemeral-storage: 1Gi
+      defaultRequest:
+        ephemeral-storage: 256Mi

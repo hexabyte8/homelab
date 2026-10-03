@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: calibre-web
-  namespace: jellyfin
+  namespace: media
 spec:
   replicas: 1
   selector:
@@ -14,14 +14,6 @@ spec:
         app: calibre-web
     spec:
       automountServiceAccountToken: false
-      # jellyfin-media is ReadWriteOnce — must be on the same node as Jellyfin.
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: jellyfin
-              topologyKey: kubernetes.io/hostname
       containers:
         - name: calibre-web
           image: crocodilestick/calibre-web-automated:v4.0.6
@@ -39,8 +31,8 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
-            # The Calibre library lives inside the shared media volume so that
-            # Jellyfin and Filebrowser can also see the books directory.
+            # The Calibre library lives inside the shared media-library volume
+            # so that Filebrowser can also see the books directory.
             - name: media
               mountPath: /calibre-library
               subPath: books
@@ -76,4 +68,4 @@ spec:
             claimName: calibre-web-config
         - name: media
           persistentVolumeClaim:
-            claimName: jellyfin-media
+            claimName: media-library

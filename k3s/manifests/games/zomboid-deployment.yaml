@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zomboid
+  namespace: games
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: zomboid
+  template:
+    metadata:
+      labels:
+        app: zomboid
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: zomboid
+          image: danixu86/project-zomboid-dedicated-server:42.21-release-2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 16261
+              protocol: UDP
+              name: game-udp
+            - containerPort: 8766
+              protocol: UDP
+              name: steam1-udp
+            - containerPort: 8767
+              protocol: UDP
+              name: steam2-udp
+            # Build 42+ only needs the two game UDP ports; no more
+            # per-player TCP client-slot range like older PZ builds.
+            - containerPort: 16262
+              protocol: UDP
+              name: game-udp2
+            - containerPort: 27015
+              protocol: TCP
+              name: rcon
+          env:
+            - name: ADMINUSERNAME
+              value: "admin"
+            - name: ADMINPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zomboid-credentials
+                  key: ADMINPASSWORD
+            - name: RCONPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zomboid-credentials
+                  # Same password as ADMINPASSWORD — the BWS mapping only
+                  # synced one key (see zomboid-bw-secret.yaml comment).
+                  key: ADMINPASSWORD
+            - name: SERVERNAME
+              value: "homelab"
+            - name: DISPLAYNAME
+              value: "Homelab Zomboid"
+            - name: PUBLIC
+              value: "false"
+            - name: SERVERPRESET
+              value: "Apocalypse"
+            # Leaves ~2Gi of headroom under the pod's 10Gi memory limit for
+            # JVM/OS overhead outside the heap.
+            - name: MIN_MEMORY
+              value: "4096m"
+            - name: MAX_MEMORY
+              value: "6144m"
+            - name: STEAMVAC
+              value: "true"
+          volumeMounts:
+            # The entrypoint script only mkdir's directories under the
+            # image's built-in HOMEDIR (/home/steam/Zomboid) regardless of
+            # CACHEDIR, so the persistent volume must be mounted there
+            # directly rather than at a custom CACHEDIR path.
+            - name: data
+              mountPath: /home/steam/Zomboid
+          securityContext:
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              cpu: "2"
+              memory: 8Gi
+              ephemeral-storage: 2Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+              ephemeral-storage: 4Gi
+          # Startup can take several minutes (server install/update + world
+          # load), so give it a generous startup window before liveness
+          # checks kick in. The image has no `pgrep`/`ps`, so probe the RCON
+          # TCP port instead — it only starts listening once the server has
+          # fully initialized.
+          startupProbe:
+            tcpSocket:
+              port: 27015
+            periodSeconds: 10
+            failureThreshold: 60
+          livenessProbe:
+            tcpSocket:
+              port: 27015
+            periodSeconds: 30
+            failureThreshold: 3
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: zomboid-data

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-library
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-media
+  resources:
+    requests:
+      # Holds calibre-web's book library (books/, cwa-ingest/) and
+      # transmission's downloads/. Jellyfin's video libraries (movies/,
+      # anime/, youtube/) and unrelated data (archives/, music/) were
+      # dropped during the migration off the old 350Gi jellyfin-media PVC —
+      # 20Gi leaves ample headroom (1-replica, Retain policy: no redundancy
+      # needed, and volume survives accidental PVC deletion).
+      storage: 20Gi

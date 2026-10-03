@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: transmission
-  namespace: jellyfin
+  namespace: media
 spec:
   replicas: 1
   selector:
@@ -12,18 +12,16 @@ spec:
     metadata:
       labels:
         app: transmission
-      annotations:
-        kubectl.kubernetes.io/restartedAt: "2026-03-20T17:15:00Z"
     spec:
       automountServiceAccountToken: false
-      # Must run on the same node as Jellyfin because both share the
-      # ReadWriteOnce jellyfin-media PVC (k3s local-path only supports RWO).
+      # media-library is ReadWriteOnce — must be on the same node as
+      # calibre-web, which is the pod that first claims the volume.
       affinity:
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  app: jellyfin
+                  app: calibre-web
               topologyKey: kubernetes.io/hostname
       # NET_ADMIN is required for the OpenVPN tun interface.
       # The init container ensures /dev/net/tun exists on the node.
@@ -155,7 +153,7 @@ spec:
             claimName: transmission-config
         - name: media
           persistentVolumeClaim:
-            claimName: jellyfin-media
+            claimName: media-library
         - name: dev-net
           emptyDir: {}
         # The secret is mounted read-only under /vpn-secret; the copy-vpn-config

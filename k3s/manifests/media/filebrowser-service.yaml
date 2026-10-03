@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: filebrowser
-  namespace: jellyfin
+  namespace: media
   annotations:
     metallb.universe.tf/loadBalancerIPs: "192.168.1.241"
     # Port 80 is claimed by Traefik's svclb on all nodes; MetalLB already provides
