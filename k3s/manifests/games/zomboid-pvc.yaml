@@ -10,3 +10,24 @@ spec:
   resources:
     requests:
       storage: 50Gi
+---
+# SteamCMD downloads Workshop mod content into
+# STEAMAPPDIR/steamapps/workshop (/home/steam/pz-dedicated/steamapps/workshop),
+# which lives outside the zomboid-data PVC above and therefore outside the
+# container's writable (ephemeral) layer whenever the pod is recreated. With
+# 177 Workshop items (some 1GB+) that meant every reboot re-downloaded the
+# entire modlist from Steam before the server could start. Mounting this PVC
+# at that path persists the downloaded mods across restarts: SteamCMD only
+# re-fetches items that are missing or out of date.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zomboid-workshop-data
+  namespace: games
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 20Gi

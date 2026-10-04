@@ -13,6 +13,13 @@ a single Project Zomboid dedicated server.
   under `HOMEDIR` regardless of any `CACHEDIR` override, so mounting
   anywhere else (e.g. a custom `/data` path) causes a
   `FileNotFoundException` crash on first boot.
+- Workshop PVC (`zomboid-workshop-data`, `longhorn` SC) is mounted at
+  `/home/steam/pz-dedicated/steamapps/workshop` — where SteamCMD downloads
+  Workshop mod content (outside `HOMEDIR`/the data PVC, and re-downloadable,
+  so no special replication). Without this, the pod's writable layer lost
+  every downloaded mod on each restart, forcing the server to re-fetch the
+  entire modlist (177 Workshop items, some 1GB+) before it could come back
+  up. This PVC persists that content across restarts instead.
 - `startupProbe`/`livenessProbe` use `tcpSocket` against the RCON port
   (27015) rather than `exec` — the image has no `pgrep`/`ps`.
 - Build 42+ only needs two UDP ports (`16261`, `16262`) plus the two Steam
