@@ -98,15 +98,9 @@ spec:
             requests:
               cpu: "4"
               memory: 16Gi
-              # Workshop content now persists on the workshop-data PVC
-              # instead of the container's writable layer (see the
-              # volumeMounts comment above), so ephemeral-storage no longer
-              # needs to hold ~177 Workshop items (some 1GB+) on top of the
-              # game install. This headroom now only covers the baked-in
-              # game files, logs, and other scratch writes.
               ephemeral-storage: 4Gi
             limits:
-              cpu: "6"
+              cpu: "8"
               memory: 16Gi
               ephemeral-storage: 8Gi
           # Startup can take several minutes (server install/update + world
