@@ -67,7 +67,7 @@ resource "cloudflare_dns_record" "long_haul_game" {
 resource "cloudflare_dns_record" "zomboid_server" {
   zone_id = var.cloudflare_zone_id
   name    = "zomb"
-  content = var.public_ip
+  content = "75.134.106.76"
   type    = "A"
   ttl     = 1
   proxied = false
