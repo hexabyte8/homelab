@@ -14,7 +14,7 @@ World/mod data persists on the `minecraft-data` PVC.
 ## Setup
 
 1. Get a CurseForge API key (https://console.curseforge.com/).
-2. Patch `minecraft-secrets` (`CF_API_KEY`, `RCON_PASSWORD`) — see `secret.yaml`.
+2. `minecraft-secrets` (`CF_API_KEY`, `RCON_PASSWORD`) is synced from Bitwarden by `bw-secret.yaml`.
 3. Forward TCP 25565 on the router to the Service's MetalLB IP
    (`kubectl -n minecraft get svc minecraft`) and point a DNS record at it.
-4. Set `WHITELIST`/`OPS` in the ConfigMap; adjust `MEMORY` to the pack's needs.
+4. Set `WHITELIST`/`OPS` in the ConfigMap; `MEMORY` is 16G (pod requests 16Gi, limit 20Gi).

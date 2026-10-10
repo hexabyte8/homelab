@@ -23,7 +23,7 @@ data:
   # Extra individual mods on top of the pack can be added via:
   #   MODS: "https://www.curseforge.com/minecraft/mc-mods/<slug>"
   # --- Server ---------------------------------------------------------------
-  MEMORY: "8G"
+  MEMORY: "16G"
   DIFFICULTY: normal
   MODE: survival
   MAX_PLAYERS: "20"
