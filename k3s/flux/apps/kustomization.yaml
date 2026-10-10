@@ -44,7 +44,7 @@ resources:
 #  - mcp-kubernetes.yaml
   - media.yaml
   - ntfy.yaml
-  # - opencode.yaml
+  - opencode.yaml
   # - radar.yaml
   - stalwart.yaml
   - uptime-kuma.yaml
