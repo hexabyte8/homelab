@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft
+  namespace: minecraft
+  annotations:
+    # MetalLB auto-assigns an IP; forward TCP 25565 from your router to it
+    # to make the server public.
+    svccontroller.k3s.cattle.io/nodeselectorsterm: "kubernetes.io/hostname in (none)"
+spec:
+  type: LoadBalancer
+  selector:
+    app: minecraft
+  ports:
+    - port: 25565
+      targetPort: 25565
+      protocol: TCP
+      name: minecraft
+---
+# RCON is admin-only — cluster-internal.
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-rcon
+  namespace: minecraft
+spec:
+  type: ClusterIP
+  selector:
+    app: minecraft
+  ports:
+    - port: 25575
+      targetPort: 25575
+      protocol: TCP
+      name: rcon

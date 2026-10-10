@@ -1,0 +1,38 @@
+# GitOps mod management: edit this file and merge. Reloader restarts the
+# server and itzg/minecraft-server re-resolves the modpack/mods on boot.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minecraft-config
+  namespace: minecraft
+data:
+  EULA: "TRUE"
+  TYPE: AUTO_CURSEFORGE
+  # --- Modpack (CurseForge) -------------------------------------------------
+  # Slug = last path segment of https://www.curseforge.com/minecraft/modpacks/<slug>
+  CF_SLUG: all-the-mods-10
+  # Pin a specific modpack file (file ID from the modpack's "Files" page URL) to
+  # avoid surprise upgrades. Leave empty to always use the latest release.
+  CF_FILENAME_MATCHER: ""
+  # --- Mod tweaks -----------------------------------------------------------
+  # Comma/space separated project slugs or IDs.
+  # Remove mods that are client-only or crash the server:
+  CF_EXCLUDE_MODS: ""
+  # Force-include mods missing from the pack's server files:
+  CF_FORCE_INCLUDE_MODS: ""
+  # Extra individual mods on top of the pack can be added via:
+  #   MODS: "https://www.curseforge.com/minecraft/mc-mods/<slug>"
+  # --- Server ---------------------------------------------------------------
+  MEMORY: "8G"
+  DIFFICULTY: normal
+  MODE: survival
+  MAX_PLAYERS: "20"
+  VIEW_DISTANCE: "10"
+  MOTD: "Homelab Minecraft"
+  ENABLE_WHITELIST: "true"
+  ENFORCE_WHITELIST: "true"
+  # Whitelist / ops by username (Mojang UUIDs resolved automatically).
+  WHITELIST: ""
+  OPS: ""
+  ENABLE_RCON: "true"
+  USE_AIKAR_FLAGS: "true"

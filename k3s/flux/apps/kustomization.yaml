@@ -41,6 +41,7 @@ resources:
 # - games.yaml
 #  - long-haul.yaml
   - mealie.yaml
+  - minecraft.yaml
 #  - mcp-kubernetes.yaml
   - media.yaml
   - ntfy.yaml
