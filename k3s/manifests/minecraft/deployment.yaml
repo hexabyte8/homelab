@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft
+  namespace: minecraft
+  annotations:
+    # Restart (and thereby re-sync mods) when config or secrets change.
+    configmap.reloader.stakater.com/reload: "minecraft-config"
+    secret.reloader.stakater.com/reload: "minecraft-secrets"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: minecraft
+  template:
+    metadata:
+      labels:
+        app: minecraft
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: minecraft
+          image: itzg/minecraft-server:java21
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 25565
+              protocol: TCP
+              name: minecraft
+            - containerPort: 25575
+              protocol: TCP
+              name: rcon
+          envFrom:
+            - configMapRef:
+                name: minecraft-config
+            - secretRef:
+                name: minecraft-secrets
+          resources:
+            requests:
+              cpu: "1"
+              memory: 16Gi
+              ephemeral-storage: 1Gi
+            limits:
+              memory: 20Gi
+              ephemeral-storage: 4Gi
+          startupProbe:
+            exec:
+              command: ["mc-health"]
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 90
+          livenessProbe:
+            exec:
+              command: ["mc-health"]
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command: ["mc-health"]
+            periodSeconds: 15
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: minecraft-data
