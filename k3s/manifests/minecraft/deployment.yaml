@@ -39,10 +39,10 @@ spec:
           resources:
             requests:
               cpu: "1"
-              memory: 16Gi
+              memory: 12Gi
               ephemeral-storage: 1Gi
             limits:
-              memory: 20Gi
+              memory: 14Gi
               ephemeral-storage: 4Gi
           startupProbe:
             exec:

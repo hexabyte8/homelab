@@ -17,4 +17,4 @@ World/mod data persists on the `minecraft-data` PVC.
 2. `minecraft-secrets` (`CF_API_KEY`, `RCON_PASSWORD`) is synced from Bitwarden by `bw-secret.yaml`.
 3. Forward TCP 25565 on the router to the Service's MetalLB IP
    (`kubectl -n minecraft get svc minecraft`) and point a DNS record at it.
-4. Set `WHITELIST`/`OPS` in the ConfigMap; `MEMORY` is 16G (pod requests 16Gi, limit 20Gi).
+4. Set `WHITELIST`/`OPS` in the ConfigMap; `MEMORY` is 10G (pod requests 12Gi, limit 14Gi; the agent node only has ~25GB shared with other workloads).
