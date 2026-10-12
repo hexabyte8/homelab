@@ -20,19 +20,17 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 1000
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
       containers:
         - name: opencodew
           image: ghcr.io/anomalyco/opencode:2.0.27@sha256:a30f386d6b0c5a08b48fae7e6000fc7d38447dc5e6eb20590b78b81eb4627354
           imagePullPolicy: IfNotPresent
+          # Runs as root so git/gh can be installed at start (rootfs is not persistent).
+          command: ["/bin/sh", "-c"]
           args:
-            - serve
-            - --hostname
-            - 0.0.0.0
-            - --port
-            - "4096"
+            - apk add --no-cache git github-cli openssh-client curl; exec opencode serve --hostname 0.0.0.0 --port 4096
           workingDir: /workspace
           ports:
             - name: http
@@ -53,7 +51,7 @@ spec:
             # provider is built in; authenticate once via the web UI
             # (Connect provider -> GitHub Copilot), stored in /data/share.
             - name: OPENCODE_CONFIG_CONTENT
-              value: '{"$schema":"https://opencode.ai/config.json","model":"github-copilot/claude-sonnet-5.5"}'
+              value: '{"$schema":"https://opencode.ai/config.json","model":"github-copilot/claude-sonnet-5.5","mcp":{"github":{"type":"remote","url":"https://api.githubcopilot.com/mcp/","headers":{"Authorization":"Bearer {env:GITHUB_TOKEN}"}}}}'
             # GitHub access (git/gh): fine-grained PAT stored in BWS as GITHUB_TOKEN.
             - name: GITHUB_TOKEN
               valueFrom:
@@ -82,10 +80,7 @@ spec:
                   key: OPENCODE_SERVER_PASSWORD
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
+            readOnlyRootFilesystem: false
           volumeMounts:
             - name: data
               mountPath: /data
