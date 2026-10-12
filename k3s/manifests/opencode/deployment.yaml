@@ -54,6 +54,25 @@ spec:
             # (Connect provider -> GitHub Copilot), stored in /data/share.
             - name: OPENCODE_CONFIG_CONTENT
               value: '{"$schema":"https://opencode.ai/config.json","model":"github-copilot/claude-sonnet-5.5"}'
+            # GitHub access (git/gh): fine-grained PAT stored in BWS as GITHUB_TOKEN.
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: opencode-secret
+                  key: GITHUB_TOKEN
+                  optional: true
+            - name: GH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: opencode-secret
+                  key: GITHUB_TOKEN
+                  optional: true
+            - name: GIT_CONFIG_COUNT
+              value: "1"
+            - name: GIT_CONFIG_KEY_0
+              value: credential.https://github.com.helper
+            - name: GIT_CONFIG_VALUE_0
+              value: '!f() { echo username=x-access-token; echo password=$GITHUB_TOKEN; }; f'
             - name: OPENCODE_SERVER_USERNAME
               value: opencode
             - name: OPENCODE_SERVER_PASSWORD

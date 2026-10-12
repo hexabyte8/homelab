@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opencodew
+  namespace: opencodew
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: opencodew
+  template:
+    metadata:
+      labels:
+        app: opencodew
+      annotations:
+        secret.reloader.stakater.com/reload: "opencodew-secret"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: opencodew
+          image: ghcr.io/anomalyco/opencode:2.0.27@sha256:a30f386d6b0c5a08b48fae7e6000fc7d38447dc5e6eb20590b78b81eb4627354
+          imagePullPolicy: IfNotPresent
+          args:
+            - serve
+            - --hostname
+            - 0.0.0.0
+            - --port
+            - "4096"
+          workingDir: /workspace
+          ports:
+            - name: http
+              containerPort: 4096
+              protocol: TCP
+          env:
+            - name: HOME
+              value: /data
+            - name: XDG_DATA_HOME
+              value: /data/share
+            - name: XDG_CONFIG_HOME
+              value: /data/config
+            - name: XDG_CACHE_HOME
+              value: /data/cache
+            - name: XDG_STATE_HOME
+              value: /data/state
+            # Merged over /data/config/opencode/opencode.jsonc. The github-copilot
+            # provider is built in; authenticate once via the web UI
+            # (Connect provider -> GitHub Copilot), stored in /data/share.
+            - name: OPENCODE_CONFIG_CONTENT
+              value: '{"$schema":"https://opencode.ai/config.json","model":"github-copilot/claude-sonnet-5.5"}'
+            # GitHub access (git/gh): fine-grained PAT stored in BWS as GITHUB_TOKEN.
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: opencodew-secret
+                  key: GITHUB_TOKEN
+                  optional: true
+            - name: GH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: opencodew-secret
+                  key: GITHUB_TOKEN
+                  optional: true
+            - name: GIT_CONFIG_COUNT
+              value: "1"
+            - name: GIT_CONFIG_KEY_0
+              value: credential.https://github.com.helper
+            - name: GIT_CONFIG_VALUE_0
+              value: '!f() { echo username=x-access-token; echo password=$GITHUB_TOKEN; }; f'
+            - name: OPENCODE_SERVER_USERNAME
+              value: opencode
+            - name: OPENCODE_SERVER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: opencodew-secret
+                  key: OPENCODE_SERVER_PASSWORD
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: workspace
+              mountPath: /workspace
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          readinessProbe:
+            tcpSocket:
+              port: 4096
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 4096
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: opencodew-data
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: opencodew-workspace
+        - name: tmp
+          emptyDir: {}
