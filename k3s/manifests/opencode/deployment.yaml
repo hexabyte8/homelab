@@ -28,7 +28,7 @@ spec:
           image: ghcr.io/anomalyco/opencode:2.0.27@sha256:a30f386d6b0c5a08b48fae7e6000fc7d38447dc5e6eb20590b78b81eb4627354
           imagePullPolicy: IfNotPresent
           args:
-            - web
+            - serve
             - --hostname
             - 0.0.0.0
             - --port
