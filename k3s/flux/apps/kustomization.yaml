@@ -29,7 +29,7 @@ resources:
   - monitoring-manifests.yaml
   # Workloads
   - actual.yaml
-  # - actual-mcp.yaml
+  #- actual-mcp.yaml
   # - actual-mcp-secondary.yaml
   - adguard.yaml
 #  - backstitch.yaml
@@ -42,7 +42,7 @@ resources:
 #  - long-haul.yaml
   - mealie.yaml
   # - minecraft.yaml
-#  - mcp-kubernetes.yaml
+  - mcp-kubernetes.yaml
   - media.yaml
   - ntfy.yaml
   - opencode.yaml
