@@ -1,0 +1,24 @@
+# Tailnet-only: served by the Tailscale operator, no Traefik / Cloudflare route.
+# https://ansible-flow.daggertooth-scala.ts.net
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ansible-flow
+  namespace: ansible-flow
+  annotations:
+    tailscale.com/proxy-class: "prod"
+spec:
+  ingressClassName: tailscale
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ansible-flow
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - ansible-flow
