@@ -87,6 +87,7 @@ spec:
         alertmanager:
           hostport: http://monitoring-kube-prometheus-alertmanager.monitoring.svc.cluster.local:9093
           minimumpriority: warning
+          endpoint: /api/v2/alerts
           extralabels: "component:falco"
 
     # Silence known-benign noise seen in the logs: opencode's own git/gh/curl
