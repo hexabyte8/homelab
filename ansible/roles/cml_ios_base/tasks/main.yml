@@ -1,0 +1,9 @@
+---
+- name: Enforce base device settings
+  cisco.ios.ios_config:
+    lines: "{{ cml_ios_base_lines }}"
+
+- name: Enforce VTY line settings (SSH only, local auth)
+  cisco.ios.ios_config:
+    parents: line vty 0 4
+    lines: "{{ cml_ios_base_vty_lines }}"

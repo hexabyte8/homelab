@@ -1,0 +1,83 @@
+name: Configure CML Lab
+
+on:
+  workflow_dispatch:
+    inputs:
+      check_mode:
+        description: 'Dry run: show what would change without applying it'
+        required: false
+        type: boolean
+        default: false
+      limit:
+        description: 'Limit to a host or group (e.g. vrouter1, cml_switches)'
+        required: false
+        type: string
+        default: 'cml_lab'
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            2ea22c80-a3b2-4b71-a5f7-b40f00c90b84 > TAILSCALE_OAUTH_CLIENT_ID
+            9edcc17b-513b-4b4b-848b-b40f00c91c35 > TAILSCALE_OAUTH_CLIENT_SECRET
+            7285af12-3ae8-40b4-adae-b40f00cfbd6f > DEFAULT_VM_PASSWORD
+
+      # --accept-routes is needed to reach the lab subnet advertised by the
+      # tsgw1 node inside the CML lab.
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ env.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+          args: --accept-routes
+          version: 1.68.1
+
+      - name: Wait for the lab devices to be reachable
+        run: |
+          for host in 10.96.0.1 10.96.0.2; do
+            echo "Waiting for SSH on ${host}..."
+            for i in $(seq 1 90); do
+              if timeout 5 bash -c "</dev/tcp/${host}/22" 2>/dev/null; then
+                echo "${host} is reachable"
+                break
+              fi
+              if [ "$i" -eq 90 ]; then
+                echo "::error::${host} not reachable on tcp/22 after 15 minutes. Is the lab started (tofu apply -> cml) and is tsgw1 online in Tailscale?"
+                exit 1
+              fi
+              sleep 10
+            done
+          done
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible paramiko
+          ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Run CML lab playbook
+        working-directory: ansible
+        env:
+          CML_DEVICE_PASSWORD: ${{ env.DEFAULT_VM_PASSWORD }}
+        run: |
+          ansible-playbook -i inventories/cml-lab playbooks/configure_cml_lab.yml \
+            --limit "${{ inputs.limit }}" \
+            --diff ${{ inputs.check_mode && '--check' || '' }}

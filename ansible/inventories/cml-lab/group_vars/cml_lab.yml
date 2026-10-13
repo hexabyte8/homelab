@@ -1,0 +1,14 @@
+---
+ansible_connection: ansible.netcommon.network_cli
+ansible_network_os: cisco.ios.ios
+ansible_network_cli_ssh_type: paramiko
+ansible_user: ansible
+# Same value as the DEFAULT_VM_PASSWORD secret used for the day-0 config in
+# opentofu/cml. Export it as CML_DEVICE_PASSWORD (the workflow does this).
+ansible_password: "{{ lookup('ansible.builtin.env', 'CML_DEVICE_PASSWORD') }}"
+ansible_become: false
+ansible_command_timeout: 60
+ansible_connect_timeout: 30
+
+# Settings shared by every device in the lab.
+lab_domain_name: lab.local
