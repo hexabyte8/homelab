@@ -1,0 +1,13 @@
+---
+# Settings applied to every IOS device. device_hostname must be set per host.
+cml_ios_base_lines:
+  - "hostname {{ device_hostname }}"
+  - no ip domain lookup
+  - "ip domain name {{ lab_domain_name }}"
+  - ip ssh version 2
+  - service timestamps log datetime msec
+
+cml_ios_base_vty_lines:
+  - login local
+  - transport input ssh
+  - exec-timeout 30 0

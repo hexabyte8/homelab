@@ -1,0 +1,35 @@
+---
+# Desired state for vRouter1 (IOSv). Enforced by the cml_router role.
+device_hostname: vRouter1
+
+router_interfaces:
+  - name: GigabitEthernet0/0
+    description: to-vSwitch1-internal
+    ipv4: 10.96.0.1/24
+    nat: inside
+  - name: GigabitEthernet0/1
+    description: to-external-connector-NAT
+    ipv4: dhcp # lease from CML's NAT network; also installs the default route
+    nat: outside
+
+# PAT (overload) of the inside network behind the outside interface.
+router_nat:
+  acl_name: INTERNAL-NAT
+  permit:
+    - network: 10.96.0.0
+      wildcard: 0.0.0.255
+  outside_interface: GigabitEthernet0/1
+
+# DHCP server for the lab clients.
+router_dhcp_excluded:
+  - start: 10.96.0.1
+    end: 10.96.0.20
+router_dhcp_pools:
+  - name: LAB-CLIENTS
+    network: 10.96.0.0
+    netmask: 255.255.255.0
+    default_router: 10.96.0.1
+    dns_servers: [1.1.1.1, 8.8.8.8]
+    lease: 0 8 # days hours
+
+router_static_routes: []

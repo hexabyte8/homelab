@@ -1,0 +1,9 @@
+---
+router_interfaces: []
+router_nat: {}
+router_dhcp_excluded: []
+router_dhcp_pools: []
+router_static_routes: []
+
+# Public address used by the end-to-end connectivity check.
+router_verify_target: 1.1.1.1

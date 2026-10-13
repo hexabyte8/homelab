@@ -1,0 +1,30 @@
+---
+# Desired state for vSwitch1 (IOSvL2). Enforced by the cml_switch role.
+# Port map is defined by the interface slots in opentofu/cml/basic-lab.tf.
+device_hostname: vSwitch1
+
+switch_vlans:
+  - vlan_id: 10
+    name: INTERNAL
+
+switch_access_ports:
+  - name: GigabitEthernet0/0
+    description: chronos1
+    vlan: 10
+  - name: GigabitEthernet0/1
+    description: alpine2
+    vlan: 10
+  - name: GigabitEthernet0/2
+    description: vRouter1
+    vlan: 10
+  - name: GigabitEthernet0/3
+    description: tsgw1
+    vlan: 10
+
+# In-band management interface.
+switch_svis:
+  - vlan_id: 10
+    description: management
+    ipv4: 10.96.0.2/24
+
+switch_default_gateway: 10.96.0.1
