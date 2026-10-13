@@ -1,0 +1,5 @@
+---
+switch_vlans: []
+switch_access_ports: []
+switch_svis: []
+switch_default_gateway: ""

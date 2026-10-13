@@ -1,0 +1,98 @@
+---
+- name: Enforce interface admin state and description
+  cisco.ios.ios_interfaces:
+    config:
+      - name: "{{ item.name }}"
+        description: "{{ item.description | default(omit) }}"
+        enabled: true
+    state: replaced
+  loop: "{{ router_interfaces }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Enforce interface IPv4 addressing
+  cisco.ios.ios_l3_interfaces:
+    config:
+      - name: "{{ item.name }}"
+        ipv4:
+          - address: "{{ item.ipv4 }}"
+    state: replaced
+  loop: "{{ router_interfaces }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Enforce NAT inside/outside roles
+  cisco.ios.ios_config:
+    parents: "interface {{ item.name }}"
+    lines:
+      - "ip nat {{ item.nat }}"
+  loop: "{{ router_interfaces | selectattr('nat', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Enforce NAT source ACL entries
+  cisco.ios.ios_config:
+    parents: "ip access-list standard {{ router_nat.acl_name }}"
+    lines:
+      - "permit {{ item.network }} {{ item.wildcard }}"
+  loop: "{{ router_nat.permit }}"
+  loop_control:
+    label: "{{ item.network }} {{ item.wildcard }}"
+  when: router_nat | length > 0
+
+- name: Enforce NAT overload rule
+  cisco.ios.ios_config:
+    lines:
+      - "ip nat inside source list {{ router_nat.acl_name }} interface {{ router_nat.outside_interface }} overload"
+  when: router_nat | length > 0
+
+- name: Enforce DHCP excluded addresses
+  cisco.ios.ios_config:
+    lines:
+      - "ip dhcp excluded-address {{ item.start }} {{ item.end }}"
+  loop: "{{ router_dhcp_excluded }}"
+  loop_control:
+    label: "{{ item.start }}-{{ item.end }}"
+
+- name: Enforce DHCP pools
+  cisco.ios.ios_config:
+    parents: "ip dhcp pool {{ item.name }}"
+    lines: >-
+      {{ ['network ' ~ item.network ~ ' ' ~ item.netmask]
+         + (['domain-name ' ~ item.domain_name] if item.domain_name is defined else [])
+         + (['dns-server ' ~ (item.dns_servers | join(' '))] if item.dns_servers is defined else [])
+         + ['default-router ' ~ item.default_router]
+         + (['lease ' ~ item.lease] if item.lease is defined else []) }}
+  loop: "{{ router_dhcp_pools }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Enforce static routes
+  cisco.ios.ios_config:
+    lines:
+      - "ip route {{ item }}"
+  loop: "{{ router_static_routes }}"
+
+- name: Verify the outside interface has a DHCP lease
+  cisco.ios.ios_command:
+    commands:
+      - "show ip interface brief | include {{ router_nat.outside_interface }}"
+  register: cml_router_outside_check
+  until: "'DHCP' in cml_router_outside_check.stdout[0]"
+  retries: 12
+  delay: 10
+  changed_when: false
+  when: router_nat | length > 0 and not ansible_check_mode
+  tags: [verify]
+
+- name: Verify the router can reach the internet
+  cisco.ios.ios_command:
+    commands:
+      - "ping {{ router_verify_target }} repeat 3"
+  register: cml_router_ping
+  until: "'Success rate is 0 percent' not in cml_router_ping.stdout[0]"
+  retries: 6
+  delay: 10
+  changed_when: false
+  when: not ansible_check_mode
+  tags: [verify]

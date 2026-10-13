@@ -8,7 +8,11 @@ terraform {
       source  = "CiscoDevNet/cml2"
       version = "~> 0.9"
     }
-  }  
+    tailscale = {
+      source  = "tailscale/tailscale"
+      version = "0.24.0"
+    }
+  }
   backend "s3" {
     bucket         = "chronobyte-homelab-tf-state"
     key            = "homelab/cml/terraform.tfstate"
@@ -23,3 +27,5 @@ provider "cml2" {
   username    = var.cml_cloud_user
   password    = var.cml_cloud_pass
 }
+
+provider "tailscale" {}

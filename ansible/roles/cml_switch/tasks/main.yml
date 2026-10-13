@@ -1,0 +1,72 @@
+---
+- name: Enforce VLANs
+  cisco.ios.ios_vlans:
+    config: "{{ switch_vlans | map('combine', {'state': 'active'}) | list }}"
+    state: replaced
+  when: switch_vlans | length > 0
+
+- name: Enforce access port admin state and description
+  cisco.ios.ios_interfaces:
+    config:
+      - name: "{{ item.name }}"
+        description: "{{ item.description }}"
+        enabled: true
+    state: replaced
+  loop: "{{ switch_access_ports }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Enforce access port VLAN membership
+  cisco.ios.ios_l2_interfaces:
+    config:
+      - name: "{{ item.name }}"
+        mode: access
+        access:
+          vlan: "{{ item.vlan }}"
+    state: replaced
+  loop: "{{ switch_access_ports }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Enforce SVI admin state and description
+  cisco.ios.ios_interfaces:
+    config:
+      - name: "Vlan{{ item.vlan_id }}"
+        description: "{{ item.description }}"
+        enabled: true
+    state: replaced
+  loop: "{{ switch_svis }}"
+  loop_control:
+    label: "Vlan{{ item.vlan_id }}"
+
+- name: Enforce SVI IP addressing
+  cisco.ios.ios_l3_interfaces:
+    config:
+      - name: "Vlan{{ item.vlan_id }}"
+        ipv4:
+          - address: "{{ item.ipv4 }}"
+    state: replaced
+  loop: "{{ switch_svis }}"
+  loop_control:
+    label: "Vlan{{ item.vlan_id }}"
+
+- name: Enforce default gateway
+  cisco.ios.ios_config:
+    lines:
+      - "ip default-gateway {{ switch_default_gateway }}"
+  when: switch_default_gateway | length > 0
+
+- name: Verify SVIs are up
+  cisco.ios.ios_command:
+    commands:
+      - "show ip interface brief | include Vlan{{ item.vlan_id }}"
+  register: cml_switch_svi_check
+  until: "'up' in cml_switch_svi_check.stdout[0]"
+  retries: 6
+  delay: 5
+  changed_when: false
+  loop: "{{ switch_svis }}"
+  loop_control:
+    label: "Vlan{{ item.vlan_id }}"
+  when: not ansible_check_mode
+  tags: [verify]

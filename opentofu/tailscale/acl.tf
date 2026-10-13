@@ -8,6 +8,15 @@ resource "tailscale_acl" "as_json" {
           "tag:k8s-operator":       ["autogroup:owner"],
           "tag:k8s-operator-proxy": ["autogroup:owner"],
           "tag:k8s":                ["tag:k8s-operator"],
+          "tag:cml-lab":            ["autogroup:owner"],
+        },
+
+        // The CML lab gateway (tsgw1) advertises the lab subnet; approve it
+        // automatically so Ansible can reach vRouter1/vSwitch1.
+        "autoApprovers": {
+          "routes": {
+            "10.96.0.0/24": ["tag:cml-lab"],
+          },
         },
       
         "grants": [
@@ -30,6 +39,13 @@ resource "tailscale_acl" "as_json" {
             "src": ["tag:k8s-operator"],
             "dst": ["tag:server"],
             "ip":  ["*"],
+          },
+          {
+            // SSH to the CML lab devices (via the tsgw1 subnet router) for
+            // the cml-lab-configure Ansible workflow / local runs.
+            "src": ["tag:ci", "autogroup:member"],
+            "dst": ["10.96.0.0/24"],
+            "ip":  ["tcp:22"],
           },
           {
             "src": ["tag:copilot"],

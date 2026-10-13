@@ -1,0 +1,42 @@
+---
+# Idempotently enforce the desired configuration of the CML basic-lab devices
+# (vRouter1, vSwitch1) as defined in inventories/cml-lab/.
+#
+#   cd ansible
+#   export CML_DEVICE_PASSWORD=...        # DEFAULT_VM_PASSWORD
+#   ansible-galaxy collection install -r requirements.yml
+#   ansible-playbook -i inventories/cml-lab playbooks/configure_cml_lab.yml --diff
+#
+# Add --check to preview changes, --limit vrouter1 to target one device, or
+# --tags verify to only run the connectivity checks.
+#
+# The devices must be reachable on their lab addresses (see docs/cml-lab.md);
+# the cml-lab-configure workflow handles this over Tailscale.
+
+- name: Base configuration (all lab devices)
+  hosts: cml_lab
+  gather_facts: false
+  roles:
+    - cml_ios_base
+
+# Router first so DHCP and NAT are up before anything depends on them.
+- name: Configure the router
+  hosts: cml_routers
+  gather_facts: false
+  roles:
+    - cml_router
+
+- name: Configure the switch
+  hosts: cml_switches
+  gather_facts: false
+  roles:
+    - cml_switch
+
+- name: Persist configuration
+  hosts: cml_lab
+  gather_facts: false
+  tasks:
+    - name: Save running-config to startup-config if it changed
+      cisco.ios.ios_config:
+        save_when: modified
+      when: not ansible_check_mode

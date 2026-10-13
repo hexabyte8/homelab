@@ -79,6 +79,7 @@ nav:
     - Tailscale Operator: tailscale-operator.md
     - Cloudflare Tunnels: cloudflare-tunnels.md
     - Flannel over Tailscale: flannel-over-tailscale.md
+    - CML Lab: cml-lab.md
   - Automation:
     - Copilot Cloud Agent: copilot-cloud-agent.md
   - Disaster Recovery:
