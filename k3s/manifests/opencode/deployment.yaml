@@ -51,7 +51,7 @@ spec:
             # provider is built in; authenticate once via the web UI
             # (Connect provider -> GitHub Copilot), stored in /data/share.
             - name: OPENCODE_CONFIG_CONTENT
-              value: '{"$schema":"https://opencode.ai/config.json","model":"github-copilot/claude-sonnet-5.5","mcp":{"github":{"type":"remote","url":"https://api.githubcopilot.com/mcp/","headers":{"Authorization":"Bearer {env:GITHUB_TOKEN}"}}}}'
+              value: '{"$schema":"https://opencode.ai/config.json","model":"github-copilot/claude-sonnet-5.5","mcp":{"github":{"type":"remote","url":"https://api.githubcopilot.com/mcp/","headers":{"Authorization":"Bearer {env:GITHUB_TOKEN}"}},"kubernetes":{"type":"remote","url":"http://mcp-kubernetes.mcp-kubernetes.svc.cluster.local:8000/mcp"}}}'
             # GitHub access (git/gh): fine-grained PAT stored in BWS as GITHUB_TOKEN.
             - name: GITHUB_TOKEN
               valueFrom:
