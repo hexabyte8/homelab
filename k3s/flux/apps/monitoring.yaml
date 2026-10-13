@@ -226,12 +226,23 @@ spec:
                 - severity = "warning"
               receiver: ntfy
               repeat_interval: 4h
+            # Falco runtime security events (via falcosidekick) → ntfy
+            - matchers:
+                - component = "falco"
+              receiver: ntfy-falco
+              group_by: [rule, hostname]
+              repeat_interval: 12h
         receivers:
           - name: "null"
           - name: ntfy
             webhook_configs:
               - url: "http://alertmanager-ntfy-relay.monitoring.svc.cluster.local:8080"
                 send_resolved: true
+          # Falco events are point-in-time and never "resolve"
+          - name: ntfy-falco
+            webhook_configs:
+              - url: "http://alertmanager-ntfy-relay.monitoring.svc.cluster.local:8080"
+                send_resolved: false
 
       ingress:
         enabled: true

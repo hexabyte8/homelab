@@ -66,9 +66,9 @@ spec:
 
     # Structured JSON output for easier ingestion by log tools
     falco:
-      jsonOutput: true
-      jsonIncludeOutputProperty: true
-      logLevel: info
+      json_output: true
+      json_include_output_property: true
+      log_level: info
       # Increase priority threshold to reduce noise in a homelab
       priority: WARNING
 
@@ -78,9 +78,29 @@ spec:
       kubernetes:
         enabled: true
 
-    # Falcosidekick disabled by default; enable later to route alerts to ntfy/Slack
+    # Falcosidekick forwards events to Alertmanager, which routes component=falco
+    # alerts to ntfy via alertmanager-ntfy-relay (see monitoring.yaml).
     falcosidekick:
-      enabled: false
+      enabled: true
+      replicaCount: 1
+      config:
+        alertmanager:
+          hostport: http://monitoring-kube-prometheus-alertmanager.monitoring.svc.cluster.local:9093
+          minimumpriority: warning
+          extralabels: "component:falco"
+
+    # Silence known-benign noise seen in the logs: opencode's own git/gh/curl
+    # (installed at container start) and systemd's PAM reads on the host.
+    customRules:
+      homelab-overrides.yaml: |-
+        - rule: Drop and execute new binary in container
+          condition: and not k8smeta.ns.name in (opencode, opencodew)
+          override:
+            condition: append
+        - rule: Read sensitive file untrusted
+          condition: and not proc.exepath = /usr/lib/systemd/systemd-executor
+          override:
+            condition: append
 
     # Expose Prometheus metrics so kube-prometheus-stack can scrape Falco
     metrics:
