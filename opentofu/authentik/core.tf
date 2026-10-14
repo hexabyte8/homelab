@@ -87,6 +87,14 @@ resource "authentik_provider_proxy" "drawio" {
   invalidation_flow  = data.authentik_flow.default_invalidation.id
 }
 
+resource "authentik_provider_proxy" "router_admin" {
+  name               = "router-admin"
+  mode               = "forward_single"
+  external_host      = "https://rt.${var.cloudflare_zone_name}"
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+}
+
 # ---------- Applications ----------
 
 resource "authentik_application" "dashy" {
@@ -122,6 +130,15 @@ resource "authentik_application" "drawio" {
   protocol_provider = authentik_provider_proxy.drawio.id
   meta_launch_url   = "https://drawio.${var.cloudflare_zone_name}"
   meta_description  = "diagrams.net (drawio) editor (public, ForwardAuth-protected)."
+  open_in_new_tab   = false
+}
+
+resource "authentik_application" "router_admin" {
+  name              = "Router Admin"
+  slug              = "router-admin"
+  protocol_provider = authentik_provider_proxy.router_admin.id
+  meta_launch_url   = "https://rt.${var.cloudflare_zone_name}"
+  meta_description  = "Home router admin UI (public, ForwardAuth-protected)."
   open_in_new_tab   = false
 }
 
@@ -188,6 +205,13 @@ resource "authentik_policy_binding" "drawio_deny_family_and_friends" {
   order  = 0
 }
 
+resource "authentik_policy_binding" "router_admin_deny_family_and_friends" {
+  target = authentik_application.router_admin.uuid
+  group  = authentik_group.family_and_friends.id
+  negate = true
+  order  = 0
+}
+
 resource "authentik_policy_binding" "actual_deny_family_and_friends" {
   target = authentik_application.actual.uuid
   group  = authentik_group.family_and_friends.id
@@ -239,6 +263,13 @@ resource "authentik_policy_binding" "uptime_kuma_allow_admins" {
 
 resource "authentik_policy_binding" "drawio_allow_admins" {
   target = authentik_application.drawio.uuid
+  group  = data.authentik_group.admins.id
+  negate = false
+  order  = -1
+}
+
+resource "authentik_policy_binding" "router_admin_allow_admins" {
+  target = authentik_application.router_admin.uuid
   group  = data.authentik_group.admins.id
   negate = false
   order  = -1
@@ -309,6 +340,7 @@ resource "authentik_outpost" "embedded" {
     authentik_provider_proxy.calibre.id,
     authentik_provider_proxy.uptime_kuma.id,
     authentik_provider_proxy.drawio.id,
+    authentik_provider_proxy.router_admin.id,
   ]
   config = jsonencode({
     authentik_host          = "https://authentik.${var.cloudflare_zone_name}"

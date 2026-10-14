@@ -49,6 +49,7 @@ resources:
   - opencode.yaml
   - opencodew.yaml
   # - radar.yaml
+  - router-admin.yaml
   - stalwart.yaml
   - uptime-kuma.yaml
   # - velero-config.yaml
