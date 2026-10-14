@@ -95,6 +95,19 @@ resource "cloudflare_dns_record" "zomboid_server_srv" {
   }
 }
 
+# rt.chronobyte.net — router admin page, reachable via its globally routable
+# IPv6 address. DNS-only (not proxied): Cloudflare's proxy can't front an
+# arbitrary LAN device's admin UI, and this is just for convenient access to
+# the router itself, not a proxied public service.
+resource "cloudflare_dns_record" "router_admin" {
+  zone_id = var.cloudflare_zone_id
+  name    = "rt"
+  content = "2600:1702:884f:83b0::1"
+  type    = "AAAA"
+  ttl     = 1
+  proxied = false
+}
+
 # GitHub Pages domain verification
 resource "cloudflare_dns_record" "github_pages_challenge" {
   zone_id = var.cloudflare_zone_id
