@@ -78,6 +78,10 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "homelab" {
         hostname = "back.${var.cloudflare_zone_name}"
         service  = "http://traefik.kube-system.svc.cluster.local:80"
       },
+      {
+        hostname = "rt.${var.cloudflare_zone_name}"
+        service  = "http://traefik.kube-system.svc.cluster.local:80"
+      },
       # Catch-all: reject unmatched hostnames
       {
         service = "http_status:404"
@@ -212,6 +216,20 @@ resource "cloudflare_dns_record" "livekit" {
 resource "cloudflare_dns_record" "backstitch" {
   zone_id = var.cloudflare_zone_id
   name    = "back"
+  content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"
+  type    = "CNAME"
+  ttl     = 1
+  proxied = true
+}
+
+# rt.chronobyte.net — router admin page, proxied through the Cloudflare
+# Tunnel/Traefik like the other ForwardAuth-protected apps (see
+# opentofu/authentik/core.tf for the Authentik proxy provider). The Traefik
+# Ingress backend is a selector-less Service/Endpoints pair in
+# k3s/manifests/router-admin pointing at the router's LAN IP.
+resource "cloudflare_dns_record" "router_admin" {
+  zone_id = var.cloudflare_zone_id
+  name    = "rt"
   content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"
   type    = "CNAME"
   ttl     = 1
