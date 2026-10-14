@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ansible-flow-backend
+  namespace: ansible-flow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ansible-flow-backend
+  strategy:
+    type: Recreate # RWO volume
+  template:
+    metadata:
+      labels:
+        app: ansible-flow-backend
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backend
+          image: ghcr.io/hexabyte8/ansible-flow-backend:0.1.0
+          ports:
+            - name: http
+              containerPort: 8000
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /api/blocks
+              port: 8000
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/blocks
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          volumeMounts:
+            - name: data
+              mountPath: /srv/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ansible-flow-backend-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ansible-flow
+  namespace: ansible-flow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ansible-flow
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: ansible-flow
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: frontend
+          image: ghcr.io/hexabyte8/ansible-flow-frontend:0.1.0
+          env:
+            - name: BACKEND_URL
+              value: http://ansible-flow-backend.ansible-flow.svc.cluster.local:8000
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30

@@ -29,6 +29,7 @@ resources:
   - monitoring-manifests.yaml
   # Workloads
   - actual.yaml
+  - ansible-flow.yaml
   #- actual-mcp.yaml
   # - actual-mcp-secondary.yaml
   - adguard.yaml

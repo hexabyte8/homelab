@@ -144,6 +144,13 @@ data:
             icon: hl-ntfy
             target: newtab
 
+          - title: Ansible Flow
+            description: Ansible workflow builder and block IDE
+            url: https://ansible-flow.daggertooth-scala.ts.net
+            statusCheckUrl: http://ansible-flow.ansible-flow.svc.cluster.local:8080
+            icon: hl-ansible
+            target: newtab
+
       - name: Communication
         icon: fas fa-envelope
         items:
