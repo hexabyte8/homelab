@@ -1,0 +1,24 @@
+# Tailnet-only: served by the Tailscale operator, no Traefik / Cloudflare route.
+# https://nostos.daggertooth-scala.ts.net
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nostos
+  namespace: nostos
+  annotations:
+    tailscale.com/proxy-class: "prod"
+spec:
+  ingressClassName: tailscale
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nostos
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - nostos
