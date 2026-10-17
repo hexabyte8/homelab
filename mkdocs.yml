@@ -75,6 +75,7 @@ nav:
   - Services:
     - Adding a New Service: new-service.md
     - Authentik SSO: authentik.md
+    - Game Servers (Steam): game-servers.md
   - Networking:
     - Tailscale Operator: tailscale-operator.md
     - Cloudflare Tunnels: cloudflare-tunnels.md
