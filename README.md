@@ -49,4 +49,4 @@ If something here looks like a leaked secret or you know of a way to omit some s
 
 ## License & disclaimer
 
-Provided as-is, without warranty. Configuration values, hostnames, and conventions are specific to this lab - copy with adaptation, not as-is. PRs that improve clarity for other readers are welcome.
+Licensed under the [MIT License](LICENSE). Provided as-is, without warranty. Configuration values, hostnames, and conventions are specific to this lab - copy with adaptation, not as-is. PRs that improve clarity for other readers are welcome.
