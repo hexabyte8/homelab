@@ -53,7 +53,7 @@ spec:
               mountPath: /data
       containers:
         - name: forgejo
-          image: codeberg.org/forgejo/forgejo:10
+          image: codeberg.org/forgejo/forgejo:17
           ports:
             - name: http
               containerPort: 3000
