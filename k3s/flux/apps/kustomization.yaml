@@ -46,7 +46,6 @@ resources:
   - mcp-kubernetes.yaml
   - media.yaml
   - ntfy.yaml
-  - nostos.yaml
   - opencode.yaml
   - opencodew.yaml
   # - radar.yaml
