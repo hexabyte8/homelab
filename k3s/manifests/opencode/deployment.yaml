@@ -47,11 +47,16 @@ spec:
               value: /data/cache
             - name: XDG_STATE_HOME
               value: /data/state
-            # Merged over /data/config/opencode/opencode.jsonc. The github-copilot
-            # provider is built in; authenticate once via the web UI
-            # (Connect provider -> GitHub Copilot), stored in /data/share.
+            # Merged over /data/config/opencode/opencode.jsonc. The ollama-cloud
+            # provider is built in and authenticates with OLLAMA_API_KEY.
             - name: OPENCODE_CONFIG_CONTENT
-              value: '{"$schema":"https://opencode.ai/config.json","model":"github-copilot/claude-sonnet-5.5","mcp":{"github":{"type":"remote","url":"https://api.githubcopilot.com/mcp/","headers":{"Authorization":"Bearer {env:GITHUB_TOKEN}"}},"kubernetes":{"type":"remote","url":"http://mcp-kubernetes.mcp-kubernetes.svc.cluster.local:8000/mcp"}}}'
+              value: '{"$schema":"https://opencode.ai/config.json","model":"ollama-cloud/glm-5.3","mcp":{"github":{"type":"remote","url":"https://api.githubcopilot.com/mcp/","headers":{"Authorization":"Bearer {env:GITHUB_TOKEN}"}},"kubernetes":{"type":"remote","url":"http://mcp-kubernetes.mcp-kubernetes.svc.cluster.local:8000/mcp"}}}'
+            # Ollama Cloud models: API key stored in BWS as OLLAMA_API_KEY.
+            - name: OLLAMA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: opencode-secret
+                  key: OLLAMA_API_KEY
             # GitHub access (git/gh): fine-grained PAT stored in BWS as GITHUB_TOKEN.
             - name: GITHUB_TOKEN
               valueFrom:
