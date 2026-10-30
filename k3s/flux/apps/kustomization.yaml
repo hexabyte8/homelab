@@ -47,7 +47,7 @@ resources:
   - media.yaml
   - ntfy.yaml
   - opencode.yaml
-  - opencodew.yaml
+  #- opencodew.yaml
   # - radar.yaml
   - stalwart.yaml
   - uptime-kuma.yaml
