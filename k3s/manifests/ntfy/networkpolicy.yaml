@@ -1,0 +1,43 @@
+# Restrict ingress to the notification service to its actual clients:
+#   - monitoring: the alert relay publishes here
+#   - tailscale: operator-managed proxies serving web/mobile subscribers
+#   - dashy: dashboard status check (http://ntfy.ntfy.svc.cluster.local)
+#   - uptime-kuma: possible notification integrations configured at runtime
+#   - 100.64.0.0/10: node addresses (kubelet health probes; this cluster's
+#     flannel VTEPs ride the tailnet CGNAT range, so node traffic arrives
+#     from there)
+#
+# Delivery to mobile clients is unchanged: the relay publishes from the
+# monitoring namespace and subscribers read through the tailnet proxies, and
+# the server's upstream forwarding (used for mobile push wake-ups) is
+# outbound traffic and unaffected by this ingress policy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ntfy
+  namespace: ntfy
+spec:
+  podSelector:
+    matchLabels:
+      app: ntfy
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tailscale
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: dashy
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: uptime-kuma
+        - ipBlock:
+            cidr: 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 80

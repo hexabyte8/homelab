@@ -21,7 +21,10 @@ resource "tailscale_acl" "as_json" {
       
         "grants": [
           {
-            "src": ["*"],
+            // Member-owned devices reach server nodes on all ports. Scoped to
+            // autogroup:member instead of a wildcard so that service/CI tags
+            // only get what their dedicated grants below allow.
+            "src": ["autogroup:member"],
             "dst": ["tag:server"],
             "ip":  ["*", "tcp:*"],
           },
@@ -75,9 +78,11 @@ resource "tailscale_acl" "as_json" {
             "action": "accept",
           },
           {
+            // CI runs commands as ubuntu + sudo (passwordless) — direct root
+            // sessions are not needed by any workflow.
             "src":    ["tag:ci"],
             "dst":    ["autogroup:tagged"],
-            "users":  ["root", "ubuntu"],
+            "users":  ["ubuntu"],
             "action": "accept",
           },
           {
@@ -85,13 +90,6 @@ resource "tailscale_acl" "as_json" {
             "dst":    ["autogroup:self"],
             "users":  ["autogroup:nonroot"],
             "action": "accept",
-          },
-        ],
-      
-        "nodeAttrs": [
-          {
-            "target": ["tag:k8s"],
-            "attr":   ["funnel"],
           },
         ],
       }

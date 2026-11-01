@@ -14,8 +14,11 @@ data:
     from http.server import BaseHTTPRequestHandler, HTTPServer
     from urllib.request import urlopen, Request
 
-    NTFY_URL   = os.environ.get("NTFY_URL",   "http://ntfy.ntfy.svc.cluster.local")
-    NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "homelab-alerts")
+    NTFY_URL = os.environ.get("NTFY_URL", "http://ntfy.ntfy.svc.cluster.local")
+    # Comma-separated list of topics, sourced from the secret manager so the
+    # channel identifier isn't committed (see the deployment env below). Falls
+    # back to the built-in default so behavior is unchanged until provisioned.
+    NTFY_TOPICS = [t.strip() for t in os.environ.get("NTFY_TOPIC", "homelab-alerts").split(",") if t.strip()]
 
     PRIORITY = {"critical": 5, "warning": 3, "info": 2}
     EMOJI    = {"critical": "🔥", "warning": "⚠️", "info": "ℹ️"}
@@ -54,23 +57,24 @@ data:
                            or annotations.get("summary")
                            or f"Alert fired on {instance}")
 
-                payload = json.dumps({
-                    "topic":    NTFY_TOPIC,
-                    "title":    title,
-                    "message":  message,
-                    "priority": priority,
-                    "tags":     tags,
-                }).encode()
+                for topic in NTFY_TOPICS:
+                    payload = json.dumps({
+                        "topic":    topic,
+                        "title":    title,
+                        "message":  message,
+                        "priority": priority,
+                        "tags":     tags,
+                    }).encode()
 
-                try:
-                    req = Request(
-                        NTFY_URL, data=payload,
-                        headers={"Content-Type": "application/json"},
-                        method="POST",
-                    )
-                    urlopen(req, timeout=10)
-                except Exception as e:
-                    print(f"ntfy publish failed: {e}", flush=True)
+                    try:
+                        req = Request(
+                            NTFY_URL, data=payload,
+                            headers={"Content-Type": "application/json"},
+                            method="POST",
+                        )
+                        urlopen(req, timeout=10)
+                    except Exception as e:
+                        print(f"ntfy publish failed: {e}", flush=True)
 
             self.send_response(200)
             self.end_headers()
@@ -106,8 +110,16 @@ spec:
           env:
             - name: NTFY_URL
               value: "http://ntfy.ntfy.svc.cluster.local"
+            # Comma-separated topic list, sourced from the secret manager
+            # (alertmanager-ntfy-topics, see monitoring-config/) so the
+            # channel identifier isn't committed. The optional flag keeps the
+            # relay on its built-in default until the entry is provisioned.
             - name: NTFY_TOPIC
-              value: "homelab-alerts"
+              valueFrom:
+                secretKeyRef:
+                  name: alertmanager-ntfy-topics
+                  key: topics
+                  optional: true
           ports:
             - containerPort: 8080
           volumeMounts:
@@ -142,3 +154,27 @@ spec:
   ports:
     - port: 8080
       targetPort: 8080
+---
+# Restrict who can deliver alerts to the relay: only workloads in the
+# monitoring namespace (Alertmanager itself) plus node health probes.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: alertmanager-ntfy-relay
+  namespace: monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app: alertmanager-ntfy-relay
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+        - ipBlock:
+            cidr: 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 8080
