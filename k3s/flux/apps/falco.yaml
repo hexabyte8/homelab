@@ -90,12 +90,21 @@ spec:
           endpoint: /api/v2/alerts
           extralabels: "component:falco"
 
-    # Silence known-benign noise seen in the logs: opencode's own git/gh/curl
-    # (installed at container start) and systemd's PAM reads on the host.
+    # Silence known-benign startup noise seen in the logs, scoped as tightly
+    # as possible so unexpected code execution still alerts:
+    #   - opencode/opencodew install git, github-cli, openssh-client and curl
+    #     via apk at every container start, so those execs always look like
+    #     "new" binaries. Only the specific exepaths are excluded — anything
+    #     else dropped into those pods still fires the rule.
+    #   - forgejo's image copies its binary into /usr/local/bin at container
+    #     start (s6-overlay), which fires the rule on every restart and also
+    #     put the startup command line into the alert stream. Excluding the
+    #     image's own binary paths keeps the signal for anything else.
+    #   - systemd's PAM reads on the host (unchanged).
     customRules:
       homelab-overrides.yaml: |-
         - rule: Drop and execute new binary in container
-          condition: and not k8smeta.ns.name in (opencode, opencodew)
+          condition: "and not ((k8smeta.ns.name in (opencode, opencodew) and (proc.exepath in (/usr/bin/git, /usr/bin/gh, /usr/bin/curl, /usr/bin/ssh, /usr/bin/scp, /usr/bin/sftp, /usr/bin/ssh-add, /usr/bin/ssh-agent, /usr/bin/ssh-keygen, /usr/bin/ssh-keyscan) or proc.exepath startswith /usr/libexec/git-core/)) or (k8smeta.ns.name = forgejo and (proc.exe startswith /usr/local/bin/ or proc.exe startswith /app/gitea/)))"
           override:
             condition: append
         - rule: Read sensitive file untrusted

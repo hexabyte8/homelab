@@ -1,0 +1,34 @@
+# Restrict ingress to the cluster resource browser to its actual clients:
+#   - opencode / opencodew: the agent workloads that may consume the MCP
+#     interface in-cluster
+#   - tailscale: operator-managed proxies serving tailnet/web clients
+#   - 100.64.0.0/10: node addresses (kubelet health probes; this cluster's
+#     flannel VTEPs ride the tailnet CGNAT range, so node traffic arrives
+#     from there)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: radar
+  namespace: radar
+spec:
+  podSelector:
+    matchLabels:
+      app: radar
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: opencode
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: opencodew
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tailscale
+        - ipBlock:
+            cidr: 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 9280

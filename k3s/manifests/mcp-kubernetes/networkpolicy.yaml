@@ -1,0 +1,35 @@
+# Restrict ingress to the internal Kubernetes MCP endpoint to its actual
+# clients:
+#   - opencode / opencodew: the agent workloads that consume the MCP server
+#     in-cluster
+#   - tailscale: operator-managed proxies serving tailnet/web MCP clients
+#   - 100.64.0.0/10: node addresses (kubelet health probes; this cluster's
+#     flannel VTEPs ride the tailnet CGNAT range, so node traffic arrives
+#     from there)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mcp-kubernetes
+  namespace: mcp-kubernetes
+spec:
+  podSelector:
+    matchLabels:
+      app: mcp-kubernetes
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: opencode
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: opencodew
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tailscale
+        - ipBlock:
+            cidr: 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 8000

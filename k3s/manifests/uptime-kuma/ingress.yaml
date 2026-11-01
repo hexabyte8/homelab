@@ -4,8 +4,10 @@ metadata:
   name: uptime-kuma
   namespace: uptime-kuma
   annotations:
-    tailscale.com/proxy-class: "funnel"
-    tailscale.com/funnel: "true"
+    # Tailnet-only. Public status checks go through the authenticated
+    # uptime.chronobyte.net path (Cloudflare tunnel + SSO) instead of a
+    # publicly reachable funnel route.
+    tailscale.com/proxy-class: "prod"
 spec:
   ingressClassName: tailscale
   rules:
