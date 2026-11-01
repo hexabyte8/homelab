@@ -21,6 +21,15 @@ resource "tailscale_acl" "as_json" {
       
         "grants": [
           {
+            // Node-to-node overlay: every VM joins the tailnet as tag:server
+            // and flannel VTEPs ride the tailnet, so server nodes must reach
+            // each other on all ports. Keep separate from the member grant —
+            // removing this splits the cluster network across nodes.
+            "src": ["tag:server"],
+            "dst": ["tag:server"],
+            "ip":  ["*", "tcp:*"],
+          },
+          {
             // Member-owned devices reach server nodes on all ports. Scoped to
             // autogroup:member instead of a wildcard so that service/CI tags
             // only get what their dedicated grants below allow.
