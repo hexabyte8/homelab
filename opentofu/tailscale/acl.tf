@@ -38,6 +38,16 @@ resource "tailscale_acl" "as_json" {
             "ip":  ["*", "tcp:*"],
           },
           {
+            // Tailscale SSH needs BOTH this tcp:22 network grant and an ssh
+            // rule (hexabyte8@github -> autogroup:self below). Personal
+            // devices (phone, Steam Deck, ...) are untagged member-owned
+            // machines, so member-to-member traffic is denied by default
+            // without this. icmp:* allows ping-based debugging.
+            "src": ["autogroup:member"],
+            "dst": ["autogroup:member"],
+            "ip":  ["tcp:22", "icmp:*"],
+          },
+          {
             "src": ["tag:ci"],
             "dst": ["tag:server"],
             "ip":  ["*"],
