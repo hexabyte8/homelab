@@ -111,75 +111,6 @@ spec:
               port: 4096
             initialDelaySeconds: 30
             periodSeconds: 30
-        # Tailnet slot: this sidecar gives the opencode instance its own
-        # Tailscale identity (tag:opencode, hostname opencode-agent). The
-        # tailnet ACL grants that identity — and nothing else — SSH + ping to
-        # specific personal devices (currently the Steam Deck, wagyu), so the
-        # AI assistant can reach them without widening tag:server's access
-        # to member devices.
-        - name: tailscale
-          image: tailscale/tailscale:v1.102.4
-          # The OAuth client secret doubles as the authkey (same flow as the
-          # tailscale/github-action in CI). containerboot has no env var for
-          # the ?preauthorized query param, so wrap it in sh.
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              export TS_AUTHKEY="${TAILSCALE_OAUTH_CLIENT_SECRET}?preauthorized=true"
-              exec /containerboot
-          env:
-            - name: TAILSCALE_OAUTH_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: opencode-secret
-                  key: TAILSCALE_OAUTH_CLIENT_SECRET
-                  # Optional so the opencode container still starts if the
-                  # secret is not synced yet; the sidecar crash-loops until it
-                  # is, and the reloader annotation rolls the pod once the
-                  # sm-operator syncs the new key.
-                  optional: true
-            - name: TS_HOSTNAME
-              value: opencode-agent
-            - name: TS_EXTRA_ARGS
-              value: "--advertise-tags=tag:opencode"
-            # Kernel TUN (not the default userspace mode) so the whole pod
-            # network namespace can route tailnet traffic directly.
-            - name: TS_USERSPACE
-              value: "false"
-            # Persist login state on the data PVC instead of a kube secret —
-            # this pod has no service account token for the API server.
-            - name: TS_KUBE_SECRET
-              value: ""
-            - name: TS_STATE_DIR
-              value: /var/lib/tailscale
-            # Reuse the persisted login across restarts instead of
-            # re-authenticating on every boot.
-            - name: TS_AUTH_ONCE
-              value: "true"
-            # Keep CoreDNS as the pod resolver.
-            - name: TS_ACCEPT_DNS
-              value: "false"
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              add:
-                - NET_ADMIN
-                - NET_RAW
-          volumeMounts:
-            - name: tailscale-state
-              mountPath: /var/lib/tailscale
-              subPath: tailscale
-            # belt-and-braces: containerboot mknods this if missing, but some
-            # container runtimes block mknod.
-            - name: dev-net-tun
-              mountPath: /dev/net/tun
-          resources:
-            requests:
-              cpu: 10m
-              memory: 64Mi
-            limits:
-              cpu: 500m
-              memory: 256Mi
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -189,12 +120,3 @@ spec:
             claimName: opencode-workspace
         - name: tmp
           emptyDir: {}
-        # Tailscale sidecar state, kept under a subPath of the data PVC so the
-        # device identity (and its tailnet IP) survive pod restarts.
-        - name: tailscale-state
-          persistentVolumeClaim:
-            claimName: opencode-data
-        - name: dev-net-tun
-          hostPath:
-            path: /dev/net/tun
-            type: CharDevice
