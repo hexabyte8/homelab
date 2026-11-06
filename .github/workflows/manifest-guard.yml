@@ -24,29 +24,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Incidents like the 2026-11-05 opencode outage (PR #277) started with
-      # a manifest merged before its placeholder values were filled in. Only
-      # newly added lines are checked, so pre-existing placeholder debt does
-      # not block unrelated PRs — clean it up incrementally.
-      - name: Reject newly added placeholder values
-        run: |
-          BASE="${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}"
-          if git diff "$BASE"...HEAD -- k3s/ \
-            | grep -E '^\+[^+]' \
-            | sed 's/^+//' \
-            | grep -vE '^[[:space:]]*#' \
-            | grep -E 'REPLACE[-_]WITH|REPLACE_ME|CHANGEME|<placeholder'; then
-            echo "::error::New placeholder values were added under k3s/ — replace them with real values before merging."
-            exit 1
-          fi
-
       # Mounting the same PVC more than once in a single pod spec hangs the
       # pod in ContainerCreating with no events on this cluster: CSI volume
       # publish paths are keyed by PV name, so only the first mount is ever
       # published (root cause of the 2026-11-05 opencode outage, PR #277).
+      # This step runs first so it is always exercised, even on PRs that
+      # fail the placeholder gate below.
       - name: Reject duplicate PVC mounts within a pod
         run: |
-          pip install --quiet pyyaml
+          python3 -c "import yaml" 2>/dev/null || pip install --quiet pyyaml
           python3 - <<'EOF'
           import glob, sys, yaml
 
@@ -85,3 +71,19 @@ jobs:
                       fail = True
           sys.exit(1 if fail else 0)
           EOF
+
+      # Incidents like the 2026-11-05 opencode outage (PR #277) started with
+      # a manifest merged before its placeholder values were filled in. Only
+      # newly added lines are checked, so pre-existing placeholder debt does
+      # not block unrelated PRs — clean it up incrementally.
+      - name: Reject newly added placeholder values
+        run: |
+          BASE="${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}"
+          if git diff "$BASE"...HEAD -- k3s/ \
+            | grep -E '^\+[^+]' \
+            | sed 's/^+//' \
+            | grep -vE '^[[:space:]]*#' \
+            | grep -E 'REPLACE[-_]WITH|REPLACE_ME|CHANGEME|<placeholder'; then
+            echo "::error::New placeholder values were added under k3s/ — replace them with real values before merging."
+            exit 1
+          fi
