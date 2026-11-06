@@ -112,11 +112,13 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
         # Tailnet slot: this sidecar gives the opencode instance its own
-        # Tailscale identity (tag:opencode, hostname opencode-agent). The
-        # tailnet ACL grants that identity — and nothing else — SSH + ping to
-        # specific personal devices (currently the Steam Deck, wagyu), so the
-        # AI assistant can reach them without widening tag:server's reach
-        # into member devices.
+        # Tailscale device (hostname opencode-agent) that joins with the
+        # tag:ci identity — the same OAuth client the CI workflows use
+        # (secret injected via the same BWS item). The tailnet ACL grants
+        # that identity — and nothing else — SSH + ping to specific personal
+        # devices (currently the Steam Deck, wagyu), so the AI assistant can
+        # reach them without widening tag:server's reach into member
+        # devices.
         - name: tailscale
           image: tailscale/tailscale:v1.102.4
           # The OAuth client secret doubles as the authkey (same flow as the
@@ -141,7 +143,7 @@ spec:
             - name: TS_HOSTNAME
               value: opencode-agent
             - name: TS_EXTRA_ARGS
-              value: "--advertise-tags=tag:opencode"
+              value: "--advertise-tags=tag:ci"
             # Kernel TUN (not the default userspace mode) so the whole pod
             # network namespace can route tailnet traffic directly. The node
             # runs kernel-mode tailscaled, so /dev/net/tun exists.

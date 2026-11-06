@@ -4,7 +4,6 @@ resource "tailscale_acl" "as_json" {
         "tagOwners": {
           "tag:ci":                 ["autogroup:owner"],
           "tag:copilot":            ["autogroup:owner"],
-          "tag:opencode":           ["autogroup:owner"],
           "tag:server":             ["autogroup:owner"],
           "tag:k8s-operator":       ["autogroup:owner"],
           "tag:k8s-operator-proxy": ["autogroup:owner"],
@@ -59,6 +58,18 @@ resource "tailscale_acl" "as_json" {
             "ip":  ["tcp:443"],
           },
           {
+            // The opencode agent pod joins the tailnet as tag:ci via a
+            // tailscale sidecar — the same OAuth client the CI workflows
+            // use — giving the AI assistant its own device. The grant stays
+            // pinned to a single member-owned device by IP, so the assistant
+            // can reach it without widening tag:ci's or tag:server's general
+            // reach into member devices. Currently just the Steam Deck
+            // (wagyu) for SSH + ping-based debugging.
+            "src": ["tag:ci"],
+            "dst": ["100.84.62.116/32"],
+            "ip":  ["tcp:22", "icmp:*"],
+          },
+          {
             "src": ["tag:k8s-operator"],
             "dst": ["tag:server"],
             "ip":  ["*"],
@@ -74,17 +85,6 @@ resource "tailscale_acl" "as_json" {
             "src": ["tag:copilot"],
             "dst": ["tag:k8s-operator", "tag:k8s-operator-proxy", "tag:k8s"],
             "ip":  ["tcp:443"],
-          },
-          {
-            // The opencode agent pod joins the tailnet with this tag via a
-            // tailscale sidecar, giving the AI assistant its own device
-            // identity. Grants to it stay pinned to individual member-owned
-            // devices by IP so the assistant can reach them without
-            // widening tag:server's reach. Currently just the Steam Deck
-            // (wagyu) for SSH + ping-based debugging.
-            "src": ["tag:opencode"],
-            "dst": ["100.84.62.116/32"],
-            "ip":  ["tcp:22", "icmp:*"],
           },
           {
             // tcp:22 is required for Forgejo's SSH server, exposed via the

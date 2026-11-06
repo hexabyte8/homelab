@@ -24,7 +24,7 @@ spec:
     requests:
       storage: 10Gi
 ---
-# Dedicated state volume for the tailscale sidecar (tag:opencode identity).
+# Dedicated state volume for the tailscale sidecar (tag:ci identity).
 # It must NOT share a claim with any other volume in the opencode pod —
 # mounting the same PVC twice breaks CSI publishing and hangs the pod in
 # ContainerCreating (see the 2026-11-05 outage post-mortem).
