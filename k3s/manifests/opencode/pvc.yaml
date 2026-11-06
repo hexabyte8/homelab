@@ -23,3 +23,20 @@ spec:
   resources:
     requests:
       storage: 10Gi
+---
+# Dedicated state volume for the tailscale sidecar (tag:opencode identity).
+# It must NOT share a claim with any other volume in the opencode pod —
+# mounting the same PVC twice breaks CSI publishing and hangs the pod in
+# ContainerCreating (see the 2026-11-05 outage post-mortem).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: opencode-tailscale
+  namespace: opencode
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
