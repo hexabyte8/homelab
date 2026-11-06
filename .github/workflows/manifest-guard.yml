@@ -1,0 +1,153 @@
+name: Manifest Guard
+
+on:
+  pull_request:
+    paths:
+      - 'k3s/**'
+      - '.github/workflows/manifest-guard.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'k3s/**'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Guard k3s manifests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Mounting the same PVC more than once in a single pod spec hangs the
+      # pod in ContainerCreating with no events on this cluster: CSI volume
+      # publish paths are keyed by PV name, so only the first mount is ever
+      # published (root cause of the 2026-11-05 opencode outage, PR #277).
+      # This step runs first so it is always exercised.
+      - name: Reject duplicate PVC mounts within a pod
+        run: |
+          python3 -c "import yaml" 2>/dev/null || pip install --quiet pyyaml
+          python3 - <<'EOF'
+          import glob, sys, yaml
+
+          fail = False
+          for path in sorted(glob.glob('k3s/**/*.yaml', recursive=True)):
+              try:
+                  with open(path) as f:
+                      docs = list(yaml.safe_load_all(f))
+              except yaml.YAMLError as e:
+                  print(f"::error file={path}::invalid YAML: {e}")
+                  fail = True
+                  continue
+              for i, doc in enumerate(docs, 1):
+                  if not isinstance(doc, dict):
+                      continue
+                  kind = doc.get('kind')
+                  if kind == 'Pod':
+                      spec = doc.get('spec') or {}
+                  elif kind == 'CronJob':
+                      spec = (((doc.get('spec') or {}).get('jobTemplate') or {}).get('spec') or {}) \
+                          .get('template', {}).get('spec') or {}
+                  elif kind in ('Deployment', 'StatefulSet', 'DaemonSet', 'ReplicaSet', 'Job'):
+                      spec = ((doc.get('spec') or {}).get('template') or {}).get('spec') or {}
+                  else:
+                      continue
+                  claims = []
+                  for v in spec.get('volumes') or []:
+                      if not isinstance(v, dict):
+                          continue
+                      claim = (v.get('persistentVolumeClaim') or {}).get('claimName')
+                      if claim:
+                          claims.append(claim)
+                  dupes = sorted({c for c in claims if claims.count(c) > 1})
+                  if dupes:
+                      print(f"::error file={path}::document {i} mounts the same PVC more than once: {', '.join(dupes)}")
+                      fail = True
+          sys.exit(1 if fail else 0)
+          EOF
+
+      # Incidents start with a manifest merged before its placeholder values
+      # were filled in (PR #277 shipped REPLACE-WITH-BWS-ITEM-UUID and had to
+      # be reverted). Only newly added lines are checked, so pre-existing
+      # placeholder debt does not block unrelated PRs — clean it up
+      # incrementally.
+      - name: Reject newly added placeholder values
+        run: |
+          BASE="${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}"
+          if git diff "$BASE"...HEAD -- k3s/ \
+            | grep -E '^\+[^+]' \
+            | sed 's/^+//' \
+            | grep -vE '^[[:space:]]*#' \
+            | grep -E 'REPLACE[-_]WITH|REPLACE_ME|CHANGEME|<placeholder'; then
+            echo "::error::New placeholder values were added under k3s/ — replace them with real values before merging."
+            exit 1
+          fi
+
+      # PR #279 shipped an opencode sidecar wrapper that exec'd /containerboot
+      # — a path that does not exist in the published image (the binary is at
+      # /usr/local/bin/containerboot). The sidecar crash-looped from its first
+      # second and, because a NotReady pod is dropped from Service endpoints,
+      # took the opencode UI down. This step runs the pinned image on the
+      # runner and proves the exact command the deployment uses:
+      #   1. the wrapper execs a binary that exists and is executable
+      #   2. the empty-secret branch idles instead of crash-looping
+      #   3. with a (dummy) secret the wrapper gets past the exec and
+      #      containerboot actually starts (the dummy login then fails,
+      #      which is expected — we assert on containerboot's boot log)
+      # NOTE: keep the scripts below in sync with the wrapper args in
+      # k3s/manifests/opencode/deployment.yaml.
+      - name: Smoke-test the opencode tailscale sidecar command
+        run: |
+          set -e
+          DEPLOY="k3s/manifests/opencode/deployment.yaml"
+          IMAGE="$(sed -n 's/.*image: \(tailscale\/tailscale:v[0-9.]*\)$/\1/p' "$DEPLOY" | head -1)"
+          [ -n "$IMAGE" ] || { echo "::error::could not find tailscale image in $DEPLOY"; exit 1; }
+          echo "smoke-testing sidecar command in $IMAGE"
+
+          # The deployment must exec the exact path we prove below.
+          grep -n 'exec\? /usr/local/bin/containerboot\|/usr/local/bin/containerboot$' "$DEPLOY" \
+            | grep -q '/usr/local/bin/containerboot' || {
+              echo "::error::$DEPLOY does not run /usr/local/bin/containerboot — update it and this test together"
+              exit 1
+            }
+
+          docker pull -q "$IMAGE"
+
+          # 1. The binary exists and is executable in the pinned image.
+          docker run --rm --entrypoint /bin/sh "$IMAGE" \
+            -c 'test -x /usr/local/bin/containerboot'
+
+          # 2. The empty-secret branch idles (stays Running) instead of
+          #    crash-looping, keeping the pod Ready while the sm-operator
+          #    syncs the key.
+          OUT="$(timeout 10 docker run --rm --entrypoint /bin/sh -e TAILSCALE_OAUTH_CLIENT_SECRET= "$IMAGE" -c '
+            if [ -z "${TAILSCALE_OAUTH_CLIENT_SECRET:-}" ]; then
+              echo "TAILSCALE_OAUTH_CLIENT_SECRET not synced yet - idling"
+              while :; do sleep 3600; done
+            fi' || true)"
+          echo "$OUT" | grep -q 'idling' || {
+            echo "::error::empty-secret branch did not idle — output:"
+            echo "$OUT"
+            exit 1
+          }
+
+          # 3. With a dummy secret the wrapper reaches the exec and
+          #    containerboot starts (its logs carry the 'boot: ' prefix).
+          OUT="$(timeout 60 docker run --rm --entrypoint /bin/sh -e TAILSCALE_OAUTH_CLIENT_SECRET=dummy "$IMAGE" -c '
+            export TS_AUTHKEY="${TAILSCALE_OAUTH_CLIENT_SECRET}?preauthorized=true"
+            while :; do
+              /usr/local/bin/containerboot
+              echo "containerboot exited (code $?), restarting in 30s"
+              sleep 30
+            done' 2>&1 || true)"
+          echo "$OUT" | grep -q 'boot: ' || {
+            echo "::error::wrapper never started containerboot — output:"
+            echo "$OUT"
+            exit 1
+          }
+          echo "sidecar smoke test OK"
