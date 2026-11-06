@@ -58,18 +58,6 @@ resource "tailscale_acl" "as_json" {
             "ip":  ["tcp:443"],
           },
           {
-            // The opencode agent pod joins the tailnet as tag:ci via a
-            // tailscale sidecar — the same OAuth client the CI workflows
-            // use — giving the AI assistant its own device. The grant stays
-            // pinned to a single member-owned device by IP, so the assistant
-            // can reach it without widening tag:ci's or tag:server's general
-            // reach into member devices. Currently just the Steam Deck
-            // (wagyu) for SSH + ping-based debugging.
-            "src": ["tag:ci"],
-            "dst": ["100.84.62.116/32"],
-            "ip":  ["tcp:22", "icmp:*"],
-          },
-          {
             "src": ["tag:k8s-operator"],
             "dst": ["tag:server"],
             "ip":  ["*"],
