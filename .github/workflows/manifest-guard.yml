@@ -1,0 +1,89 @@
+name: Manifest Guard
+
+on:
+  pull_request:
+    paths:
+      - 'k3s/**'
+      - '.github/workflows/manifest-guard.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'k3s/**'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Guard k3s manifests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Mounting the same PVC more than once in a single pod spec hangs the
+      # pod in ContainerCreating with no events on this cluster: CSI volume
+      # publish paths are keyed by PV name, so only the first mount is ever
+      # published (root cause of the 2026-11-05 opencode outage, PR #277).
+      # This step runs first so it is always exercised, even on PRs that
+      # fail the placeholder gate below.
+      - name: Reject duplicate PVC mounts within a pod
+        run: |
+          python3 -c "import yaml" 2>/dev/null || pip install --quiet pyyaml
+          python3 - <<'EOF'
+          import glob, sys, yaml
+
+          fail = False
+          for path in sorted(glob.glob('k3s/**/*.yaml', recursive=True)):
+              try:
+                  with open(path) as f:
+                      docs = list(yaml.safe_load_all(f))
+              except yaml.YAMLError as e:
+                  print(f"::error file={path}::invalid YAML: {e}")
+                  fail = True
+                  continue
+              for i, doc in enumerate(docs, 1):
+                  if not isinstance(doc, dict):
+                      continue
+                  kind = doc.get('kind')
+                  if kind == 'Pod':
+                      spec = doc.get('spec') or {}
+                  elif kind == 'CronJob':
+                      spec = (((doc.get('spec') or {}).get('jobTemplate') or {}).get('spec') or {}) \
+                          .get('template', {}).get('spec') or {}
+                  elif kind in ('Deployment', 'StatefulSet', 'DaemonSet', 'ReplicaSet', 'Job'):
+                      spec = ((doc.get('spec') or {}).get('template') or {}).get('spec') or {}
+                  else:
+                      continue
+                  claims = []
+                  for v in spec.get('volumes') or []:
+                      if not isinstance(v, dict):
+                          continue
+                      claim = (v.get('persistentVolumeClaim') or {}).get('claimName')
+                      if claim:
+                          claims.append(claim)
+                  dupes = sorted({c for c in claims if claims.count(c) > 1})
+                  if dupes:
+                      print(f"::error file={path}::document {i} mounts the same PVC more than once: {', '.join(dupes)}")
+                      fail = True
+          sys.exit(1 if fail else 0)
+          EOF
+
+      # Incidents like the 2026-11-05 opencode outage (PR #277) started with
+      # a manifest merged before its placeholder values were filled in. Only
+      # newly added lines are checked, so pre-existing placeholder debt does
+      # not block unrelated PRs — clean it up incrementally.
+      - name: Reject newly added placeholder values
+        run: |
+          BASE="${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}"
+          if git diff "$BASE"...HEAD -- k3s/ \
+            | grep -E '^\+[^+]' \
+            | sed 's/^+//' \
+            | grep -vE '^[[:space:]]*#' \
+            | grep -E 'REPLACE[-_]WITH|REPLACE_ME|CHANGEME|<placeholder'; then
+            echo "::error::New placeholder values were added under k3s/ — replace them with real values before merging."
+            exit 1
+          fi
