@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wolweb-config
+  namespace: wolweb
+data:
+  config.yaml: |
+    PrivilegedPing: false
+    MacAddresses:
+      - name: "Main"
+        address: "50:eb:f6:97:4d:fc"
+        host: "bytten"

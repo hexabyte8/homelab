@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wolweb
+  namespace: wolweb
+  annotations:
+    tailscale.com/proxy-class: "prod"
+spec:
+  ingressClassName: tailscale
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: wolweb
+                port:
+                  number: 8951
+  tls:
+    - hosts:
+        - wolweb
