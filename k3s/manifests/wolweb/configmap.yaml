@@ -7,7 +7,5 @@ data:
   config.yaml: |
     PrivilegedPing: false
     MacAddresses:
-      # Replace with real devices (MAC addresses are not secret).
-      - name: "Example"
-        address: "00:11:22:00:00:00"
-        host: "192.168.1.10"
+      - name: "Main"
+        address: "50:eb:f6:97:4d:fc"
