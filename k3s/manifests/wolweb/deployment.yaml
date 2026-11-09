@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wolweb
+  namespace: wolweb
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wolweb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wolweb
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      # Magic packets are UDP broadcasts; they must leave from the node's LAN
+      # interface, so the pod shares the host network namespace.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: wolweb
+          image: ghcr.io/ajnasz/wolweb:v1.1.2
+          args: ["/app/wolweb", "-config", "/app/config.yaml", "-address", ":8951"]
+          ports:
+            - name: http
+              containerPort: 8951
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          readinessProbe:
+            tcpSocket:
+              port: 8951
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8951
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.yaml
+              subPath: config.yaml
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: wolweb-config

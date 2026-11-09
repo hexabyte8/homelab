@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wolweb
+  namespace: wolweb
+spec:
+  type: ClusterIP
+  selector:
+    app: wolweb
+  ports:
+    - name: http
+      port: 8951
+      targetPort: 8951
