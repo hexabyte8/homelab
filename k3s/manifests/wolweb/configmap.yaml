@@ -9,3 +9,4 @@ data:
     MacAddresses:
       - name: "Main"
         address: "50:eb:f6:97:4d:fc"
+        host: "bytten"
