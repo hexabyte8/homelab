@@ -48,6 +48,22 @@ resource "tailscale_acl" "as_json" {
             "ip":  ["tcp:22", "icmp:*"],
           },
           {
+            // Sunshine/Moonlight game streaming (bytten) from any personal
+            // device: HTTPS/HTTP pairing + web dashboard (47984, 47989,
+            // 47990), RTSP (48010) and the video/audio/control UDP streams.
+            "src": ["autogroup:member"],
+            "dst": ["autogroup:member"],
+            "ip": [
+              "tcp:47984",
+              "tcp:47989",
+              "tcp:47990",
+              "tcp:48010",
+              "udp:47998-48000",
+              "udp:48002",
+              "udp:48010",
+            ],
+          },
+          {
             "src": ["tag:ci"],
             "dst": ["tag:server"],
             "ip":  ["*"],
