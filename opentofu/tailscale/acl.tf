@@ -38,6 +38,14 @@ resource "tailscale_acl" "as_json" {
             "ip":  ["*", "tcp:*"],
           },
           {
+            // Uptime Kuma runs on the cluster's tag:server nodes and needs
+            // ICMP access to Bytten for ping monitors. Bytten is a member-owned
+            // device; the policy can target member devices but not its DNS name.
+            "src": ["tag:server"],
+            "dst": ["autogroup:member"],
+            "ip":  ["icmp:*"],
+          },
+          {
             // Tailscale SSH needs BOTH this tcp:22 network grant and an ssh
             // rule (hexabyte8@github -> autogroup:self below). Personal
             // devices (phone, Steam Deck, ...) are untagged member-owned
