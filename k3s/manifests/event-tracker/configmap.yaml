@@ -1,6 +1,6 @@
 # Sources expose Schema.org Event JSON-LD and allow EventTracker per robots.txt.
 # Eventbrite category pages broaden discovery beyond its curated city landing
-# pages. Aggregators may include nearby towns; records use the configured city.
+# pages. Strict venue filtering excludes recommendations outside these TN cities.
 # See upstream README for crawl depth, page limits, and request delay semantics.
 apiVersion: v1
 kind: ConfigMap
@@ -10,9 +10,11 @@ metadata:
 data:
   config.json: |
     {
+      "filter_by_location": true,
       "cities": [
         {
           "name": "Nashville",
+          "regions": ["TN", "Tennessee"],
           "sources": [
             "https://nashvegas.com/calendar-of-events/",
             "https://www.eventbrite.com/d/tn--nashville/events/",
@@ -31,6 +33,7 @@ data:
         },
         {
           "name": "Lebanon",
+          "regions": ["TN", "Tennessee"],
           "sources": [
             "https://lebanonwilsonchamber.com/events/list/",
             "https://www.eventbrite.com/d/tn--lebanon/events/",
@@ -47,6 +50,8 @@ data:
         },
         {
           "name": "Mount Juliet",
+          "localities": ["Mount Juliet", "Mt Juliet", "Mt. Juliet"],
+          "regions": ["TN", "Tennessee"],
           "sources": [
             "https://mtjuliet.com/calendar-of-events/",
             "https://www.eventbrite.com/d/tn--mount-juliet/events/",
