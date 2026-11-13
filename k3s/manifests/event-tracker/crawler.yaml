@@ -38,7 +38,7 @@ spec:
                   topologyKey: kubernetes.io/hostname
           containers:
             - name: crawler
-              image: ghcr.io/hexabyte8/event-tracker:latest
+              image: ghcr.io/hexabyte8/event-tracker:sha-6e1a02b@sha256:0d50cfc9b47896dfd39a22be7e22034382cc571ec4b82d59f555ba80d190d4c7
               imagePullPolicy: IfNotPresent
               command: ["python", "-m", "event_tracker", "crawl"]
               securityContext:
