@@ -1,6 +1,8 @@
-# Replace these placeholder sources/cities with real event listing pages
-# before scheduling the crawler. See upstream README for config semantics
-# (max_depth, max_pages_per_source, request_delay_seconds).
+# Sources are local community/news sites (J3 Media's Nashvegas.com and
+# MtJuliet.com, and the Lebanon Wilson County Chamber of Commerce) that
+# embed Schema.org Event JSON-LD server-side and allow crawling per
+# robots.txt. See upstream README for config semantics (max_depth,
+# max_pages_per_source, request_delay_seconds).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,8 +12,18 @@ data:
   config.json: |
     {
       "cities": [
-        {"name": "London", "sources": ["https://example.org/events/london"]},
-        {"name": "Cambridge", "sources": ["https://example.org/events/cambridge"]}
+        {
+          "name": "Nashville",
+          "sources": ["https://nashvegas.com/calendar-of-events/"]
+        },
+        {
+          "name": "Lebanon",
+          "sources": ["https://lebanonwilsonchamber.com/events/list/"]
+        },
+        {
+          "name": "Mount Juliet",
+          "sources": ["https://mtjuliet.com/calendar-of-events/"]
+        }
       ],
       "max_pages_per_source": 25,
       "max_depth": 1,
