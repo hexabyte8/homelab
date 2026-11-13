@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-tracker
+  namespace: event-tracker
+spec:
+  replicas: 1
+  strategy:
+    # SQLite requires exclusive access to its file; avoid two pods writing
+    # to the same RWO volume concurrently during rollouts.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: event-tracker
+  template:
+    metadata:
+      labels:
+        app: event-tracker
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          image: ghcr.io/hexabyte8/event-tracker:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          env:
+            - name: EVENT_TRACKER_CONFIG
+              value: /config/config.json
+            - name: EVENT_TRACKER_DB
+              value: /data/events.sqlite3
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+      volumes:
+        - name: config
+          configMap:
+            name: event-tracker-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: event-tracker-data
+        - name: tmp
+          emptyDir: {}

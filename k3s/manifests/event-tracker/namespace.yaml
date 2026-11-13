@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: event-tracker
+  labels:
+    app.kubernetes.io/part-of: productivity

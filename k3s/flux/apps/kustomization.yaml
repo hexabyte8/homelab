@@ -36,6 +36,7 @@ resources:
 #  - backstitch.yaml
   - dashy.yaml
   - drawio.yaml
+  - event-tracker.yaml
   - wolweb.yaml
   - fail2ban.yaml
   - forgejo.yaml

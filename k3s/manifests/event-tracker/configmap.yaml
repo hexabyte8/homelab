@@ -1,0 +1,19 @@
+# Replace these placeholder sources/cities with real event listing pages
+# before scheduling the crawler. See upstream README for config semantics
+# (max_depth, max_pages_per_source, request_delay_seconds).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: event-tracker-config
+  namespace: event-tracker
+data:
+  config.json: |
+    {
+      "cities": [
+        {"name": "London", "sources": ["https://example.org/events/london"]},
+        {"name": "Cambridge", "sources": ["https://example.org/events/cambridge"]}
+      ],
+      "max_pages_per_source": 25,
+      "max_depth": 1,
+      "request_delay_seconds": 1
+    }
