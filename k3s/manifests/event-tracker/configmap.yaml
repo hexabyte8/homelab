@@ -1,8 +1,7 @@
-# Sources are local community/news sites (J3 Media's Nashvegas.com and
-# MtJuliet.com, and the Lebanon Wilson County Chamber of Commerce) that
-# embed Schema.org Event JSON-LD server-side and allow crawling per
-# robots.txt. See upstream README for config semantics (max_depth,
-# max_pages_per_source, request_delay_seconds).
+# Sources expose Schema.org Event JSON-LD and allow EventTracker per robots.txt.
+# Eventbrite category pages broaden discovery beyond its curated city landing
+# pages. Aggregators may include nearby towns; records use the configured city.
+# See upstream README for crawl depth, page limits, and request delay semantics.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -14,15 +13,53 @@ data:
       "cities": [
         {
           "name": "Nashville",
-          "sources": ["https://nashvegas.com/calendar-of-events/"]
+          "sources": [
+            "https://nashvegas.com/calendar-of-events/",
+            "https://www.eventbrite.com/d/tn--nashville/events/",
+            "https://www.eventbrite.com/d/tn--nashville/all-events/",
+            "https://www.eventbrite.com/d/tn--nashville/music--events/",
+            "https://www.eventbrite.com/d/tn--nashville/food-and-drink--events/",
+            "https://www.eventbrite.com/d/tn--nashville/arts--events/",
+            "https://www.eventbrite.com/d/tn--nashville/community--events/",
+            "https://www.eventbrite.com/d/tn--nashville/business--events/",
+            "https://www.eventbrite.com/d/tn--nashville/health--events/",
+            "https://www.eventbrite.com/d/tn--nashville/sports-and-fitness--events/",
+            "https://www.eventbrite.com/d/tn--nashville/hobbies--events/",
+            "https://www.songkick.com/metro-areas/11104-us-nashville",
+            "https://do615.com/events/today"
+          ]
         },
         {
           "name": "Lebanon",
-          "sources": ["https://lebanonwilsonchamber.com/events/list/"]
+          "sources": [
+            "https://lebanonwilsonchamber.com/events/list/",
+            "https://www.eventbrite.com/d/tn--lebanon/events/",
+            "https://www.eventbrite.com/d/tn--lebanon/all-events/",
+            "https://www.eventbrite.com/d/tn--lebanon/music--events/",
+            "https://www.eventbrite.com/d/tn--lebanon/food-and-drink--events/",
+            "https://www.eventbrite.com/d/tn--lebanon/arts--events/",
+            "https://www.eventbrite.com/d/tn--lebanon/community--events/",
+            "https://www.eventbrite.com/d/tn--lebanon/business--events/",
+            "https://www.eventbrite.com/d/tn--lebanon/health--events/",
+            "https://www.eventbrite.com/d/tn--lebanon/sports-and-fitness--events/",
+            "https://www.eventbrite.com/d/tn--lebanon/hobbies--events/"
+          ]
         },
         {
           "name": "Mount Juliet",
-          "sources": ["https://mtjuliet.com/calendar-of-events/"]
+          "sources": [
+            "https://mtjuliet.com/calendar-of-events/",
+            "https://www.eventbrite.com/d/tn--mount-juliet/events/",
+            "https://www.eventbrite.com/d/tn--mount-juliet/all-events/",
+            "https://www.eventbrite.com/d/tn--mount-juliet/music--events/",
+            "https://www.eventbrite.com/d/tn--mount-juliet/food-and-drink--events/",
+            "https://www.eventbrite.com/d/tn--mount-juliet/arts--events/",
+            "https://www.eventbrite.com/d/tn--mount-juliet/community--events/",
+            "https://www.eventbrite.com/d/tn--mount-juliet/business--events/",
+            "https://www.eventbrite.com/d/tn--mount-juliet/health--events/",
+            "https://www.eventbrite.com/d/tn--mount-juliet/sports-and-fitness--events/",
+            "https://www.eventbrite.com/d/tn--mount-juliet/hobbies--events/"
+          ]
         }
       ],
       "max_pages_per_source": 25,
