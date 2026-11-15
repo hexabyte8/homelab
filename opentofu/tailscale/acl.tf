@@ -94,6 +94,14 @@ resource "tailscale_acl" "as_json" {
             "ip":  ["tcp:22", "icmp:*"],
           },
           {
+            // Members (e.g. an iPhone) reach the opencode server directly on
+            // the pod's tailnet device (opencode-agent, tag:ci) at port 4096.
+            // Without this, member -> tag:ci traffic is denied by default.
+            "src": ["autogroup:member"],
+            "dst": ["tag:ci"],
+            "ip":  ["tcp:4096", "tcp:80", "tcp:443"],
+          },
+          {
             "src": ["tag:k8s-operator"],
             "dst": ["tag:server"],
             "ip":  ["*"],
