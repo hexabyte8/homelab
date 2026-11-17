@@ -25,7 +25,7 @@ I also leverage AI to assist with new deployments or config changes, you will se
 | Ingress (public)  | Traefik + Cloudflare Tunnel  | No port-forward on the home router; Cloudflare handles DDoS/edge TLS   |
 | TLS               | cert-manager + Let's Encrypt | Automatic certificate issuance & rotation                              |
 | Storage           | Longhorn                     | Replicated PVs, snapshots, S3 backup                                   |
-| Auth / SSO        | Authentik                    | Self-hosted IdP with OIDC, LDAP, and Traefik ForwardAuth               |
+| Auth / SSO        | Authentik                    | Self-hosted IdP with OIDC and Traefik ForwardAuth                      |
 | Databases         | CloudNativePG (CNPG)         | Operator-managed Postgres clusters per app                             |
 | IaC               | OpenTofu                     | Cloudflare, Proxmox, Tailscale ACLs, Authentik, AWS S3                 |
 | Secrets           | Bitwarden Secrets Manager    | Per-service-account access tokens, injected by `bitwarden/sm-action`   |

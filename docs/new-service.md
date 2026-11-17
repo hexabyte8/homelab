@@ -579,4 +579,4 @@ ports:
 
 - [gitops-flux.md](gitops-flux.md) - Flux bootstrap, patched secrets, adding services recipe
 - [tailscale-operator.md](tailscale-operator.md) - Proxy classes, Funnel, MagicDNS hostname format
-- [authentik.md](authentik.md) - ForwardAuth deep-dive, OIDC provider setup, LDAP outpost
+- [authentik.md](authentik.md) - ForwardAuth deep-dive and OIDC provider setup
