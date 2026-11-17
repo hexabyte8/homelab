@@ -131,17 +131,10 @@ resource "authentik_brand" "default" {
     }
   })
   branding_custom_css = <<-CSS
-    :root,
-    :root[data-theme="dark"] {
+    :root {
       color-scheme: dark;
       --ak-global--Color--100: #eef0e8 !important;
       --ak-global--Color--200: #bdc3b9 !important;
-      --ak-global--BackgroundColor--100: #0b1011 !important;
-      --ak-global--BackgroundColor--200: #171e20 !important;
-      --ak-global--background-image:
-        linear-gradient(rgb(112 196 210 / 5%) 1px, transparent 1px),
-        linear-gradient(90deg, rgb(112 196 210 / 5%) 1px, transparent 1px),
-        radial-gradient(ellipse at center, #1b2527 0%, #0b1011 78%) !important;
       --pf-global--Color--100: #eef0e8 !important;
       --pf-global--Color--200: #bdc3b9 !important;
       --pf-global--BackgroundColor--100: #0b1011 !important;
@@ -152,12 +145,35 @@ resource "authentik_brand" "default" {
       --pf-global--BorderColor--100: #58625d !important;
     }
 
-    .pf-c-login {
+    body::before {
+      background-color: #0b1011;
+      background-image:
+        linear-gradient(rgb(112 196 210 / 8%) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(112 196 210 / 8%) 1px, transparent 1px),
+        radial-gradient(ellipse at center, #1b2527 0%, #0b1011 78%) !important;
       background-size: 32px 32px, 32px 32px, cover !important;
+      background-repeat: repeat, repeat, no-repeat !important;
     }
 
-    .pf-c-login__main-header.pf-c-brand img {
-      display: none;
+    .pf-c-login {
+      --ak-c-login__main--BackgroundColor: #151c1e !important;
+      --ak-c-login__main--Color: #eef0e8 !important;
+      --ak-c-login__footer--Color: #bdc3b9 !important;
+    }
+
+    .pf-c-login__main {
+      background-color: #151c1e !important;
+      border: 1px solid #58625d;
+      color: #eef0e8 !important;
+    }
+
+    .pf-c-login__main-header.pf-c-brand {
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .pf-c-login__main-header.pf-c-brand .branding-logo {
+      display: none !important;
     }
 
     .pf-c-login__main-header.pf-c-brand::after {
@@ -170,19 +186,26 @@ resource "authentik_brand" "default" {
       margin-block: 0.75rem 1.25rem;
     }
 
+    .pf-c-login__main-header:not(.pf-c-brand) .pf-c-title {
+      color: #eef0e8 !important;
+    }
+
+    .pf-c-login input,
+    .pf-c-login select,
+    .pf-c-login textarea {
+      background-color: #0b1011 !important;
+      border-color: #58625d !important;
+      color: #eef0e8 !important;
+    }
+
     body {
       background-color: #0b1011;
-      background-image:
-        linear-gradient(rgb(112 196 210 / 5%) 1px, transparent 1px),
-        linear-gradient(90deg, rgb(112 196 210 / 5%) 1px, transparent 1px);
-      background-size: 32px 32px;
       color: #eef0e8;
       font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     }
 
     @media (prefers-contrast: more) {
-      :root,
-      :root[data-theme="dark"] {
+      :root {
         --ak-global--Color--200: #d1d6ce !important;
         --pf-global--BorderColor--100: #89948d !important;
       }
