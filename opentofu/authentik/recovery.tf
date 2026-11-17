@@ -118,11 +118,56 @@ import {
 }
 
 resource "authentik_brand" "default" {
-  domain              = "authentik-default"
-  default             = true
-  branding_title      = "authentik"
-  branding_logo       = "/static/dist/assets/icons/icon_left_brand.svg"
-  branding_favicon    = "/static/dist/assets/icons/icon.png"
+  domain           = "authentik-default"
+  default          = true
+  branding_title   = "Daggertooth Access"
+  branding_logo    = "/static/dist/assets/icons/icon_left_brand.svg"
+  branding_favicon = "/static/dist/assets/icons/icon.png"
+  attributes = jsonencode({
+    settings = {
+      theme = {
+        base = "dark"
+      }
+    }
+  })
+  branding_custom_css = <<-CSS
+    :root,
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --ak-color-accent: #e8a23a;
+      --ak-color-primary: #e8a23a;
+      --ak-color-link: #ffc36b;
+      --ak-color-surface: #171e20;
+      --ak-color-surface-muted: #0b1011;
+      --ak-color-text: #eef0e8;
+      --ak-color-text-muted: #bdc3b9;
+      --ak-color-border: #58625d;
+      --ak-color-info: #70c4d2;
+      --ak-color-success: #9acb85;
+      --ak-color-warning: #f5b64c;
+      --ak-color-danger: #f28475;
+      --ak-radius-sm: 2px;
+      --ak-font-family-sans-serif: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    body {
+      background-color: var(--ak-color-surface-muted);
+      background-image:
+        linear-gradient(rgb(112 196 210 / 5%) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(112 196 210 / 5%) 1px, transparent 1px);
+      background-size: 32px 32px;
+      color: var(--ak-color-text);
+      font-family: var(--ak-font-family-sans-serif);
+    }
+
+    @media (prefers-contrast: more) {
+      :root,
+      html[data-theme="dark"] {
+        --ak-color-border: #89948d;
+        --ak-color-text-muted: #d1d6ce;
+      }
+    }
+  CSS
   flow_authentication = "7aef6921-b280-4f51-9aac-1401f28fee73"
   flow_invalidation   = "dc8654ab-4e21-412e-aafd-ee2e2074906a"
   flow_user_settings  = "eb2f0eb7-6664-4902-9247-cfc66b3c4a63"
