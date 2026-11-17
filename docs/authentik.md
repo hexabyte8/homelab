@@ -10,7 +10,6 @@ This document covers the Authentik deployment in the homelab k3s cluster - what 
 
 - **SSO** - single sign-on across all protected services
 - **OIDC / OAuth2** - for apps that support standards-based authentication
-- **LDAP** - for apps that only speak LDAP (via built-in LDAP outpost)
 - **ForwardAuth** - proxy-level authentication via Traefik, so services without any auth support can be gated behind a login page
 
 ---
@@ -32,7 +31,7 @@ Flux manages the deployment via a `HelmRelease` in `k3s/flux/apps/authentik.yaml
 
 ## Flows as Code (OpenTofu)
 
-All Authentik flows, stages, providers, applications and outpost membership in this homelab
+All Authentik flows, stages, providers, applications and embedded outpost membership in this homelab
 are managed declaratively using the **goauthentik/authentik OpenTofu provider**. The Terraform
 state lives alongside the rest of the homelab IaC in S3 (`opentofu/` directory).
 

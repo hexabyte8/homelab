@@ -2,9 +2,8 @@
 #
 # This file owns the provider, shared lookups, the embedded outpost adoption,
 # the "family&friends" group, and the proxy providers/applications for the
-# public ForwardAuth-protected services. Recovery flow lives in
-# authentik-recovery.tf, invitation-based enrollment in authentik-enrollment.tf,
-# and the LDAP outpost in authentik-ldap.tf.
+# public ForwardAuth-protected services. Recovery flow lives in recovery.tf
+# and invitation-based enrollment in enrollment.tf.
 #
 # Adding a new ForwardAuth-protected app:
 #   1. Add an authentik_provider_proxy resource (mode = "forward_single").
@@ -139,11 +138,10 @@ resource "authentik_application" "backstitch" {
 #
 # Explicit group bindings restrict which groups can access each application.
 #
-# family&friends (invited external users) are limited to Backstitch and
-# Jellyfin (LDAP-scoped, see ldap.tf) only. Every other application gets a
-# negated group binding: the binding passes (allowing access) for anyone NOT
-# in family&friends, and fails (denying access) for members of
-# family&friends. With no other bindings on these apps, the default
+# family&friends (invited external users) are limited to Backstitch only.
+# Every other application gets a negated group binding that passes (allowing
+# access) for anyone NOT in family&friends and fails (denying access) for
+# members of family&friends. With no other bindings on these apps, the default
 # policy_engine_mode ("any"/OR) means this single negated binding is the sole
 # gate.
 #

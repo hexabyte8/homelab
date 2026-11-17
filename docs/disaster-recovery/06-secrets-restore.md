@@ -85,7 +85,7 @@ letsencrypt-production ClusterIssuer email.
 
 ## 6.3 Post-Restore: Authentik OpenTofu Configuration
 
-All Authentik configuration (flows, providers, applications, outposts, LDAP) is managed
+All Authentik configuration (flows, providers, applications and outposts) is managed
 by **OpenTofu** in `opentofu/authentik/`. After a fresh restore, run `tofu apply` via
 GitHub Actions to re-provision all Authentik resources (including the Grafana and Actual
 OAuth2 providers whose secrets will be automatically written to BWS by the workflow):

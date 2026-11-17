@@ -132,39 +132,59 @@ resource "authentik_brand" "default" {
   })
   branding_custom_css = <<-CSS
     :root,
-    html[data-theme="dark"] {
+    :root[data-theme="dark"] {
       color-scheme: dark;
-      --ak-color-accent: #e8a23a;
-      --ak-color-primary: #e8a23a;
-      --ak-color-link: #ffc36b;
-      --ak-color-surface: #171e20;
-      --ak-color-surface-muted: #0b1011;
-      --ak-color-text: #eef0e8;
-      --ak-color-text-muted: #bdc3b9;
-      --ak-color-border: #58625d;
-      --ak-color-info: #70c4d2;
-      --ak-color-success: #9acb85;
-      --ak-color-warning: #f5b64c;
-      --ak-color-danger: #f28475;
-      --ak-radius-sm: 2px;
-      --ak-font-family-sans-serif: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --ak-global--Color--100: #eef0e8 !important;
+      --ak-global--Color--200: #bdc3b9 !important;
+      --ak-global--BackgroundColor--100: #0b1011 !important;
+      --ak-global--BackgroundColor--200: #171e20 !important;
+      --ak-global--background-image:
+        linear-gradient(rgb(112 196 210 / 5%) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(112 196 210 / 5%) 1px, transparent 1px),
+        radial-gradient(ellipse at center, #1b2527 0%, #0b1011 78%) !important;
+      --pf-global--Color--100: #eef0e8 !important;
+      --pf-global--Color--200: #bdc3b9 !important;
+      --pf-global--BackgroundColor--100: #0b1011 !important;
+      --pf-global--BackgroundColor--200: #171e20 !important;
+      --pf-global--primary-color--100: #e8a23a !important;
+      --pf-global--primary-color--200: #ffc36b !important;
+      --pf-global--link--Color: #ffc36b !important;
+      --pf-global--BorderColor--100: #58625d !important;
+    }
+
+    .pf-c-login {
+      background-size: 32px 32px, 32px 32px, cover !important;
+    }
+
+    .pf-c-login__main-header.pf-c-brand img {
+      display: none;
+    }
+
+    .pf-c-login__main-header.pf-c-brand::after {
+      color: #ffc36b;
+      content: "DAGGERTOOTH ACCESS";
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      margin-block: 0.75rem 1.25rem;
     }
 
     body {
-      background-color: var(--ak-color-surface-muted);
+      background-color: #0b1011;
       background-image:
         linear-gradient(rgb(112 196 210 / 5%) 1px, transparent 1px),
         linear-gradient(90deg, rgb(112 196 210 / 5%) 1px, transparent 1px);
       background-size: 32px 32px;
-      color: var(--ak-color-text);
-      font-family: var(--ak-font-family-sans-serif);
+      color: #eef0e8;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     }
 
     @media (prefers-contrast: more) {
       :root,
-      html[data-theme="dark"] {
-        --ak-color-border: #89948d;
-        --ak-color-text-muted: #d1d6ce;
+      :root[data-theme="dark"] {
+        --ak-global--Color--200: #d1d6ce !important;
+        --pf-global--BorderColor--100: #89948d !important;
       }
     }
   CSS
