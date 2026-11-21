@@ -1,0 +1,19 @@
+---
+# dsmai — "Dependency Structure of Modern AI" static site
+# (https://github.com/aravpanwar/dsmai). Tailscale-only; no public ingress.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dsmai
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 5m
+  prune: true
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./k3s/manifests/dsmai
+  targetNamespace: dsmai
