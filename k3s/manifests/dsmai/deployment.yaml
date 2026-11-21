@@ -38,6 +38,8 @@ spec:
             - sh
             - -ec
             - |
+              # The emptyDir root is owned by root, even with fsGroup set.
+              git config --global --add safe.directory /site
               git init -q /site
               cd /site
               git fetch -q --depth 1 https://github.com/aravpanwar/dsmai "$DSMAI_REF"
