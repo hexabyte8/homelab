@@ -11,6 +11,26 @@ data:
   config.json: |
     {
       "filter_by_location": true,
+      "excluded_keywords": [
+        "stripper",
+        "strip club",
+        "stripclub",
+        "striptease",
+        "gentlemen's club",
+        "gentlemen\u2019s club",
+        "gentlemens club",
+        "gentleman's club",
+        "gentleman\u2019s club",
+        "exotic dancer",
+        "adult entertainment",
+        "burlesque",
+        "topless",
+        "nude",
+        "nudity",
+        "erotic",
+        "porn",
+        "sex party"
+      ],
       "cities": [
         {
           "name": "Nashville",
