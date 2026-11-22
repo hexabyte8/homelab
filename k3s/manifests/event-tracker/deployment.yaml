@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: web
-          image: ghcr.io/hexabyte8/event-tracker:sha-6e1a02b@sha256:0d50cfc9b47896dfd39a22be7e22034382cc571ec4b82d59f555ba80d190d4c7
+          image: ghcr.io/hexabyte8/event-tracker:sha-b35a178@sha256:a2f779413bbcbf64c6e553daba552cd1f8cf252a98fa705bbe3dc21bda7bdcff
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
