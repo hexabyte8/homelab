@@ -64,7 +64,7 @@ credentials file to the existing Velero BWS entry. The sm-operator then syncs
 that value into the `velero-s3-credentials` Kubernetes Secret. No manual bucket
 or IAM credential setup is required.
 
-Velero runs the `velero-daily-full` schedule at **02:00 UTC**, retains backups for 30 days, and uses
+Velero runs the `velero-daily-full` schedule at **04:00 UTC**, retains backups for 30 days, and uses
 its node agent to copy Longhorn PVC contents into S3. Longhorn volumes use
 filesystem backup rather than AWS EBS snapshots.
 

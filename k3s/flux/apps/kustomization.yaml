@@ -44,6 +44,7 @@ resources:
   - forgejo-runner.yaml
 # - games.yaml
 #  - long-haul.yaml
+  - immich.yaml
   - mealie.yaml
   # - minecraft.yaml
   - mcp-kubernetes.yaml
@@ -54,7 +55,7 @@ resources:
   # - radar.yaml
   - stalwart.yaml
   - uptime-kuma.yaml
-  # - velero-config.yaml
-  # - velero.yaml
+  - velero-config.yaml
+  - velero.yaml
   - loki.yaml
   - promtail.yaml

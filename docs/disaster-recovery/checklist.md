@@ -108,5 +108,5 @@ Work through [Phase 7: Validation](./07-validation.md) in full, including the ne
 ### Post-recovery cleanup
 
 - [ ] Remove stale/duplicate Tailscale device entries from the old hardware
-- [ ] Confirm the daily Velero schedule (`velero-daily-full`, 02:00 UTC) is enabled going forward
+- [ ] Confirm the daily Velero schedule (`velero-daily-full`, 04:00 UTC) is enabled going forward
 - [ ] Trigger one more manual backup (`velero backup create post-recovery-check --wait`) to confirm the full backup path still works end-to-end
