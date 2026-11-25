@@ -97,7 +97,8 @@ spec:
     schedules:
       daily-full:
         disabled: false
-        schedule: "0 2 * * *"
+        # Immich writes its daily database dump at 02:00; back up afterwards.
+        schedule: "0 4 * * *"
         template:
           ttl: 720h   # 30 days retention
           includedNamespaces:
